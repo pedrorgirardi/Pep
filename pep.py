@@ -1,0 +1,335 @@
+import subprocess
+import os
+import re
+import tempfile
+import json
+import traceback
+
+from functools import reduce
+
+import sublime_plugin
+import sublime
+
+
+def program_path(program):
+    return os.path.join(sublime.packages_path(), "Pep", "bin", program)
+
+
+def clj_kondo_path():
+    return program_path("clj-kondo")
+
+
+def clj_kondo_process_args(file_name=None):
+    config = "{:lint-as {reagent.core/with-let clojure.core/let} \
+               :output {:analysis true :format :json}}"
+
+    # clj-kondo seems to use different analysis based on the file extension.
+    # We might get false positives if we only read from stdin.
+
+    return [clj_kondo_path(), "--config", config, "--lint", file_name or "-"]
+
+
+def clj_kondo_analysis(view):
+    window = view.window()
+    view_file_name = view.file_name()
+    project_file_name = window.project_file_name() if window else Nones
+
+    cwd = None
+
+    if project_file_name:
+        cwd = os.path.dirname(project_file_name)
+    elif view.file_name():
+        cwd = os.path.dirname(view_file_name)
+
+    print("(Pep) cwd", cwd)
+
+    process = subprocess.Popen(
+            clj_kondo_process_args(view.file_name()),
+            cwd=cwd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+    try:
+        stdout, stderr = process.communicate(view_text(view).encode()) if view.file_name() is None else process.communicate()
+
+        stderr_decoded = stderr.decode()
+
+        # If clj-kondo had any sort of error, we need to raise an exception.
+        # (It's up to the caller to handle it.)
+        if stderr_decoded:
+            raise Exception(stderr_decoded)
+
+        return json.loads(stdout.decode())
+    except subprocess.TimeoutExpired as e:
+        process.kill()
+        raise e
+
+
+def set_view_name(view, name):
+    if view is not None:
+        if view.is_loading():
+            sublime.set_timeout(lambda: set_view_name(view, name), 100)
+        else:
+            view.set_name(name)
+
+
+def view_text(view):
+    return view.substr(sublime.Region(0, view.size()))
+
+
+
+class PepFormatCommand(sublime_plugin.TextCommand):
+    """
+    Command to formnat Clojure and JSON.
+
+    Clojure is formatted by zprint.
+    JSON is formatted using the built-in Python JSON API.
+    """
+
+    def run(self, edit):
+        syntax = self.view.syntax()
+
+        for region in self.view.sel():
+            region = sublime.Region(0, self.view.size()) if region.empty() else region
+
+            if syntax.scope == 'source.clojure':
+                self.format_clojure(edit, region)
+            elif syntax.scope == 'source.json':
+                self.format_json(edit, region)
+
+
+    def format_json(self, edit, region):
+        try:
+            decoded = json.loads(self.view.substr(region))
+
+            formatted = json.dumps(decoded, indent=4)
+
+            self.view.replace(edit, region, formatted)
+        except Exception as e:
+            print(f"(PepFormat) Failed to format JSON: {e}")
+
+
+    def format_clojure(self, edit, region):
+        zprint_path = os.path.join(sublime.packages_path(), "User", "bin", "zprint")
+
+        zprint_config = f"{{:style :respect-bl}}"
+
+        process = subprocess.Popen(
+            [zprint_path, zprint_config],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        try:
+            stdout, stderr = process.communicate(self.view.substr(region).encode())
+
+            formatted = stdout.decode("utf-8")
+
+            if formatted:
+                self.view.replace(edit, region, formatted)
+
+        except subprocess.TimeoutExpired as e:
+            print(f"(PepFormat) Failed to format Clojure: {e}")
+
+            process.kill()
+
+
+def clj_kondo_finding_message(finding):
+    def group1(regex):
+        matches = re.compile(regex).findall(finding["message"])
+
+        return matches[0] if matches is not None else finding["message"]
+
+    t = finding["type"]
+
+    if t == "unresolved-symbol":
+        return "Unresolved " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
+    elif t == "unresolved-namespace":
+        return "Unresolved " + group1(r"^Unresolved namespace\s+([^\s]*)")
+    elif t == "unused-binding":
+        return "Unused " + group1(r"^unused binding\s+(?P<symbol>.*)")
+    elif t == "unused-namespace":
+        return "Unused " + group1(r"^namespace ([^\s]*)")
+    elif t == "unused-referred-var":
+        return "Unused " + group1(r"^([^\s]*)")
+    elif t == "missing-map-value":
+        return finding["message"].capitalize()
+    elif t == "redefined-var":
+        return "Redefined " + group1(r"^redefined var ([^\s]*)")
+    else:
+        return finding["message"]
+
+
+def erase_analysis_regions(view):
+    view.erase_regions("analysis_error")
+    view.erase_regions("analysis_warning")
+
+
+class PepEraseAnalysisAnnotationCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        erase_analysis_regions(self.view)
+
+
+class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        try:
+
+            def finding_region(finding):
+                line = int(finding["row"]) - 1
+                col_start = int(finding["col"]) -1
+                col_end = int(finding["end-col"]) -1
+
+                pa = self.view.text_point(line, col_start)
+                pb = self.view.text_point(line, col_end)
+
+                return sublime.Region(pa, pb)
+
+            def finding_minihtml(finding):
+                return f"""
+                <body>
+                <div">
+                    <span>{clj_kondo_finding_message(finding)}</span></div>
+                </div>
+                </body>
+                """
+
+            analysis = clj_kondo_analysis(self.view)
+
+            findings = analysis["findings"] if "findings" in analysis else []
+
+            # Pretty print clj-kondo analysis.
+            #print(json.dumps(findings, indent=4))
+
+            warning_region_set = []
+            warning_minihtml_set = []
+
+            error_region_set = []
+            error_minihtml_set = []
+
+            for finding in findings:
+                if finding["level"] == "error":
+                    error_region_set.append(finding_region(finding))
+                    error_minihtml_set.append(finding_minihtml(finding))
+                elif finding["level"] == "warning":
+                    warning_region_set.append(finding_region(finding))
+                    warning_minihtml_set.append(finding_minihtml(finding))
+
+            # Erase regions from previous analysis.
+            erase_analysis_regions(self.view)
+
+            redish = self.view.style_for_scope('region.redish')['foreground']
+            orangish = self.view.style_for_scope('region.orangish')['foreground']
+
+            self.view.add_regions(
+                "analysis_error", 
+                error_region_set,
+                scope="region.redish",
+                annotations=error_minihtml_set,
+                annotation_color=redish,
+                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
+                        sublime.DRAW_NO_FILL | 
+                        sublime.DRAW_NO_OUTLINE))
+
+            self.view.add_regions(
+                "analysis_warning", 
+                warning_region_set,
+                scope="region.orangish",
+                annotations=warning_minihtml_set,
+                annotation_color=orangish,
+                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
+                        sublime.DRAW_NO_FILL | 
+                        sublime.DRAW_NO_OUTLINE))
+
+        except Exception as e:
+            print(f"PepAnalysis failed.", traceback.format_exc())
+
+
+class PepAnalysisReportCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        try:
+            def finding_str(finding):
+                message = clj_kondo_finding_message(finding)
+
+                return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
+
+            analysis = clj_kondo_analysis(self.view)
+
+            findings = analysis["findings"] if "findings" in analysis else []
+
+            warning_str_set = []
+
+            error_str_set = []
+
+            for finding in findings:
+                if finding["level"] == "error":
+                    error_str_set.append(finding_str(finding))
+                elif finding["level"] == "warning":
+                    warning_str_set.append(finding_str(finding))
+
+            descriptor, path = tempfile.mkstemp()
+
+            try:
+                with os.fdopen(descriptor, "w") as file:
+                    s = f"File: {self.view.file_name()}\n\n" if self.view.file_name() is not None else ""
+                    s += "\n\n".join(error_str_set + warning_str_set)
+
+                    file.write(s)
+
+                v = self.view.window().open_file(path, flags=sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT)
+                v.set_scratch(True)
+                v.set_read_only(True)
+                v.settings().set("word_wrap", "auto")
+                v.settings().set("gutter", False)
+                v.settings().set("line_numbers", False)
+                v.settings().set("result_file_regex", r"^File: (\S+)")
+                v.settings().set("result_line_regex", r"^\[(\d+).(\d+):(\d+)\]")
+
+                # Trick to set the name of the view.
+                set_view_name(v, "Analysis")
+            finally:
+                os.remove(path)
+
+        except Exception as e:
+            print(f"PepAnalysis failed.", traceback.format_exc())
+
+
+class PepAnalysisListener(sublime_plugin.ViewEventListener):
+
+    @classmethod
+    def is_applicable(_, settings):
+        return settings.get('syntax') in {"Packages/Tutkain/Clojure (Tutkain).sublime-syntax", 
+                                          "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
+                                          "Packages/Clojure/Clojure.sublime-syntax",
+                                          "Packages/Clojure/ClojureScript.sublime-syntax"}
+
+    def on_load(self):
+        self.view.run_command("pep_analysis_annotation")
+
+    def on_post_save(self):
+        self.view.run_command("pep_analysis_annotation")
+
+
+class PepJumpListener(sublime_plugin.EventListener):
+
+    def _valid_view(self, view):
+        """
+        Determines if we want to track the history for a view
+
+        :param view:
+            A sublime.View object
+
+        :return:
+            A bool if we should track the view
+        """
+
+        return view is not None and not view.settings().get('is_widget')
+
+    def on_modified(self, view):
+        if not self._valid_view(view):
+            return
