@@ -147,18 +147,25 @@ def clj_kondo_finding_message(finding):
 
     if t == "unresolved-symbol":
         return "Unresolved " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
+
     elif t == "unresolved-namespace":
         return "Unresolved " + group1(r"^Unresolved namespace\s+([^\s]*)")
+
     elif t == "unused-binding":
         return "Unused " + group1(r"^unused binding\s+(?P<symbol>.*)")
+
     elif t == "unused-namespace":
         return "Unused " + group1(r"^namespace ([^\s]*)")
+
     elif t == "unused-referred-var":
         return "Unused " + group1(r"^([^\s]*)")
+
     elif t == "missing-map-value":
         return finding["message"].capitalize()
+
     elif t == "redefined-var":
         return "Redefined " + group1(r"^redefined var ([^\s]*)")
+
     else:
         return finding["message"]
 
@@ -316,6 +323,11 @@ class PepAnalysisListener(sublime_plugin.ViewEventListener):
 
 
 class PepJumpListener(sublime_plugin.EventListener):
+    """
+    Many things were copied from Default/history_list.py
+    """
+
+    jump_history = {}
 
     def _valid_view(self, view):
         """
@@ -330,6 +342,23 @@ class PepJumpListener(sublime_plugin.EventListener):
 
         return view is not None and not view.settings().get('is_widget')
 
+    def _history_for_window(self, window):
+        """
+        Fetches the JumpHistory object for the window
+
+        :param window:
+            A sublime.Window object
+
+        :return:
+            A JumpHistory object
+        """
+
+        if not window:
+            return []
+        else:
+            return self.jump_history.setdefault(window.id(), [])
+
+
     def on_modified(self, view):
         if not self._valid_view(view):
             return
@@ -337,4 +366,14 @@ class PepJumpListener(sublime_plugin.EventListener):
         # Only the last Selection is relevant to our jump history.
         last_sel_region = view.sel()[-1]
 
-        print(last_sel_region.b)
+        history = self._history_for_window(view.window())
+        history.append(last_sel_region)
+
+        # We don't want to have an unbounded history size, 
+        # so let's remove the first 10 elements whenever 
+        # the history grows above the threshold.
+        if len(history) > 50:
+            del history[:10]
+
+        print(view.window().id(), last_sel_region.b)
+        print(history)
