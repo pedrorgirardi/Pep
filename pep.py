@@ -322,12 +322,36 @@ class PepAnalysisListener(sublime_plugin.ViewEventListener):
         self.view.run_command("pep_analysis_annotation")
 
 
+# History by window ID.
+jump_history = {}
+
+# Zero based jump position by window ID.
+jump_pos = {}
+
+
+def _history_for_window(window):
+    global jump_history
+
+    if not window:
+        return []
+    else:
+        return jump_history.setdefault(window.id(), [])
+
+
+def _jump_pos_for_window(window):
+    global jump_history
+    global jump_pos
+
+    if not window:
+        return None
+    else:
+        return jump_pos.setdefault(window.id(), len(jump_history) - 1)
+
+
 class PepJumpListener(sublime_plugin.EventListener):
     """
     Many things were copied from Default/history_list.py
     """
-
-    jump_history = {}
 
     def _valid_view(self, view):
         """
@@ -342,38 +366,59 @@ class PepJumpListener(sublime_plugin.EventListener):
 
         return view is not None and not view.settings().get('is_widget')
 
-    def _history_for_window(self, window):
-        """
-        Fetches the JumpHistory object for the window
-
-        :param window:
-            A sublime.Window object
-
-        :return:
-            A JumpHistory object
-        """
-
-        if not window:
-            return []
-        else:
-            return self.jump_history.setdefault(window.id(), [])
-
 
     def on_modified(self, view):
         if not self._valid_view(view):
             return
 
-        # Only the last Selection is relevant to our jump history.
+        # Only the last selection is relevant to our jump history.
         last_sel_region = view.sel()[-1]
 
-        history = self._history_for_window(view.window())
-        history.append(last_sel_region)
+        history = _history_for_window(view.window())
 
-        # We don't want to have an unbounded history size, 
-        # so let's remove the first 10 elements whenever 
-        # the history grows above the threshold.
+        history.append({"view": view,
+                        "region": last_sel_region})
+
+        # Remove first n elements whenever history grows above threshold.
         if len(history) > 50:
             del history[:10]
 
-        print(view.window().id(), last_sel_region.b)
-        print(history)
+class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
+
+    def is_enabled(self):
+        return not self.view.settings().get('is_widget')
+
+
+    def run(self, edit):
+
+        global jump_history
+        global jump_pos
+
+        window = self.view.window()  
+
+        history = _history_for_window(window)     
+
+        print("History", history)
+
+        if history:
+            pos = _jump_pos_for_window(window) - 1  
+            
+            if pos == 0: 
+                return
+
+            print(pos) 
+
+            history_entry = history[_jump_pos_for_window(window)]
+
+            print("History entry", history_entry)       
+
+            view = history_entry["view"]
+            region = history_entry["region"] 
+
+            print("(Pep) Jump to", region)
+
+            window.focus_view(view)
+
+            view.sel().clear()
+            view.sel().add(region)
+            view.show(region, True) 
