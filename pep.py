@@ -333,3 +333,8 @@ class PepJumpListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         if not self._valid_view(view):
             return
+
+        # Only the last Selection is relevant to our jump history.
+        last_sel_region = view.sel()[-1]
+
+        print(last_sel_region.b)
