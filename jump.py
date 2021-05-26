@@ -1,6 +1,36 @@
 import sublime_plugin
 import sublime
 
+import time
+from functools import wraps
+
+
+class throttle(object):
+    """
+    Decorator that prevents a function from being called more than once every
+    time period.
+
+    To create a function that cannot be called more than once a minute:
+        @throttle(duration=1)
+        def my_fun():
+            pass
+    """
+    def __init__(self, duration=1):
+        self.throttle_duration = duration
+        self.time_of_last_call = time.time()
+
+    def __call__(self, fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            time_since_last_call = now - self.time_of_last_call
+
+            if time_since_last_call > self.throttle_duration:
+                self.time_of_last_call = now
+                return fn(*args, **kwargs)
+
+        return wrapper
+
 
 # History by window ID.
 jump_history = {}
@@ -64,6 +94,11 @@ class PepJumpListener(sublime_plugin.EventListener):
         if not self._valid_view(view):
             return
 
+        self.save_modification(view)
+
+
+    @throttle(duration=1)
+    def save_modification(self, view):
         # Only the last selection is relevant to our jump history.
         region = view.sel()[-1]
 
@@ -77,6 +112,7 @@ class PepJumpListener(sublime_plugin.EventListener):
         # Remove first n elements whenever history grows above threshold.
         if len(history) > 50:
             del history[:10]
+
 
 class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
 
