@@ -75,6 +75,12 @@ def _jump_pos_for_window(window):
         # There is no history. We can't jump.
         return None
 
+def _reset_jump_position(window):
+    global jump_pos
+
+    if window.id() in jump_pos:
+        del jump_pos[window.id()]
+
 
 class PgJumpListener(sublime_plugin.EventListener):
 
@@ -99,7 +105,7 @@ class PgJumpListener(sublime_plugin.EventListener):
         self.save_modification(view)
 
 
-    @throttle(duration=0.5)
+    @throttle(duration=0.1)
     def save_modification(self, view):
         # Only the last selection is relevant to our jump history.
         region = view.sel()[-1]
@@ -109,11 +115,14 @@ class PgJumpListener(sublime_plugin.EventListener):
         history.append({"view": view,
                         "region": region})
 
-        #print(">", region)
+        # Always reset jump position when a view if modified.
+        _reset_jump_position(view.window())
 
         # Remove first n elements whenever history grows above threshold.
         if len(history) > 50:
             del history[:10]
+
+        print(">", region)
 
 
 class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
@@ -133,20 +142,15 @@ class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
         if history:
             pos = _jump_pos_for_window(window)
             
-            # Can't jump if there isn't a jump position,
-            # or if there is a single entry in the history.
-            if pos is None or pos == 0: 
+            if pos is None: 
                 return
 
-            # Actual jump position is last pos - 1.
-            _pos = pos - 1
-
-            history_entry = history[_pos]
+            history_entry = history[pos]
 
             view = history_entry["view"]
             region = history_entry["region"]
 
-            #print("<", region)
+            print("<", region)
 
             window.focus_view(view)
 
@@ -154,10 +158,12 @@ class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
             view.sel().add(region)
             view.show(region, True)
 
+            new_pos = pos - 1
+
             # Clear jump position whenever
             # jumping to the last entry in the history.
-            if _pos == 0:
+            if new_pos < 0:
                 del jump_pos[window.id()]
             else:
-                jump_pos[window.id()] = _pos
+                jump_pos[window.id()] = new_pos
 
