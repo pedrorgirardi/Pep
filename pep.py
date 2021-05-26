@@ -10,6 +10,10 @@ from functools import reduce
 import sublime_plugin
 import sublime
 
+from Tutkain.api import edn
+from Tutkain.src.repl import views
+from Tutkain.src import dialects
+
 
 def program_path(program):
     return os.path.join(sublime.packages_path(), "Pep", "bin", program)
@@ -321,4 +325,26 @@ class PepAnalysisListener(sublime_plugin.ViewEventListener):
     def on_post_save(self):
         self.view.run_command("pep_analysis_annotation")
  
- 
+
+class MyTutkainDisconnectCommand(sublime_plugin.WindowCommand):
+
+    def run(self):
+        if view := views.active_repl_view(self.window):
+            active_view = self.window.active_view()
+            host = view.settings().get("tutkain_repl_host")
+            port = view.settings().get("tutkain_repl_port")
+            dialect = edn.Keyword(view.settings().get("tutkain_repl_view_dialect"))
+            dialect_name = dialects.name(dialect)
+
+            ret = sublime.ok_cancel_dialog(
+                f"Disconnect from {dialect_name} REPL at {host}:{port}?",
+                "Disconnect"
+            )
+
+            if ret == sublime.DIALOG_YES:
+                #inline.clear(active_view)
+                test.progress.stop()
+                view.close()
+
+            self.window.focus_view(active_view)
+
