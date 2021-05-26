@@ -109,7 +109,7 @@ class PgJumpListener(sublime_plugin.EventListener):
         history.append({"view": view,
                         "region": region})
 
-        print(">", region)
+        #print(">", region)
 
         # Remove first n elements whenever history grows above threshold.
         if len(history) > 50:
@@ -146,7 +146,7 @@ class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
             view = history_entry["view"]
             region = history_entry["region"]
 
-            print("<", region)
+            #print("<", region)
 
             window.focus_view(view)
 
