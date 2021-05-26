@@ -36,7 +36,7 @@ def clj_kondo_process_args(file_name=None):
 def clj_kondo_analysis(view):
     window = view.window()
     view_file_name = view.file_name()
-    project_file_name = window.project_file_name() if window else Nones
+    project_file_name = window.project_file_name() if window else None
 
     cwd = None
 
