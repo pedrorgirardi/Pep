@@ -90,7 +90,7 @@ class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
 
         window = self.view.window()  
 
-        history = _window_history(window)         
+        history = _window_history(window)
 
         if history:
             pos = _jump_pos_for_window(window)
@@ -106,19 +106,20 @@ class PgJumpBackChangeCommand(sublime_plugin.TextCommand):
             history_entry = history[_pos]
 
             view = history_entry["view"]
-            region = history_entry["region"] 
+            region = history_entry["region"]
 
             print("<", region)
 
-            window.focus_view(view) 
+            window.focus_view(view)
 
             view.sel().clear()
             view.sel().add(region)
             view.show(region, True)
 
-            # Clear jump position whenever  
+            # Clear jump position whenever
             # jumping to the last entry in the history.
             if _pos == 0:
                 del jump_pos[window.id()]
             else:
                 jump_pos[window.id()] = _pos
+
