@@ -99,7 +99,7 @@ class PgJumpListener(sublime_plugin.EventListener):
         self.save_modification(view)
 
 
-    @throttle(duration=1)
+    @throttle(duration=0.5)
     def save_modification(self, view):
         # Only the last selection is relevant to our jump history.
         region = view.sel()[-1]
