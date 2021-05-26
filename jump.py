@@ -1,3 +1,8 @@
+"""
+Many things were copied from Default/history_list.py
+"""
+
+
 import sublime_plugin
 import sublime
 
@@ -71,10 +76,7 @@ def _jump_pos_for_window(window):
         return None
 
 
-class PepJumpListener(sublime_plugin.EventListener):
-    """
-    Many things were copied from Default/history_list.py
-    """
+class PgJumpListener(sublime_plugin.EventListener):
 
     def _valid_view(self, view):
         """
