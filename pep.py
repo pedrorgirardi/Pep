@@ -15,6 +15,9 @@ from Tutkain.src.repl import views
 from Tutkain.src import dialects
 
 
+debug = False
+
+
 def program_path(program):
     return os.path.join(sublime.packages_path(), "Pep", "bin", program)
 
@@ -167,6 +170,12 @@ def clj_kondo_finding_message(finding):
     elif t == "missing-map-value":
         return finding["message"].capitalize()
 
+    elif t == "cond-else":
+        return "Use :else instead"
+
+    elif t == "unreachable-code":
+        return "Unreachable"
+
     elif t == "redefined-var":
         return "Redefined " + group1(r"^redefined var ([^\s]*)")
 
@@ -214,7 +223,9 @@ class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
             findings = analysis["findings"] if "findings" in analysis else []
 
             # Pretty print clj-kondo analysis.
-            #print(json.dumps(findings, indent=4))
+            global debug
+            if debug:
+                print(json.dumps(findings, indent=4))
 
             warning_region_set = []
             warning_minihtml_set = []
