@@ -170,6 +170,9 @@ def clj_kondo_finding_message(finding):
     elif t == "missing-map-value":
         return finding["message"].capitalize()
 
+    elif t == "refer-all":
+        return finding["message"].capitalize()
+
     elif t == "cond-else":
         return "Use :else instead"
 
