@@ -5,15 +5,12 @@ import tempfile
 import json
 import traceback
 
-from functools import reduce
-
 import sublime_plugin
 import sublime
 
 from Tutkain.api import edn
 from Tutkain.src.repl import views
 from Tutkain.src import dialects
-
 
 debug = False
 
@@ -51,15 +48,16 @@ def clj_kondo_analysis(view):
     print("(Pep) cwd", cwd)
 
     process = subprocess.Popen(
-            clj_kondo_process_args(view.file_name()),
-            cwd=cwd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        clj_kondo_process_args(view.file_name()),
+        cwd=cwd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
 
     try:
-        stdout, stderr = process.communicate(view_text(view).encode()) if view.file_name() is None else process.communicate()
+        stdout, stderr = process.communicate(
+            view_text(view).encode()) if view.file_name() is None else process.communicate()
 
         stderr_decoded = stderr.decode()
 
@@ -86,7 +84,6 @@ def view_text(view):
     return view.substr(sublime.Region(0, view.size()))
 
 
-
 class PepFormatCommand(sublime_plugin.TextCommand):
     """
     Command to formnat Clojure and JSON.
@@ -106,7 +103,6 @@ class PepFormatCommand(sublime_plugin.TextCommand):
             elif syntax.scope == 'source.json':
                 self.format_json(edit, region)
 
-
     def format_json(self, edit, region):
         try:
             decoded = json.loads(self.view.substr(region))
@@ -116,7 +112,6 @@ class PepFormatCommand(sublime_plugin.TextCommand):
             self.view.replace(edit, region, formatted)
         except Exception as e:
             print(f"(PepFormat) Failed to format JSON: {e}")
-
 
     def format_clojure(self, edit, region):
         zprint_path = os.path.join(sublime.packages_path(), "User", "bin", "zprint")
@@ -208,8 +203,8 @@ class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
 
             def finding_region(finding):
                 line = int(finding["row"]) - 1
-                col_start = int(finding["col"]) -1
-                col_end = int(finding["end-col"]) -1
+                col_start = int(finding["col"]) - 1
+                col_end = int(finding["end-col"]) - 1
 
                 pa = self.view.text_point(line, col_start)
                 pb = self.view.text_point(line, col_end)
@@ -255,24 +250,24 @@ class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
             orangish = self.view.style_for_scope('region.orangish')['foreground']
 
             self.view.add_regions(
-                "analysis_error", 
+                "analysis_error",
                 error_region_set,
                 scope="region.redish",
                 annotations=error_minihtml_set,
                 annotation_color=redish,
                 flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
-                        sublime.DRAW_NO_FILL | 
-                        sublime.DRAW_NO_OUTLINE))
+                       sublime.DRAW_NO_FILL |
+                       sublime.DRAW_NO_OUTLINE))
 
             self.view.add_regions(
-                "analysis_warning", 
+                "analysis_warning",
                 warning_region_set,
                 scope="region.orangish",
                 annotations=warning_minihtml_set,
                 annotation_color=orangish,
                 flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
-                        sublime.DRAW_NO_FILL | 
-                        sublime.DRAW_NO_OUTLINE))
+                       sublime.DRAW_NO_FILL |
+                       sublime.DRAW_NO_OUTLINE))
 
         except Exception as e:
             print(f"PepAnalysis failed.", traceback.format_exc())
@@ -332,7 +327,7 @@ class PepAnalysisListener(sublime_plugin.ViewEventListener):
 
     @classmethod
     def is_applicable(_, settings):
-        return settings.get('syntax') in {"Packages/Tutkain/Clojure (Tutkain).sublime-syntax", 
+        return settings.get('syntax') in {"Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
                                           "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
                                           "Packages/Clojure/Clojure.sublime-syntax",
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
@@ -342,7 +337,7 @@ class PepAnalysisListener(sublime_plugin.ViewEventListener):
 
     def on_post_save(self):
         self.view.run_command("pep_analysis_annotation")
- 
+
 
 class MyTutkainDisconnectCommand(sublime_plugin.WindowCommand):
 
@@ -360,9 +355,8 @@ class MyTutkainDisconnectCommand(sublime_plugin.WindowCommand):
             )
 
             if ret == sublime.DIALOG_YES:
-                #inline.clear(active_view)
+                # inline.clear(active_view)
                 test.progress.stop()
                 view.close()
 
             self.window.focus_view(active_view)
-
