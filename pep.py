@@ -152,38 +152,42 @@ def clj_kondo_finding_message(finding):
 
     t = finding["type"]
 
+    minihtml = ""
+
     if t == "unresolved-symbol":
-        return "Unresolved " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
+        minihtml = "Unresolved " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
 
     elif t == "unresolved-namespace":
-        return "Unresolved " + group1(r"^Unresolved namespace\s+([^\s]*)")
+        minihtml = "Unresolved " + group1(r"^Unresolved namespace\s+([^\s]*)")
 
     elif t == "unused-binding":
-        return "Unused " + group1(r"^unused binding\s+(?P<symbol>.*)")
+        minihtml = "Unused " + group1(r"^unused binding\s+(?P<symbol>.*)")
 
     elif t == "unused-namespace":
-        return "Unused " + group1(r"^namespace ([^\s]*)")
+        minihtml = "Unused " + group1(r"^namespace ([^\s]*)")
 
     elif t == "unused-referred-var":
-        return "Unused " + group1(r"^([^\s]*)")
+        minihtml = "Unused " + group1(r"^([^\s]*)")
 
     elif t == "missing-map-value":
-        return finding["message"].capitalize()
+        minihtml = finding["message"].capitalize()
 
     elif t == "refer-all":
-        return finding["message"].capitalize()
+        minihtml = finding["message"].capitalize()
 
     elif t == "cond-else":
-        return "Use :else instead"
+        minihtml = "Use :else instead"
 
     elif t == "unreachable-code":
-        return "Unreachable"
+        minihtml = "Unreachable"
 
     elif t == "redefined-var":
-        return "Redefined " + group1(r"^redefined var ([^\s]*)")
+        minihtml = "Redefined " + group1(r"^redefined var ([^\s]*)")
 
     else:
-        return finding["message"]
+        minihtml = finding["message"]
+
+    return minihtml
 
 
 def erase_analysis_regions(view):
