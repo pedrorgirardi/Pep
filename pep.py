@@ -23,6 +23,10 @@ def clj_kondo_path():
     return program_path("clj-kondo")
 
 
+def zprint_path():
+    return program_path("zprint")
+
+
 def clj_kondo_process_args(file_name=None):
     config = "{:lint-as {reagent.core/with-let clojure.core/let} \
                :output {:analysis true :format :json}}"
@@ -114,12 +118,10 @@ class PepFormatCommand(sublime_plugin.TextCommand):
             print(f"(PepFormat) Failed to format JSON: {e}")
 
     def format_clojure(self, edit, region):
-        zprint_path = os.path.join(sublime.packages_path(), "User", "bin", "zprint")
-
         zprint_config = f"{{:style :respect-bl}}"
 
         process = subprocess.Popen(
-            [zprint_path, zprint_config],
+            [zprint_path(), zprint_config],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
