@@ -115,7 +115,7 @@ class PepFormatCommand(sublime_plugin.TextCommand):
 
             self.view.replace(edit, region, formatted)
         except Exception as e:
-            print(f"(PepFormat) Failed to format JSON: {e}")
+            print(f"(Pep) Failed to format JSON: {e}")
 
     def format_clojure(self, edit, region):
         zprint_config = f"{{:style :respect-bl}}"
@@ -136,7 +136,7 @@ class PepFormatCommand(sublime_plugin.TextCommand):
                 self.view.replace(edit, region, formatted)
 
         except subprocess.TimeoutExpired as e:
-            print(f"(PepFormat) Failed to format Clojure: {e}")
+            print(f"(Pep) Failed to format Clojure: {e}")
 
             process.kill()
 
@@ -272,7 +272,7 @@ class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
                        sublime.DRAW_NO_OUTLINE))
 
         except Exception as e:
-            print(f"PepAnalysis failed.", traceback.format_exc())
+            print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
 class PepAnalysisReportCommand(sublime_plugin.TextCommand):
@@ -322,7 +322,7 @@ class PepAnalysisReportCommand(sublime_plugin.TextCommand):
                 os.remove(path)
 
         except Exception as e:
-            print(f"PepAnalysis failed.", traceback.format_exc())
+            print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
 class PepAnalysisListener(sublime_plugin.ViewEventListener):
