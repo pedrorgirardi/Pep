@@ -229,6 +229,9 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
             analysis = clj_kondo_analysis(self.view)
 
+            # Persist analysis.
+            self.view.settings().set("pg_pep_analysis", analysis)
+
             findings = analysis.get("findings", [])
 
             # Pretty print clj-kondo analysis.
