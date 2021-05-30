@@ -4,7 +4,7 @@
 (comment
   
   (def analysis
-    (clj-kondo/run! {:lint ["/Users/pedro/Developer/velos/rex.web"]
+    (clj-kondo/run! {:lint ["/Users/pedro/Developer/velos/rex.web/src"]
                      :cache-dir "/Users/pedro/Developer/velos/rex.web/.clj-kondo/.cache"
                      :config {:output {:analysis true}}}))
   
