@@ -201,7 +201,7 @@ class PepEraseAnalysisAnnotationCommand(sublime_plugin.TextCommand):
         erase_analysis_regions(self.view)
 
 
-class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
+class PgPepAnalysisCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         try:
@@ -278,7 +278,7 @@ class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
-class PepAnalysisReportCommand(sublime_plugin.TextCommand):
+class PgPepAnalysisReportCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         try:
@@ -338,10 +338,10 @@ class PepAnalysisListener(sublime_plugin.ViewEventListener):
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
     def on_load(self):
-        self.view.run_command("pep_analysis_annotation")
+        self.view.run_command("pg_pep_analysis")
 
     def on_post_save(self):
-        self.view.run_command("pep_analysis_annotation")
+        self.view.run_command("pg_pep_analysis")
 
 
 class MyTutkainDisconnectCommand(sublime_plugin.WindowCommand):
