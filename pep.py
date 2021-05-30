@@ -278,7 +278,7 @@ class PgPepAnalysisCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
-class PgPepAnalysisReportCommand(sublime_plugin.TextCommand):
+class PgPepReportCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         try:
