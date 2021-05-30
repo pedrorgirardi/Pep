@@ -12,7 +12,7 @@ from Tutkain.api import edn
 from Tutkain.src.repl import views
 from Tutkain.src import dialects
 
-debug = False
+DEBUG = False
 
 
 def program_path(program):
@@ -152,25 +152,28 @@ def clj_kondo_finding_message(finding):
     minihtml = ""
 
     if t == "unresolved-symbol":
-        minihtml = "Unresolved " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
+        minihtml = "Unresolved: " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
 
     elif t == "unresolved-namespace":
-        minihtml = "Unresolved " + group1(r"^Unresolved namespace\s+([^\s]*)")
+        minihtml = "Unresolved: " + group1(r"^Unresolved namespace\s+([^\s]*)")
 
     elif t == "unused-binding":
-        minihtml = "Unused " + group1(r"^unused binding\s+(?P<symbol>.*)")
+        minihtml = "Unused: " + group1(r"^unused binding\s+(?P<symbol>.*)")
 
     elif t == "unused-namespace":
-        minihtml = "Unused " + group1(r"^namespace ([^\s]*)")
+        minihtml = "Unused: " + group1(r"^namespace ([^\s]*)")
 
     elif t == "unused-referred-var":
-        minihtml = "Unused " + group1(r"^([^\s]*)")
+        minihtml = "Unused: " + group1(r"^([^\s]*)")
 
     elif t == "missing-map-value":
         minihtml = finding["message"].capitalize()
 
     elif t == "refer-all":
         minihtml = finding["message"].capitalize()
+
+    elif t == "duplicate-require":
+        minihtml = "Duplicated require: " + group1(r"^duplicate require of ([^\s]*)")
 
     elif t == "cond-else":
         minihtml = "Use :else instead"
@@ -179,7 +182,7 @@ def clj_kondo_finding_message(finding):
         minihtml = "Unreachable"
 
     elif t == "redefined-var":
-        minihtml = "Redefined " + group1(r"^redefined var ([^\s]*)")
+        minihtml = "Redefined: " + group1(r"^redefined var ([^\s]*)")
 
     else:
         minihtml = finding["message"]
@@ -227,8 +230,8 @@ class PepAnalysisAnnotationCommand(sublime_plugin.TextCommand):
             findings = analysis["findings"] if "findings" in analysis else []
 
             # Pretty print clj-kondo analysis.
-            global debug
-            if debug:
+            global DEBUG
+            if DEBUG:
                 print(json.dumps(findings, indent=4))
 
             warning_region_set = []
