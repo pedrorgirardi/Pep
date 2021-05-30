@@ -12,7 +12,7 @@ from Tutkain.api import edn
 from Tutkain.src.repl import views
 from Tutkain.src import dialects
 
-DEBUG = False
+DEBUG = True
 
 
 def program_path(program):
@@ -29,7 +29,7 @@ def zprint_path():
 
 def clj_kondo_process_args(file_name=None):
     config = "{:lint-as {reagent.core/with-let clojure.core/let} \
-               :output {:analysis true :format :json}}"
+               :output {:analysis {:locals true} :format :json}}"
 
     # clj-kondo seems to use different analysis based on the file extension.
     # We might get false positives if we only read from stdin.
