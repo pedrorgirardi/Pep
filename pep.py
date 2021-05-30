@@ -49,7 +49,9 @@ def clj_kondo_analysis(view):
     elif view.file_name():
         cwd = os.path.dirname(view_file_name)
 
-    print("(Pep) cwd", cwd)
+    global DEBUG
+    if DEBUG:
+        print("(Pep) cwd", cwd)
 
     process = subprocess.Popen(
         clj_kondo_process_args(view.file_name()),
@@ -195,7 +197,7 @@ def erase_analysis_regions(view):
     view.erase_regions("analysis_warning")
 
 
-class PepEraseAnalysisAnnotationCommand(sublime_plugin.TextCommand):
+class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         erase_analysis_regions(self.view)
@@ -227,7 +229,7 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
             analysis = clj_kondo_analysis(self.view)
 
-            findings = analysis["findings"] if "findings" in analysis else []
+            findings = analysis.get("findings", [])
 
             # Pretty print clj-kondo analysis.
             global DEBUG
