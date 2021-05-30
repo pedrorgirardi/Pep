@@ -154,19 +154,19 @@ def clj_kondo_finding_message(finding):
     minihtml = ""
 
     if t == "unresolved-symbol":
-        minihtml = "Unresolved: " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
+        minihtml = "Unresolved: " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)") + "</code>"
 
     elif t == "unresolved-namespace":
-        minihtml = "Unresolved: " + group1(r"^Unresolved namespace\s+([^\s]*)")
+        minihtml = "Unresolved: " + group1(r"^Unresolved namespace\s+([^\s]*)") + "</code>"
 
     elif t == "unused-binding":
-        minihtml = "Unused: " + group1(r"^unused binding\s+(?P<symbol>.*)")
+        minihtml = "Unused: <code>" + group1(r"^unused binding\s+(?P<symbol>.*)") + "</code>"
 
     elif t == "unused-namespace":
-        minihtml = "Unused: " + group1(r"^namespace ([^\s]*)")
+        minihtml = "Unused: <code>" + group1(r"^namespace ([^\s]*)") + "</code>"
 
     elif t == "unused-referred-var":
-        minihtml = "Unused: " + group1(r"^([^\s]*)")
+        minihtml = "Unused: <code>" + group1(r"^([^\s]*)") + "</code>"
 
     elif t == "missing-map-value":
         minihtml = finding["message"].capitalize()
@@ -175,7 +175,7 @@ def clj_kondo_finding_message(finding):
         minihtml = finding["message"].capitalize()
 
     elif t == "duplicate-require":
-        minihtml = "Duplicated require: " + group1(r"^duplicate require of ([^\s]*)")
+        minihtml = "Duplicated require: <code>" + group1(r"^duplicate require of ([^\s]*)") + "</code>"
 
     elif t == "cond-else":
         minihtml = "Use :else instead"
@@ -184,7 +184,7 @@ def clj_kondo_finding_message(finding):
         minihtml = "Unreachable"
 
     elif t == "redefined-var":
-        minihtml = "Redefined: " + group1(r"^redefined var ([^\s]*)")
+        minihtml = "Redefined: <code>" + group1(r"^redefined var ([^\s]*)") + "</code>"
 
     else:
         minihtml = finding["message"]
@@ -234,7 +234,7 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
             # Pretty print clj-kondo analysis.
             global DEBUG
             if DEBUG:
-                print(json.dumps(findings, indent=4))
+                print(json.dumps(analysis, indent=4))
 
             warning_region_set = []
             warning_minihtml_set = []
@@ -275,6 +275,13 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                 flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
                        sublime.DRAW_NO_FILL |
                        sublime.DRAW_NO_OUTLINE))
+
+            status_messages = []
+            status_messages.append(f"Errors: {len(error_region_set)}")
+            status_messages.append(f"Warnings: {len(warning_region_set)}")
+
+            sublime.status_message(", ".join(status_messages))
+                
 
         except Exception as e:
             print(f"(Pep) Analysis failed.", traceback.format_exc())
