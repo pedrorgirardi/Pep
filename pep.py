@@ -328,7 +328,7 @@ class PgPepAnalysisReportCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
-class PepAnalysisListener(sublime_plugin.ViewEventListener):
+class PgPepListener(sublime_plugin.ViewEventListener):
 
     @classmethod
     def is_applicable(_, settings):
