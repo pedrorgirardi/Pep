@@ -460,6 +460,9 @@ class PgPepListener(sublime_plugin.ViewEventListener):
     def on_load(self):
         self.view.run_command("pg_pep_analyze")
 
+    def on_selection_modified(self):
+        self.view.run_command("pg_pep_erase_usage_regions")
+
     def on_post_save(self):
         self.view.run_command("pg_pep_analyze")
 
