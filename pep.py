@@ -269,17 +269,21 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             if local_usage["id"] == region_local["id"]:
                 usages.append(local_usage)
 
-        usage_regions = []
-
-        for usage in usages:
-            line = int(usage["row"]) - 1
-            col_start = int(usage["col"]) - 1
-            col_end = int(usage["end-col"]) - 1
+        def make_region(d):
+            line = int(d["row"]) - 1
+            col_start = int(d["col"]) - 1
+            col_end = int(d["end-col"]) - 1
 
             pa = self.view.text_point(line, col_start)
             pb = self.view.text_point(line, col_end)
 
-            usage_regions.append(sublime.Region(pa, pb))
+            return sublime.Region(pa, pb)
+
+        # Include the local name region.
+        usage_regions = [make_region(region_local)]
+
+        for usage in usages:
+            usage_regions.append(make_region(usage))
 
         if usage_regions:
             self.view.add_regions(
