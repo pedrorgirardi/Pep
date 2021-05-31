@@ -14,7 +14,7 @@ from Tutkain.src.repl import views
 from Tutkain.src import dialects
 
 
-debug = True
+debug = False
 
 
 _state_ = {"view": {}}
@@ -203,10 +203,20 @@ def erase_analysis_regions(view):
     view.erase_regions("analysis_warning")
 
 
+def erase_usage_regions(view):
+    view.erase_regions("pg_pep_usages")
+
+
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         erase_analysis_regions(self.view)
+
+
+class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        erase_usage_regions(self.view)
 
 
 def view_lrn(id):
@@ -217,12 +227,64 @@ def view_lrn(id):
     return _state_.get("view", {}).get(id, {}).get("lrn", {})
 
 
+def view_analysis(id):
+    """
+    Returns clj-kondo analysis.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
+
+
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
+        # It's the last region because find usages is for a single name.
+        region = self.view.sel()[-1]
+
+        # Question: does it matter which one we use: a (start) or b (end)?
+        row,col = self.view.rowcol(region.a)
+
         lrn = view_lrn(self.view.id())
 
-        print(lrn)
+        lrn.get(row + 1, [])
+
+        region_local = None
+
+        # Find region local.
+        for n in lrn.get(row + 1, []):
+            _col = col + 1
+
+            if _col >= n["col"] and _col <= n["end-col"]:
+                region_local = n
+                break
+
+        analysis = view_analysis(self.view.id())
+
+        usages = []
+
+        for local_usage in analysis.get("local-usages", []):
+            if local_usage["id"] == region_local["id"]:
+                usages.append(local_usage)
+
+        usage_regions = []
+
+        for usage in usages:
+            line = int(usage["row"]) - 1
+            col_start = int(usage["col"]) - 1
+            col_end = int(usage["end-col"]) - 1
+
+            pa = self.view.text_point(line, col_start)
+            pb = self.view.text_point(line, col_end)
+
+            usage_regions.append(sublime.Region(pa, pb))
+
+        if usage_regions:
+            self.view.add_regions(
+                "pg_pep_usages",
+                usage_regions,
+                scope="region.cyanish",
+                flags=(sublime.DRAW_NO_FILL)
+            )
 
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
@@ -252,13 +314,13 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                 </body>
                 """
 
-            analysis = clj_kondo_analysis(self.view)
+            result = clj_kondo_analysis(self.view)
 
-            # Pretty print clj-kondo analysis.
+            # Pretty print clj-kondo result.
             if debug:
-                print(json.dumps(analysis, indent=4))
+                print(json.dumps(result, indent=4))
 
-            alocals = analysis.get("analysis", {}).get("locals", [])
+            alocals = result.get("analysis", {}).get("locals", [])
 
             # Locals indexed by row.
             lrn = {}
@@ -267,9 +329,9 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                 lrn[r] = list(n)
 
             # Update view analysis.
-            _state_.get("view", {})[self.view.id()] = {"analysis": analysis, "lrn": lrn}
+            _state_.get("view", {})[self.view.id()] = {"result": result, "lrn": lrn}
 
-            findings = analysis.get("findings", [])
+            findings = result.get("findings", [])
 
             warning_region_set = []
             warning_minihtml_set = []
