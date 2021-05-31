@@ -258,6 +258,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 region_local = n
                 break
 
+        if region_local is None:
+            return
+
         analysis = view_analysis(self.view.id())
 
         usages = []
@@ -283,6 +286,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 "pg_pep_usages",
                 usage_regions,
                 scope="region.cyanish",
+                icon="dot",
                 flags=(sublime.DRAW_NO_FILL)
             )
 
