@@ -4,6 +4,7 @@ import re
 import tempfile
 import json
 import traceback
+import itertools
 
 import sublime_plugin
 import sublime
@@ -12,7 +13,11 @@ from Tutkain.api import edn
 from Tutkain.src.repl import views
 from Tutkain.src import dialects
 
-DEBUG = True
+
+debug = True
+
+
+_state_ = {"view": {}}
 
 
 def program_path(program):
@@ -38,6 +43,8 @@ def clj_kondo_process_args(file_name=None):
 
 
 def clj_kondo_analysis(view):
+    global debug
+
     window = view.window()
     view_file_name = view.file_name()
     project_file_name = window.project_file_name() if window else None
@@ -49,8 +56,7 @@ def clj_kondo_analysis(view):
     elif view.file_name():
         cwd = os.path.dirname(view_file_name)
 
-    global DEBUG
-    if DEBUG:
+    if debug:
         print("(Pep) cwd", cwd)
 
     process = subprocess.Popen(
@@ -203,9 +209,28 @@ class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
         erase_analysis_regions(self.view)
 
 
+def view_lrn(id):
+    """
+    Returns a dictionary of locals by row.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("lrn", {})
+
+
+class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        lrn = view_lrn(self.view.id())
+
+        print(lrn)
+
+
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
+        global debug
+        global _state_
+
         try:
 
             def finding_region(finding):
@@ -229,15 +254,22 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
             analysis = clj_kondo_analysis(self.view)
 
-            # Persist analysis.
-            self.view.settings().set("pg_pep_analysis", analysis)
+            # Pretty print clj-kondo analysis.
+            if debug:
+                print(json.dumps(analysis, indent=4))
+
+            alocals = analysis.get("analysis", {}).get("locals", [])
+
+            # Locals indexed by row.
+            lrn = {}
+
+            for r,n in itertools.groupby(alocals, lambda d: d["row"]):
+                lrn[r] = list(n)
+
+            # Update view analysis.
+            _state_.get("view", {})[self.view.id()] = {"analysis": analysis, "lrn": lrn}
 
             findings = analysis.get("findings", [])
-
-            # Pretty print clj-kondo analysis.
-            global DEBUG
-            if DEBUG:
-                print(json.dumps(analysis, indent=4))
 
             warning_region_set = []
             warning_minihtml_set = []
