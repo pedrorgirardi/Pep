@@ -266,7 +266,13 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         usages = []
 
         for local_usage in analysis.get("local-usages", []):
-            if local_usage["id"] == region_local["id"]:
+            if debug:
+                if local_usage.get("id") is None:
+                    print("Usage is missing ID:", local_usage)
+
+            # Usage ID seems to be missing in some cases,
+            # therefore it must be read as optional.
+            if local_usage.get("id") == region_local["id"]:
                 usages.append(local_usage)
 
         def make_region(d):
