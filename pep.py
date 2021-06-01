@@ -219,12 +219,28 @@ class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
         erase_usage_regions(self.view)
 
 
+def view_lindex(id):
+    """
+    Returns a dictionary of locals by ID.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("lindex", {})
+
+
 def view_lrn(id):
     """
     Returns a dictionary of locals by row.
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn", {})
+
+
+def view_lrn_usages(id):
+    """
+    Returns a dictionary of local usages by row.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("lrn_usages", {})
 
 
 def view_analysis(id):
@@ -235,9 +251,21 @@ def view_analysis(id):
     return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
 
 
+def is_local_match(col, n):
+    return col >= n["col"] and col <= n["end-col"]
+
+
+def find_local(lrn, row, col):
+    for n in lrn.get(row, []):
+        if is_local_match(col, n):
+            return n
+
+
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
+        global debug
+
         # It's the last region because find usages is for a single name.
         region = self.view.sel()[-1]
 
@@ -246,19 +274,45 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         lrn = view_lrn(self.view.id())
 
-        lrn.get(row + 1, [])
+        lrn_usages = view_lrn_usages(self.view.id())
 
-        region_local = None
+        lindex = view_lindex(self.view.id())
 
-        # Find region local.
-        for n in lrn.get(row + 1, []):
-            _col = col + 1
+        if debug:
+            print(f"(Pep) View({self.view.id()}) lindex", lindex)
+            print(f"(Pep) View({self.view.id()}) lrn", lrn)
+            print(f"(Pep) View({self.view.id()}) lrn_usages", lrn_usages)
 
-            if _col >= n["col"] and _col <= n["end-col"]:
-                region_local = n
-                break
+        # clj-kondo data for the local under the caret (selection region).
+        region_local = find_local(lrn, row + 1, col + 1)
 
+        # Not found. Try to find it in usages.
         if region_local is None:
+
+            if debug:
+                print("(Pep) Local not found. Try usages.")
+
+            for n_usage in lrn_usages.get(row + 1, []):
+                if debug:
+                    print("(Pep) Try usage", n_usage)
+
+                n_usage_id = n_usage.get("id")
+
+                if n_usage_id is not None:
+                    n = lindex.get(n_usage_id)
+
+                    if debug:
+                        print("(Pep) Found potential local", n)
+
+                    if n is not None and is_local_match(n["col"] + 1, n):
+                        region_local = n
+                        break
+
+        # Interrupt execution. Couldn't find local definition or usage.
+        if region_local is None:
+            if debug:
+                print("(Pep) Local not found. Interrupt execution.")
+
             return
 
         analysis = view_analysis(self.view.id())
@@ -268,7 +322,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         for local_usage in analysis.get("local-usages", []):
             if debug:
                 if local_usage.get("id") is None:
-                    print("Usage is missing ID:", local_usage)
+                    print("(Pep) Usage is missing ID:", local_usage)
 
             # Usage ID seems to be missing in some cases,
             # therefore it must be read as optional.
@@ -334,16 +388,34 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
             if debug:
                 print(json.dumps(result, indent=4))
 
-            alocals = result.get("analysis", {}).get("locals", [])
+            def result_locals(result):
+                return result.get("analysis", {}).get("locals", [])
+
+            def result_local_usages(result):
+                return result.get("analysis", {}).get("local-usages", [])
 
             # Locals indexed by row.
             lrn = {}
 
-            for r,n in itertools.groupby(alocals, lambda d: d["row"]):
+            for r,n in itertools.groupby(result_locals(result), lambda d: d["row"]):
                 lrn[r] = list(n)
 
+
+            # Locals indexed by ID.
+            lindex = {}
+
+            for id,n in itertools.groupby(result_locals(result), lambda d: d["id"]):
+                lindex[id] = list(n)[0]
+
+
+            # Local usages indexed by row.
+            lrn_usages = {}
+
+            for r,n in itertools.groupby(result_local_usages(result), lambda d: d["row"]):
+                lrn_usages[r] = list(n)
+
             # Update view analysis.
-            _state_.get("view", {})[self.view.id()] = {"result": result, "lrn": lrn}
+            _state_.get("view", {})[self.view.id()] = {"result": result, "lindex": lindex, "lrn": lrn, "lrn_usages": lrn_usages}
 
             findings = result.get("findings", [])
 
