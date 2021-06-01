@@ -350,7 +350,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 "pg_pep_usages",
                 usage_regions,
                 scope="region.cyanish",
-                icon="dot",
                 flags=(sublime.DRAW_NO_FILL)
             )
 
