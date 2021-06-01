@@ -525,6 +525,7 @@ class PgPepListener(sublime_plugin.ViewEventListener):
     def is_applicable(_, settings):
         return settings.get('syntax') in {"Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
                                           "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
+                                          "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
                                           "Packages/Clojure/Clojure.sublime-syntax",
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
