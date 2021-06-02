@@ -212,13 +212,24 @@ def view_analysis(id):
     return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
 
 
-def is_local_match(col, n):
+def is_name_under_caret(col, n):
+    """
+    Returns true if col is within col range of `n`.
+
+    `n` is a dictionary with `col` and `end-col` keys.
+    """
     return col >= n["col"] and col <= n["end-col"]
 
 
 def find_local(lrn, row, col):
     for n in lrn.get(row, []):
-        if is_local_match(col, n):
+        if is_name_under_caret(col, n):
+            return n
+
+
+def find_local_usage(lrn_usages, row, col):
+    for n in lrn_usages.get(row, []):
+        if is_name_under_caret(col, n):
             return n
 
 
@@ -244,36 +255,30 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             print(f"(Pep) View({self.view.id()}) lrn", lrn)
             print(f"(Pep) View({self.view.id()}) lrn_usages", lrn_usages)
 
-        # clj-kondo data for the local under the caret (selection region).
+        # Potential local under caret.
         region_local = find_local(lrn, row + 1, col + 1)
 
-        # Not found. Try to find it in usages.
+        # Local not found. Try to find it in usages.
         if region_local is None:
 
             if debug:
                 print("(Pep) Local not found. Try usages.")
 
-            for n_usage in lrn_usages.get(row + 1, []):
-                if debug:
-                    print("(Pep) Try usage", n_usage)
+            # Potential local usage under caret.
+            region_local_usage = find_local_usage(lrn_usages, row + 1, col + 1)
 
-                n_usage_id = n_usage.get("id")
+            if region_local_usage is not None:
+                usage_id = region_local_usage.get("id")
 
-                if n_usage_id is not None:
-                    n = lindex.get(n_usage_id)
+                if usage_id is not None:
+                    # Get local by ID - local and usages share the same ID.
+                    n = lindex.get(usage_id)
 
-                    if debug:
-                        print("(Pep) Found potential local", n)
-
-                    if n is not None and is_local_match(n["col"] + 1, n):
+                    if n is not None and is_name_under_caret(n["col"] + 1, n):
                         region_local = n
-                        break
 
-        # Interrupt execution. Couldn't find local definition or usage.
+        # Interrupt execution. Could not find local definition or usage.
         if region_local is None:
-            if debug:
-                print("(Pep) Local not found. Interrupt execution.")
-
             return
 
         analysis = view_analysis(self.view.id())
