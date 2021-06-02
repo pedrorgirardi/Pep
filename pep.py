@@ -46,7 +46,7 @@ def clj_kondo_process_args(file_name=None):
     return [clj_kondo_path(), "--config", config, "--lint", file_name or "-"]
 
 
-def clj_kondo_analysis(view):
+def analize(view):
     global debug
 
     window = view.window()
@@ -347,7 +347,7 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                 </body>
                 """
 
-            result = clj_kondo_analysis(self.view)
+            result = analize(self.view)
 
             # Pretty print clj-kondo result.
             if debug:
@@ -444,7 +444,7 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
 
                 return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
 
-            analysis = clj_kondo_analysis(self.view)
+            analysis = analize(self.view)
 
             findings = analysis["findings"] if "findings" in analysis else []
 
