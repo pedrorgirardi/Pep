@@ -170,7 +170,7 @@ def view_lindex(id):
     Locals and usages have the same ID, 
     so it's possible to corretale a usage with a local.
 
-    'lindex' stand for 'local index'.
+    'lindex' stands for 'local index'.
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lindex", {})
