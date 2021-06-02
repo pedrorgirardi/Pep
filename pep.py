@@ -161,6 +161,16 @@ class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
 def view_lindex(id):
     """
     Returns a dictionary of locals by ID.
+
+    This index can be used to find a local in constant time if you know its ID.
+
+    When finding usages from a usage itself, the first step is to find the usage,
+    once you have found it, you can use its ID to find the local.
+
+    Locals and usages have the same ID, 
+    so it's possible to corretale a usage with a local.
+
+    'lindex' stand for 'local index'.
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lindex", {})
@@ -169,6 +179,12 @@ def view_lindex(id):
 def view_lrn(id):
     """
     Returns a dictionary of locals by row.
+
+    This index can be used to quicky find a local definition by row.
+
+    Example: (let [a| 1] ...)
+
+    'lrn' stands for 'local row name'.
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn", {})
@@ -177,6 +193,12 @@ def view_lrn(id):
 def view_lrn_usages(id):
     """
     Returns a dictionary of local usages by row.
+
+    This index can be used to quicky find a local usage by row.
+
+    Example: (let [a 1] |a)
+
+    'lrn' stands for 'local row name'.
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn_usages", {})
