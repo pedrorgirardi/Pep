@@ -138,8 +138,8 @@ def clj_kondo_finding_message(finding):
 
 
 def erase_analysis_regions(view):
-    view.erase_regions("analysis_error")
-    view.erase_regions("analysis_warning")
+    view.erase_regions("pg_pep_analysis_error")
+    view.erase_regions("pg_pep_analysis_warning")
 
 
 def erase_usage_regions(view):
@@ -400,7 +400,7 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
             orangish = self.view.style_for_scope('region.orangish')['foreground']
 
             self.view.add_regions(
-                "analysis_error",
+                "pg_pep_analysis_error",
                 error_region_set,
                 scope="region.redish",
                 annotations=error_minihtml_set,
@@ -410,7 +410,7 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                        sublime.DRAW_NO_OUTLINE))
 
             self.view.add_regions(
-                "analysis_warning",
+                "pg_pep_analysis_warning",
                 warning_region_set,
                 scope="region.orangish",
                 annotations=warning_minihtml_set,
