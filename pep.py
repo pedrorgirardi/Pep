@@ -336,12 +336,14 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
         try:
 
             def finding_region(finding):
-                line = int(finding["row"]) - 1
+                line_start = int(finding["row"]) - 1
+                line_end = int(finding["end-row"]) - 1
+
                 col_start = int(finding["col"]) - 1
                 col_end = int(finding["end-col"]) - 1
 
-                pa = self.view.text_point(line, col_start)
-                pb = self.view.text_point(line, col_end)
+                pa = self.view.text_point(line_start, col_start)
+                pb = self.view.text_point(line_end, col_end)
 
                 return sublime.Region(pa, pb)
 
