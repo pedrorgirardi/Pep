@@ -10,7 +10,7 @@ import sublime_plugin
 import sublime
 
 
-debug = False
+debug = True
 
 
 _state_ = {"view": {}}
@@ -131,6 +131,9 @@ def clj_kondo_finding_message(finding):
 
     elif t == "unreachable-code":
         minihtml = "Unreachable"
+
+    elif t == "redundant-do":
+        minihtml = "Redundant do"
 
     elif t == "redefined-var":
         minihtml = "Redefined: " + group1(r"^redefined var ([^\s]*)")
