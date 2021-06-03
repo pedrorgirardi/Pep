@@ -513,7 +513,7 @@ class PgPepListener(sublime_plugin.ViewEventListener):
                                           "Packages/Clojure/Clojure.sublime-syntax",
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
-    def on_load(self):
+    def on_activated_async(self):
         if settings().get("analyze_on_load", False):
             self.view.run_command("pg_pep_analyze")
 
