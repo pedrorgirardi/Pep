@@ -242,7 +242,7 @@ def find_local_usage(lrn_usages, row, col):
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
-    def run(self, edit):
+    def run(self, edit, select=False):
         global debug
 
         # It's the last region because find usages is for a single name.
@@ -319,12 +319,16 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             usage_regions.append(make_region(usage))
 
         if usage_regions:
-            self.view.add_regions(
-                "pg_pep_usages",
-                usage_regions,
-                scope="region.cyanish",
-                flags=(sublime.DRAW_NO_FILL)
-            )
+            if select:
+                self.view.sel().clear()
+                self.view.sel().add_all(usage_regions)
+            else:
+                self.view.add_regions(
+                    "pg_pep_usages",
+                    usage_regions,
+                    scope="region.cyanish",
+                    flags=(sublime.DRAW_NO_FILL)
+                )
 
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
