@@ -333,7 +333,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
-    def run(self, edit):
+    def run(self, edit, annotate=False):
         global debug
         global _state_
 
@@ -397,54 +397,61 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
             # Update view analysis.
             _state_.get("view", {})[self.view.id()] = {"result": result, "lindex": lindex, "lrn": lrn, "lrn_usages": lrn_usages}
 
-            findings = result.get("findings", [])
-
-            warning_region_set = []
-            warning_minihtml_set = []
-
-            error_region_set = []
-            error_minihtml_set = []
-
-            for finding in findings:
-                if finding["level"] == "error":
-                    error_region_set.append(finding_region(finding))
-                    error_minihtml_set.append(finding_minihtml(finding))
-                elif finding["level"] == "warning":
-                    warning_region_set.append(finding_region(finding))
-                    warning_minihtml_set.append(finding_minihtml(finding))
-
-            # Erase regions from previous analysis.
-            erase_analysis_regions(self.view)
-
-            redish = self.view.style_for_scope('region.redish')['foreground']
-            orangish = self.view.style_for_scope('region.orangish')['foreground']
-
-            self.view.add_regions(
-                "pg_pep_analysis_error",
-                error_region_set,
-                scope="region.redish",
-                annotations=error_minihtml_set,
-                annotation_color=redish,
-                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
-                       sublime.DRAW_NO_FILL |
-                       sublime.DRAW_NO_OUTLINE))
-
-            self.view.add_regions(
-                "pg_pep_analysis_warning",
-                warning_region_set,
-                scope="region.orangish",
-                annotations=warning_minihtml_set,
-                annotation_color=orangish,
-                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
-                       sublime.DRAW_NO_FILL |
-                       sublime.DRAW_NO_OUTLINE))
+            
+            # Summary & status bar.
+            summary_errors = result.get("summary", {}).get("error", 0)
+            summary_warnings = result.get("summary", {}).get("warning", 0)
 
             status_messages = []
-            status_messages.append(f"Errors: {len(error_region_set)}")
-            status_messages.append(f"Warnings: {len(warning_region_set)}")
+            status_messages.append(f"Errors: {summary_errors}")
+            status_messages.append(f"Warnings: {summary_warnings}")
 
             sublime.status_message(", ".join(status_messages))
-                
+            
+
+            # Region annotations (optional).
+            if annotate:
+                findings = result.get("findings", [])
+
+                warning_region_set = []
+                warning_minihtml_set = []
+
+                error_region_set = []
+                error_minihtml_set = []
+
+                for finding in findings:
+                    if finding["level"] == "error":
+                        error_region_set.append(finding_region(finding))
+                        error_minihtml_set.append(finding_minihtml(finding))
+                    elif finding["level"] == "warning":
+                        warning_region_set.append(finding_region(finding))
+                        warning_minihtml_set.append(finding_minihtml(finding))
+
+                # Erase regions from previous analysis.
+                erase_analysis_regions(self.view)
+
+                redish = self.view.style_for_scope('region.redish')['foreground']
+                orangish = self.view.style_for_scope('region.orangish')['foreground']
+
+                self.view.add_regions(
+                    "pg_pep_analysis_error",
+                    error_region_set,
+                    scope="region.redish",
+                    annotations=error_minihtml_set,
+                    annotation_color=redish,
+                    flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
+                           sublime.DRAW_NO_FILL |
+                           sublime.DRAW_NO_OUTLINE))
+
+                self.view.add_regions(
+                    "pg_pep_analysis_warning",
+                    warning_region_set,
+                    scope="region.orangish",
+                    annotations=warning_minihtml_set,
+                    annotation_color=orangish,
+                    flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
+                           sublime.DRAW_NO_FILL |
+                           sublime.DRAW_NO_OUTLINE))                
 
         except Exception as e:
             print(f"(Pep) Analysis failed.", traceback.format_exc())
