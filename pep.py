@@ -556,12 +556,17 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
 
         print(locals_to_rename)
 
-        self.view.window().show_input_panel("New Name:",
+        input_panel_view = self.view.window().show_input_panel(
+            "New Name:",
             caret_local["name"],
             lambda new_name: print(new_name),
             self.noop,
             self.noop
         )
+
+        input_panel_view.sel().clear()
+        input_panel_view.sel().add(sublime.Region(0, input_panel_view.size()))
+
 
 
 class PgPepListener(sublime_plugin.ViewEventListener):
