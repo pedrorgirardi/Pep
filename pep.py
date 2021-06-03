@@ -513,12 +513,19 @@ class PgPepListener(sublime_plugin.ViewEventListener):
                                           "Packages/Clojure/Clojure.sublime-syntax",
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
+    def analyze_on(self):
+        return set(settings().get("analyze_on", {}))
+
+    def on_load_async(self):
+        if "on_load_async" in self.analyze_on():
+            self.view.run_command("pg_pep_analyze")
+
     def on_activated_async(self):
-        if settings().get("analyze_on_load", False):
+        if "on_activated_async" in self.analyze_on():
             self.view.run_command("pg_pep_analyze")
 
     def on_post_save(self):
-        if settings().get("analyze_on_post_save", False):
+        if "on_post_save" in self.analyze_on():
             self.view.run_command("pg_pep_analyze")
 
     def on_selection_modified(self):
