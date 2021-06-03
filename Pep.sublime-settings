@@ -1,0 +1,11 @@
+{
+	// True if you want to analyze when file is finished loading.
+    "analyze_on_load": true,
+
+    // True if you want to analyze after a view has been saved.
+    "analyze_on_post_save": true,
+
+    // True if you want to clear usage regions after 
+    // the selection has been modified in the view.
+    "clear_usages_on_selection_modified": true
+}

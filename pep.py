@@ -16,6 +16,10 @@ debug = False
 _state_ = {"view": {}}
 
 
+def settings():
+    return sublime.load_settings("Pep.sublime-settings")
+
+
 def set_view_name(view, name):
     if view is not None:
         if view.is_loading():
@@ -501,11 +505,14 @@ class PgPepListener(sublime_plugin.ViewEventListener):
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
     def on_load(self):
-        self.view.run_command("pg_pep_analyze")
-
-    def on_selection_modified(self):
-        self.view.run_command("pg_pep_erase_usage_regions")
+        if settings().get("analyze_on_load", False):
+            self.view.run_command("pg_pep_analyze")
 
     def on_post_save(self):
-        self.view.run_command("pg_pep_analyze")
+        if settings().get("analyze_on_post_save", False):
+            self.view.run_command("pg_pep_analyze")
+
+    def on_selection_modified(self):
+        if settings().get("clear_usages_on_selection_modified", False):
+            self.view.run_command("pg_pep_erase_usage_regions")
 
