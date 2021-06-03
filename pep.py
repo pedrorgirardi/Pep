@@ -103,19 +103,19 @@ def clj_kondo_finding_message(finding):
     minihtml = ""
 
     if t == "unresolved-symbol":
-        minihtml = "Unresolved: " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)") + "</code>"
+        minihtml = "Unresolved: " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
 
     elif t == "unresolved-namespace":
-        minihtml = "Unresolved: " + group1(r"^Unresolved namespace\s+([^\s]*)") + "</code>"
+        minihtml = "Unresolved: " + group1(r"^Unresolved namespace\s+([^\s]*)")
 
     elif t == "unused-binding":
-        minihtml = "Unused: <code>" + group1(r"^unused binding\s+(?P<symbol>.*)") + "</code>"
+        minihtml = "Unused: " + group1(r"^unused binding\s+(?P<symbol>.*)")
 
     elif t == "unused-namespace":
-        minihtml = "Unused: <code>" + group1(r"^namespace ([^\s]*)") + "</code>"
+        minihtml = "Unused: " + group1(r"^namespace ([^\s]*)")
 
     elif t == "unused-referred-var":
-        minihtml = "Unused: <code>" + group1(r"^([^\s]*)") + "</code>"
+        minihtml = "Unused: " + group1(r"^([^\s]*)")
 
     elif t == "missing-map-value":
         minihtml = finding["message"].capitalize()
@@ -124,7 +124,7 @@ def clj_kondo_finding_message(finding):
         minihtml = finding["message"].capitalize()
 
     elif t == "duplicate-require":
-        minihtml = "Duplicated require: <code>" + group1(r"^duplicate require of ([^\s]*)") + "</code>"
+        minihtml = "Duplicated require: " + group1(r"^duplicate require of ([^\s]*)")
 
     elif t == "cond-else":
         minihtml = "Use :else instead"
@@ -133,7 +133,7 @@ def clj_kondo_finding_message(finding):
         minihtml = "Unreachable"
 
     elif t == "redefined-var":
-        minihtml = "Redefined: <code>" + group1(r"^redefined var ([^\s]*)") + "</code>"
+        minihtml = "Redefined: " + group1(r"^redefined var ([^\s]*)")
 
     else:
         minihtml = finding["message"]
