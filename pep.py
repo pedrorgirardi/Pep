@@ -491,9 +491,11 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
 
 class PgPepListener(sublime_plugin.ViewEventListener):
     """
-    These 'actions' are likely to be configured via settings.
+    These 'actions' are configured via settings.
 
     You might want to disable running analyzes on load & save for instance.
+
+    See Pep.sublime-settings.
     """
 
     @classmethod
