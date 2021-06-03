@@ -10,9 +10,6 @@ import sublime_plugin
 import sublime
 
 
-debug = False
-
-
 _state_ = {"view": {}}
 
 
@@ -51,7 +48,7 @@ def clj_kondo_process_args(file_name=None):
 
 
 def analize(view):
-    global debug
+    debug = settings().get("debug", False)
 
     window = view.window()
     view_file_name = view.file_name()
@@ -243,7 +240,7 @@ def find_local_usage(lrn_usages, row, col):
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
-        global debug
+        debug = settings().get("debug", False)
 
         # It's the last region because find usages is for a single name.
         region = self.view.sel()[-1]
@@ -334,8 +331,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, annotate=False):
-        global debug
         global _state_
+
+        debug = settings().get("debug", False)
 
         try:
 
