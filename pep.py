@@ -568,6 +568,79 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
         input_panel_view.sel().add(sublime.Region(0, input_panel_view.size()))
 
 
+class PgPepSelectCommand(sublime_plugin.TextCommand):
+
+    def noop(*args):
+        pass
+
+    def run(self, edit):
+        global _state_
+
+        # Indexes by ID and row:
+        lindex = view_lindex(self.view.id())
+        lrn = view_lrn(self.view.id())
+        lrn_usages = view_lrn_usages(self.view.id())
+
+
+        # All locals that must be renamed.
+        locals_to_rename = []
+
+
+        caret_region = self.view.sel()[-1]
+        caret_row, caret_col = self.view.rowcol(caret_region.a)
+
+        caret_local = find_local(lrn, caret_row + 1, caret_col + 1)
+
+        if caret_local is None:
+            # Potential local usage under caret.
+            caret_local_usage = find_local_usage(lrn_usages, caret_row + 1, caret_col + 1)
+
+            if caret_local_usage is None:
+                return
+
+            local_usage_id = caret_local_usage.get("id")
+
+            if local_usage_id is None:
+                return
+
+            # Locals and usages share the same ID.
+            caret_local = lindex.get(local_usage_id)
+
+
+        if caret_local is None:
+            return
+
+        locals_to_rename.append(caret_local)
+
+        # TODO: Find all usages.
+
+        for row in range(caret_local["row"] - 1, caret_local["scope-end-row"]):
+            # Usages per row.
+            usages = lrn_usages.get(row + 1)
+
+            if usages:
+                for usage in usages:
+                    if usage.get("id") == caret_local.get("id"):
+                        locals_to_rename.append(usage)
+
+        selections = []
+
+        for local in locals_to_rename:
+            row = local["row"] - 1
+            col_start = local["col"] - 1
+            col_end = local["end-col"] - 1
+
+            region = sublime.Region(
+                self.view.text_point(row, col_start), 
+                self.view.text_point(row, col_end)
+            )
+
+            selections.append(region)
+
+        if selections:
+            self.view.sel().clear()
+            self.view.sel().add_all(selections)
+
 
 class PgPepListener(sublime_plugin.ViewEventListener):
     """
