@@ -1,4 +1,6 @@
 {
+    "debug": false,
+
     "analyze_on": ["on_activated_async", "on_post_save"],
 
     // True if you want to clear usage regions after 
