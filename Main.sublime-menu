@@ -1,0 +1,34 @@
+[
+  {
+    "caption": "Preferences",
+    "id": "preferences",
+    "mnemonic": "n",
+    "children":
+    [
+      {
+        "caption": "Package Settings",
+        "id": "package-settings",
+        "mnemonic": "P",
+        "children":
+        [
+          {
+            "caption": "Pep",
+            "id": "pep-settings",
+            "children":
+            [
+              {
+                "caption": "Settings",
+                "command": "edit_settings",
+                "args":
+                {
+                  "base_file": "${packages}/Pep/Pep.sublime-settings",
+                  "default": "// Settings in here override those in \"Pep/Preferences.sublime-settings\",\n\n{\n\t$0\n}\n"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
