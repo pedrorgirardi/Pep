@@ -10,7 +10,7 @@ import sublime_plugin
 import sublime
 
 
-debug = False
+debug = True
 
 
 _state_ = {"view": {}}
@@ -303,9 +303,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 usages.append(local_usage)
 
         def make_region(d):
-            line = int(d["row"]) - 1
-            col_start = int(d["col"]) - 1
-            col_end = int(d["end-col"]) - 1
+            line = (d.get("name-row") or d.get("row")) - 1
+            col_start = (d.get("name-col") or d.get("col")) - 1
+            col_end = (d.get("name-end-col") or d.get("end-col")) - 1
 
             pa = self.view.text_point(line, col_start)
             pb = self.view.text_point(line, col_end)
