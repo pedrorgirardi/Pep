@@ -10,7 +10,7 @@ import sublime_plugin
 import sublime
 
 
-debug = True
+debug = False
 
 
 _state_ = {"view": {}}
