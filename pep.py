@@ -315,6 +315,33 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             print(f"(Pep) View({self.view.id()}) lrn", lrn)
             print(f"(Pep) View({self.view.id()}) lrn_usages", lrn_usages)
 
+
+        def make_region(d):
+            """
+            Usages have row and col for name.
+            Usage entails more than the location of a symbol,
+            it extends row and col based on how a symbol
+            is used in a particular location.
+
+            Example:
+
+            (fn [f] (f))
+
+            `f` usage data will extend row and col to match the parenthesis.
+
+            Local definition doesn't have row and col for name -
+            it's simply row and col.
+            """
+            line = (d.get("name-row") or d.get("row")) - 1
+            col_start = (d.get("name-col") or d.get("col")) - 1
+            col_end = (d.get("name-end-col") or d.get("end-col")) - 1
+
+            pa = self.view.text_point(line, col_start)
+            pb = self.view.text_point(line, col_end)
+
+            return sublime.Region(pa, pb)
+
+
         # Potential local under caret.
         region_local = find_local(lrn, row + 1, col + 1)
 
@@ -348,13 +375,18 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             vars = [var]
 
-            items = [var["name"]]
+
+            items = [sublime.QuickPanelItem(var["name"], f"{var['name-row']}:{var['name-col']}", var["ns"], sublime.KIND_FUNCTION)]
 
             def on_done(selected_index):
                 print("Selected index", selected_index)
 
             def on_highlighted(index):
-                print(vars[index])
+                selected_var = vars[index]
+
+                selected_var_region = make_region(selected_var)
+
+                self.view.show(selected_var_region, True, True, True)
 
             self.view.window().show_quick_panel(items, on_done, sublime.MONOSPACE_FONT, 0, on_highlighted)
 
@@ -373,31 +405,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             # therefore it must be read as optional.
             if local_usage.get("id") == region_local["id"]:
                 usages.append(local_usage)
-
-        def make_region(d):
-            """
-            Usages have row and col for name.
-            Usage entails more than the location of a symbol,
-            it extends row and col based on how a symbol
-            is used in a particular location.
-
-            Example:
-
-            (fn [f] (f))
-
-            `f` usage data will extend row and col to match the parenthesis.
-
-            Local definition doesn't have row and col for name -
-            it's simply row and col.
-            """
-            line = (d.get("name-row") or d.get("row")) - 1
-            col_start = (d.get("name-col") or d.get("col")) - 1
-            col_end = (d.get("name-end-col") or d.get("end-col")) - 1
-
-            pa = self.view.text_point(line, col_start)
-            pb = self.view.text_point(line, col_end)
-
-            return sublime.Region(pa, pb)
 
         # Include the local name region.
         usage_regions = [make_region(region_local)]
