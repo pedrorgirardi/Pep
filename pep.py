@@ -428,6 +428,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             def on_done(selected_index):
                 if selected_index == -1:
+                    self.view.sel().clear()
+                    self.view.sel().add(region)
+                    self.view.show_at_center(region)
+
                     return
 
                 selected_var = var_definition_usages[selected_index]
