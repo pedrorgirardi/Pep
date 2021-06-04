@@ -442,7 +442,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                 selected_var_region = make_region(selected_var)
 
-                self.view.show(selected_var_region, True, True, True)
+                self.view.sel().clear()
+                self.view.sel().add(selected_var_region)
+                self.view.show_at_center(selected_var_region)
+
 
             self.view.window().show_quick_panel(var_quick_panel_items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted, f"Usages of {var_under_caret_name}")
 
