@@ -525,19 +525,7 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                                                         "vrn_usages": vrn_usages,
                                                         "lindex": lindex, 
                                                         "lrn": lrn, 
-                                                        "lrn_usages": lrn_usages }
-
-            
-            # Summary & status bar.
-            summary_errors = result.get("summary", {}).get("error", 0)
-            summary_warnings = result.get("summary", {}).get("warning", 0)
-
-            status_messages = []
-            status_messages.append(f"Errors: {summary_errors}")
-            status_messages.append(f"Warnings: {summary_warnings}")
-
-            sublime.status_message(", ".join(status_messages))
-            
+                                                        "lrn_usages": lrn_usages }        
 
             # Region annotations (optional).
             if annotate:
@@ -581,7 +569,16 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                     annotation_color=orangish,
                     flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
                            sublime.DRAW_NO_FILL |
-                           sublime.DRAW_NO_OUTLINE))                
+                           sublime.DRAW_NO_OUTLINE))
+
+                summary_errors = result.get("summary", {}).get("error", 0)
+                summary_warnings = result.get("summary", {}).get("warning", 0)
+
+                status_messages = []
+                status_messages.append(f"Errors: {summary_errors}")
+                status_messages.append(f"Warnings: {summary_warnings}")
+
+                sublime.status_message(", ".join(status_messages))
 
         except Exception as e:
             print(f"(Pep) Analysis failed.", traceback.format_exc())
