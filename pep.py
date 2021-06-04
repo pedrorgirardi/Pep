@@ -387,6 +387,35 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
             def result_local_usages(result):
                 return result.get("analysis", {}).get("local-usages", [])
 
+            def result_vars(result):
+                return result.get("analysis", {}).get("var-definitions", [])
+
+            def result_var_usages(result):
+                return result.get("analysis", {}).get("var-usages", [])
+
+            # -- Var indexes
+
+            # Vars indexed by row.
+            vrn = {}
+
+            for r,n in itertools.groupby(result_vars(result), lambda d: d["row"]):
+                vrn[r] = list(n)
+
+            # Vars indexed by name - tuple of namespace and name.
+            vindex = {}
+
+            for id,n in itertools.groupby(result_vars(result), lambda d: (d["ns"], d["name"])):
+                vindex[id] = list(n)[0]
+
+            # Var usages indexed by row.
+            vrn_usages = {}
+
+            for r,n in itertools.groupby(result_var_usages(result), lambda d: d["row"]):
+                vrn_usages[r] = list(n)
+
+
+            # -- Local indexes
+
             # Locals indexed by row.
             lrn = {}
 
