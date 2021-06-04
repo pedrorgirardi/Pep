@@ -419,10 +419,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             var_quick_panel_items = []
 
             for v in var_definition_usages:
-                trigger = f"{v['name-row']}:{v['name-col']} {v['name']}"
+                trigger = f"{v['name']} {v['name-row']}:{v['name-col']}"
                 details = ""
                 annotation = ""
-                kind = sublime.KIND_FUNCTION
+                kind = sublime.KIND_VARIABLE
 
                 var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
 
