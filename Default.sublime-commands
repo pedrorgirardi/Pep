@@ -1,0 +1,17 @@
+[
+    {
+        "caption": "Pep: Find Usages",
+        "command": "pg_pep_find_usages",
+        "args": {
+            "select": false,
+        }
+    },
+
+    {
+        "caption": "Pep: Select Usages",
+        "command": "pg_pep_find_usages",
+        "args": {
+            "select": true,
+        }
+    },
+]
