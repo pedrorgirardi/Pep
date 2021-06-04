@@ -162,7 +162,7 @@ class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
         erase_usage_regions(self.view)
 
 
-def view_lindex(id):
+def view_vindex(id):
     """
     Returns a dictionary of locals by ID.
 
@@ -177,7 +177,7 @@ def view_lindex(id):
     'lindex' stands for 'local index'.
     """
     global _state_
-    return _state_.get("view", {}).get(id, {}).get("lindex", {})
+    return _state_.get("view", {}).get(id, {}).get("vindex", {})
 
 
 def view_vrn(id):
@@ -202,6 +202,24 @@ def view_vrn_usages(id):
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("vrn_usages", {})
+
+
+def view_lindex(id):
+    """
+    Returns a dictionary of locals by ID.
+
+    This index can be used to find a local in constant time if you know its ID.
+
+    When finding usages from a usage itself, the first step is to find the usage,
+    once you have found it, you can use its ID to find the local.
+
+    Locals and usages have the same ID, 
+    so it's possible to corretale a usage with a local.
+
+    'lindex' stands for 'local index'.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("lindex", {})
 
 
 def view_lrn(id):
@@ -368,27 +386,65 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         if region_local is None:
             vrn = view_vrn(self.view.id())
 
-            var = find_var(vrn, row + 1, col + 1)
+            var_under_caret = find_var(vrn, row + 1, col + 1)
 
-            if var is None:
+            if var_under_caret is None:
+                vrn_usages = view_vrn_usages(self.view.id())
+
+                var_under_caret = find_var_usage(vrn_usages, row + 1, col + 1)
+
+            if var_under_caret is None:
                 return
 
-            vars = [var]
+            is_definition = bool(var_under_caret.get("defined-by"))
+            
+            var_under_caret_namespace = var_under_caret.get("ns") or var_under_caret.get("to")
+            var_under_caret_name = var_under_caret["name"]
+
+            qualified_name = (var_under_caret_namespace, var_under_caret_name)
+
+            vindex = view_vindex(self.view.id())
+
+            var_definition = var_under_caret if is_definition else vindex[qualified_name]
+
+            var_definition_usages = [var_definition]
+
+            analysis = view_analysis(self.view.id())
+
+            for var_usage in analysis.get("var-usages", []):
+                if var_usage.get("from") == var_under_caret_namespace and var_usage.get("name") == var_under_caret_name:
+                    var_definition_usages.append(var_usage)
 
 
-            items = [sublime.QuickPanelItem(var["name"], f"{var['name-row']}:{var['name-col']}", var["ns"], sublime.KIND_FUNCTION)]
+            var_quick_panel_items = []
+
+            for v in var_definition_usages:
+                trigger = f"{v['name-row']}:{v['name-col']} {v['name']}"
+                details = ""
+                annotation = ""
+                kind = sublime.KIND_FUNCTION
+
+                var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
 
             def on_done(selected_index):
-                print("Selected index", selected_index)
+                if selected_index == -1:
+                    return
+
+                selected_var = var_definition_usages[selected_index]
+
+                selected_var_region = make_region(selected_var)
+
+                self.view.sel().clear()
+                self.view.sel().add(selected_var_region)
 
             def on_highlighted(index):
-                selected_var = vars[index]
+                selected_var = var_definition_usages[index]
 
                 selected_var_region = make_region(selected_var)
 
                 self.view.show(selected_var_region, True, True, True)
 
-            self.view.window().show_quick_panel(items, on_done, sublime.MONOSPACE_FONT, 0, on_highlighted)
+            self.view.window().show_quick_panel(var_quick_panel_items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted, f"Usages of {var_under_caret_name}")
 
             return
 
