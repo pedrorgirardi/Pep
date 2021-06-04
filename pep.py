@@ -180,6 +180,30 @@ def view_lindex(id):
     return _state_.get("view", {}).get(id, {}).get("lindex", {})
 
 
+def view_vrn(id):
+    """
+    Returns a dictionary of Vars by row.
+
+    This index can be used to quicky find a Var definition by row.
+
+    'vrn' stands for 'var row name'.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("vrn", {})
+
+
+def view_vrn_usages(id):
+    """
+    Returns a dictionary of Var usages by row.
+
+    This index can be used to quicky find a Var usage by row.
+
+    'vrn' stands for 'var row name'.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("vrn_usages", {})
+
+
 def view_lrn(id):
     """
     Returns a dictionary of locals by row.
@@ -222,19 +246,51 @@ def is_name_under_caret(col, n):
 
     `n` is a dictionary with `col` and `end-col` keys.
     """
-    return col >= n["col"] and col <= n["end-col"]
+    col_start = n.get("name-col") or n.get("col")
+    col_end = n.get("name-end-col") or n.get("end-col")
+
+    return col >= col_start and col <= col_end
+
+
+def find_under_caret(index, row, col):
+    """
+    Find name under caret in index by row.
+    """
+    for n in index.get(row, []):
+        print(row, col, n)
+        if is_name_under_caret(col, n):
+            return n
 
 
 def find_local(lrn, row, col):
+    """
+    Find local definition under caret.
+    """
     for n in lrn.get(row, []):
         if is_name_under_caret(col, n):
             return n
 
 
 def find_local_usage(lrn_usages, row, col):
+    """
+    Find local usage under caret.
+    """
     for n in lrn_usages.get(row, []):
         if is_name_under_caret(col, n):
             return n
+
+
+def find_var(vrn, row, col):
+    """
+    Find Var definition under caret.
+    """
+    return find_under_caret(vrn, row, col)
+
+def find_var_usage(vrn_usages, row, col):
+    """
+    Find Var usage under caret.
+    """
+    return find_under_caret(vrn_usages, row, col)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
@@ -281,8 +337,27 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     if n is not None and is_name_under_caret(n["col"] + 1, n):
                         region_local = n
 
-        # Interrupt execution. Could not find local definition or usage.
+        # Try Vars instead.
         if region_local is None:
+            vrn = view_vrn(self.view.id())
+
+            var = find_var(vrn, row + 1, col + 1)
+
+            if var is None:
+                return
+
+            vars = [var]
+
+            items = [var["name"]]
+
+            def on_done(selected_index):
+                print("Selected index", selected_index)
+
+            def on_highlighted(index):
+                print(vars[index])
+
+            self.view.window().show_quick_panel(items, on_done, sublime.MONOSPACE_FONT, 0, on_highlighted)
+
             return
 
         analysis = view_analysis(self.view.id())
@@ -437,7 +512,13 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                 lrn_usages[r] = list(n)
 
             # Update view analysis.
-            _state_.get("view", {})[self.view.id()] = {"result": result, "lindex": lindex, "lrn": lrn, "lrn_usages": lrn_usages}
+            _state_.get("view", {})[self.view.id()] = { "result": result,
+                                                        "vindex": vindex, 
+                                                        "vrn": vrn, 
+                                                        "vrn_usages": vrn_usages,
+                                                        "lindex": lindex, 
+                                                        "lrn": lrn, 
+                                                        "lrn_usages": lrn_usages }
 
             
             # Summary & status bar.
