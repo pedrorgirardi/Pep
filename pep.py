@@ -335,7 +335,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         def make_region(d):
             """
-            Usages have row and col for name.
+            Usages have row and col for name - name-row, name-col, name-end-col.
+            
             Usage entails more than the location of a symbol,
             it extends row and col based on how a symbol
             is used in a particular location.
@@ -346,8 +347,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             `f` usage data will extend row and col to match the parenthesis.
 
-            Local definition doesn't have row and col for name -
-            it's simply row and col.
+            Var or local definition doesn't have row and col for name - it's simply row and col.
             """
             line = (d.get("name-row") or d.get("row")) - 1
             col_start = (d.get("name-col") or d.get("col")) - 1
