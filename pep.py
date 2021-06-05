@@ -312,10 +312,10 @@ def find_var_usage(vrn_usages, row, col):
     return find_under_caret(vrn_usages, row, col)
 
 
-def find_local_usage_2(view, lrn_usages, sel_region):
-    sel_begin_row, _ = view.rowcol(sel_region.begin())
+def local_usage_in_region(view, lrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
 
-    usages = lrn_usages.get(sel_begin_row + 1)
+    usages = lrn_usages.get(region_begin_row + 1)
 
     for usage in usages:
         usage_row_start = usage["name-row"]
@@ -329,13 +329,13 @@ def find_local_usage_2(view, lrn_usages, sel_region):
 
         usage_region = sublime.Region(usage_start_point, usage_end_point)
 
-        if usage_region.contains(sel_region):
+        if usage_region.contains(region):
             return usage
 
 
-def thingy_in_region(view, state, sel_region):
+def thingy_in_region(view, state, region):
 
-    thingy_data = find_local_usage_2(view, state.get("lrn_usages", {}), sel_region)
+    thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region)
 
     if thingy_data:
         return (thingy_data, "local_usage")
