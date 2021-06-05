@@ -417,7 +417,16 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             var_quick_panel_items = []
 
+            quick_panel_selected_index = 0
+
+            var_definition_usages_index = 0
+
             for v in var_definition_usages:
+                if v == var_under_caret:
+                    quick_panel_selected_index = var_definition_usages_index
+
+                var_definition_usages_index += 1
+
                 is_definition = bool(v.get("defined-by"))
 
                 trigger = f"{'Definition' if is_definition else 'Usage'}"
@@ -456,7 +465,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             self.view.window().show_quick_panel(var_quick_panel_items, 
                                                 on_done, 
                                                 sublime.KEEP_OPEN_ON_FOCUS_LOST, 
-                                                0, 
+                                                quick_panel_selected_index, 
                                                 on_highlighted, 
                                                 placeholder)
 
