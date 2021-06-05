@@ -310,7 +310,82 @@ def find_var_usage(vrn_usages, row, col):
     return find_under_caret(vrn_usages, row, col)
 
 
+def make_region(view, d):
+    """
+    Usages have row and col for name - name-row, name-col, name-end-col.
+
+    Usage entails more than the location of a symbol,
+    it extends row and col based on how a symbol
+    is used in a particular location.
+
+    Example:
+
+    (fn [f] (f|))
+
+    `f` usage data will extend row and col to match the parenthesis.
+
+    Var or local definition doesn't have row and col for name - it's simply row and col.
+    """
+    line = (d.get("name-row") or d.get("row")) - 1
+    col_start = (d.get("name-col") or d.get("col")) - 1
+    col_end = (d.get("name-end-col") or d.get("end-col")) - 1
+
+    text_point_a = view.text_point(line, col_start)
+    text_point_b = view.text_point(line, col_end)
+
+    return sublime.Region(text_point_a, text_point_b)
+
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
+
+    def var_quick_panel(self, caret_region, var_under_caret, var_definition_and_usages):
+        var_quick_panel_items = []
+
+        quick_panel_selected_index = 0
+
+        var_definition_usages_index = 0
+
+        for var_definition_or_usage in var_definition_and_usages:
+            if var_definition_or_usage == var_under_caret:
+                quick_panel_selected_index = var_definition_usages_index
+
+            var_definition_usages_index += 1
+
+            is_definition = bool(var_definition_or_usage.get("defined-by"))
+
+            trigger = f"{'Definition' if is_definition else 'Usage'}"
+            details = ""
+            annotation = f"{var_definition_or_usage['name-row']}:{var_definition_or_usage['name-col']}"
+            kind = sublime.KIND_VARIABLE
+
+            var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+
+
+        def on_done(selected_index, _):
+            if selected_index == -1:
+                self.view.sel().clear()
+                self.view.sel().add(caret_region)
+                self.view.show_at_center(caret_region)
+
+                return
+
+        def on_highlighted(index):
+            selected_var = var_definition_and_usages[index]
+
+            selected_var_region = make_region(self.view, selected_var)
+
+            self.view.sel().clear()
+            self.view.sel().add(selected_var_region)
+            self.view.show_at_center(selected_var_region)
+
+        placeholder = f"{var_under_caret['name']} is used {len(var_definition_and_usages) - 1} times"
+
+        self.view.window().show_quick_panel(var_quick_panel_items, 
+                                            on_done, 
+                                            sublime.WANT_EVENT, 
+                                            quick_panel_selected_index, 
+                                            on_highlighted, 
+                                            placeholder)
+
 
     def run(self, edit, select=False):
         debug = settings().get("debug", False)
@@ -331,32 +406,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             print(f"(Pep) View({self.view.id()}) lindex", lindex)
             print(f"(Pep) View({self.view.id()}) lrn", lrn)
             print(f"(Pep) View({self.view.id()}) lrn_usages", lrn_usages)
-
-
-        def make_region(d):
-            """
-            Usages have row and col for name - name-row, name-col, name-end-col.
-
-            Usage entails more than the location of a symbol,
-            it extends row and col based on how a symbol
-            is used in a particular location.
-
-            Example:
-
-            (fn [f] (f))
-
-            `f` usage data will extend row and col to match the parenthesis.
-
-            Var or local definition doesn't have row and col for name - it's simply row and col.
-            """
-            line = (d.get("name-row") or d.get("row")) - 1
-            col_start = (d.get("name-col") or d.get("col")) - 1
-            col_end = (d.get("name-end-col") or d.get("end-col")) - 1
-
-            pa = self.view.text_point(line, col_start)
-            pb = self.view.text_point(line, col_end)
-
-            return sublime.Region(pa, pb)
 
         local_under_caret = find_local(lrn, row + 1, col + 1)
 
@@ -420,56 +469,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 self.view.sel().clear()
 
                 for var_definition_or_usage in var_definition_and_usages:
-                    self.view.sel().add(make_region(var_definition_or_usage))
-
-                return
-
-            var_quick_panel_items = []
-
-            quick_panel_selected_index = 0
-
-            var_definition_usages_index = 0
-
-            for var_definition_or_usage in var_definition_and_usages:
-                if var_definition_or_usage == var_under_caret:
-                    quick_panel_selected_index = var_definition_usages_index
-
-                var_definition_usages_index += 1
-
-                is_definition = bool(var_definition_or_usage.get("defined-by"))
-
-                trigger = f"{'Definition' if is_definition else 'Usage'}"
-                details = ""
-                annotation = f"{var_definition_or_usage['name-row']}:{var_definition_or_usage['name-col']}"
-                kind = sublime.KIND_VARIABLE
-
-                var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
-
-            def on_done(selected_index):
-                if selected_index == -1:
-                    self.view.sel().clear()
-                    self.view.sel().add(region)
-                    self.view.show_at_center(region)
-
-                    return
-
-            def on_highlighted(index):
-                selected_var = var_definition_and_usages[index]
-
-                selected_var_region = make_region(selected_var)
-
-                self.view.sel().clear()
-                self.view.sel().add(selected_var_region)
-                self.view.show_at_center(selected_var_region)
-
-            placeholder = f"{var_under_caret_name} is used {len(var_definition_and_usages) - 1} times"
-
-            self.view.window().show_quick_panel(var_quick_panel_items, 
-                                                on_done, 
-                                                sublime.KEEP_OPEN_ON_FOCUS_LOST, 
-                                                quick_panel_selected_index, 
-                                                on_highlighted, 
-                                                placeholder)
+                    self.view.sel().add(make_region(self.view, var_definition_or_usage))
+            else:
+                self.var_quick_panel(region, var_under_caret, var_definition_and_usages)
 
             return
 
@@ -488,10 +490,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 usages.append(local_usage)
 
         # Include the local name region.
-        usage_regions = [make_region(local_under_caret)]
+        usage_regions = [make_region(self.view, local_under_caret)]
 
         for usage in usages:
-            usage_regions.append(make_region(usage))
+            usage_regions.append(make_region(self.view, usage))
 
         if usage_regions:
             if select:
