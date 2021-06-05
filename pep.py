@@ -404,6 +404,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             var_definition = var_under_caret if is_var_under_caret_definition else vindex[qualified_name]
 
+            # A list of a Var definition and all its usages.
             var_definition_and_usages = [var_definition]
 
             analysis = view_analysis(self.view.id())
@@ -412,6 +413,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 if var_usage.get("from") == var_under_caret_namespace and var_usage.get("name") == var_under_caret_name:
                     var_definition_and_usages.append(var_usage)
 
+            # Var definition and usages are shown in a Quick Panel,
+            # but if select arg is true, it will simply select the regions.
             
             if select:
                 self.view.sel().clear()
@@ -421,24 +424,23 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                 return
 
-
             var_quick_panel_items = []
 
             quick_panel_selected_index = 0
 
             var_definition_usages_index = 0
 
-            for v in var_definition_and_usages:
-                if v == var_under_caret:
+            for var_definition_or_usage in var_definition_and_usages:
+                if var_definition_or_usage == var_under_caret:
                     quick_panel_selected_index = var_definition_usages_index
 
                 var_definition_usages_index += 1
 
-                is_definition = bool(v.get("defined-by"))
+                is_definition = bool(var_definition_or_usage.get("defined-by"))
 
                 trigger = f"{'Definition' if is_definition else 'Usage'}"
                 details = ""
-                annotation = f"{v['name-row']}:{v['name-col']}"
+                annotation = f"{var_definition_or_usage['name-row']}:{var_definition_or_usage['name-col']}"
                 kind = sublime.KIND_VARIABLE
 
                 var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
