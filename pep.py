@@ -235,6 +235,9 @@ def view_lrn(id):
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn", {})
 
+def view_state(view_id):
+    global _state_
+    return _state_.get("view", {}).get(view_id, {})
 
 def view_lrn_usages(id):
     """
@@ -296,7 +299,6 @@ def find_local_usage(lrn_usages, row, col):
         if is_name_under_caret(col, n):
             return n
 
-
 def find_var(vrn, row, col):
     """
     Find Var definition under caret.
@@ -308,6 +310,35 @@ def find_var_usage(vrn_usages, row, col):
     Find Var usage under caret.
     """
     return find_under_caret(vrn_usages, row, col)
+
+
+def find_local_usage_2(view, lrn_usages, sel_region):
+    sel_begin_row, _ = view.rowcol(sel_region.begin())
+
+    usages = lrn_usages.get(sel_begin_row + 1)
+
+    for usage in usages:
+        usage_row_start = usage["name-row"]
+        usage_col_start = usage["name-col"]
+
+        usage_row_end = usage["name-end-row"]
+        usage_col_end = usage["name-end-col"]
+
+        usage_start_point = view.text_point(usage_row_start - 1, usage_col_start - 1)
+        usage_end_point = view.text_point(usage_row_end - 1, usage_col_end - 1)
+
+        usage_region = sublime.Region(usage_start_point, usage_end_point)
+
+        if usage_region.contains(sel_region):
+            return usage
+
+
+def thingy_in_region(view, state, sel_region):
+
+    thingy_data = find_local_usage_2(view, state.get("lrn_usages", {}), sel_region)
+
+    if thingy_data:
+        return (thingy_data, "local_usage")
 
 
 def make_region(view, d):
@@ -334,6 +365,18 @@ def make_region(view, d):
     text_point_b = view.text_point(line, col_end)
 
     return sublime.Region(text_point_a, text_point_b)
+
+class PgPepFindCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, select=False):
+        state = view_state(self.view.id())
+
+        sel_region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, state, sel_region)
+
+        print("thingy", thingy)
+
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
