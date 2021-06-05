@@ -414,6 +414,15 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 if var_usage.get("from") == var_under_caret_namespace and var_usage.get("name") == var_under_caret_name:
                     var_definition_usages.append(var_usage)
 
+            
+            if select:
+                self.view.sel().clear()
+
+                for var_definition_or_usage in var_definition_usages:
+                    self.view.sel().add(make_region(var_definition_or_usage))
+
+                return
+
 
             var_quick_panel_items = []
 
