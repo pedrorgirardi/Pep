@@ -444,13 +444,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     return
 
-                selected_var = var_definition_usages[selected_index]
-
-                selected_var_region = make_region(selected_var)
-
-                self.view.sel().clear()
-                self.view.sel().add(selected_var_region)
-
             def on_highlighted(index):
                 selected_var = var_definition_usages[index]
 
