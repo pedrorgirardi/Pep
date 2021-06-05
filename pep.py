@@ -336,7 +336,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         def make_region(d):
             """
             Usages have row and col for name - name-row, name-col, name-end-col.
-            
+
             Usage entails more than the location of a symbol,
             it extends row and col based on how a symbol
             is used in a particular location.
@@ -358,31 +358,26 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             return sublime.Region(pa, pb)
 
+        local_under_caret = find_local(lrn, row + 1, col + 1)
 
-        # Potential local under caret.
-        region_local = find_local(lrn, row + 1, col + 1)
-
-        # Local not found. Try to find it in usages.
-        if region_local is None:
-
-            if debug:
-                print("(Pep) Local not found. Try usages.")
+        # Try local usages instead.
+        if local_under_caret is None:
 
             # Potential local usage under caret.
-            region_local_usage = find_local_usage(lrn_usages, row + 1, col + 1)
+            local_usage_under_caret = find_local_usage(lrn_usages, row + 1, col + 1)
 
-            if region_local_usage is not None:
-                usage_id = region_local_usage.get("id")
+            if local_usage_under_caret is not None:
+                usage_id = local_usage_under_caret.get("id")
 
                 if usage_id is not None:
                     # Get local by ID - local and usages share the same ID.
                     n = lindex.get(usage_id)
 
                     if n is not None and is_name_under_caret(n["col"] + 1, n):
-                        region_local = n
+                        local_under_caret = n
 
         # Try Vars instead.
-        if region_local is None:
+        if local_under_caret is None:
             vrn = view_vrn(self.view.id())
 
             var_under_caret = find_var(vrn, row + 1, col + 1)
@@ -392,33 +387,36 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                 var_under_caret = find_var_usage(vrn_usages, row + 1, col + 1)
 
+            # Var definition nor usage is found. Interrupt execution.
             if var_under_caret is None:
                 return
 
             is_var_under_caret_definition = bool(var_under_caret.get("defined-by"))
             
             var_under_caret_namespace = var_under_caret.get("ns") or var_under_caret.get("to")
+
             var_under_caret_name = var_under_caret["name"]
 
+            # Var is indexed by its qualified name.
             qualified_name = (var_under_caret_namespace, var_under_caret_name)
 
             vindex = view_vindex(self.view.id())
 
             var_definition = var_under_caret if is_var_under_caret_definition else vindex[qualified_name]
 
-            var_definition_usages = [var_definition]
+            var_definition_and_usages = [var_definition]
 
             analysis = view_analysis(self.view.id())
 
             for var_usage in analysis.get("var-usages", []):
                 if var_usage.get("from") == var_under_caret_namespace and var_usage.get("name") == var_under_caret_name:
-                    var_definition_usages.append(var_usage)
+                    var_definition_and_usages.append(var_usage)
 
             
             if select:
                 self.view.sel().clear()
 
-                for var_definition_or_usage in var_definition_usages:
+                for var_definition_or_usage in var_definition_and_usages:
                     self.view.sel().add(make_region(var_definition_or_usage))
 
                 return
@@ -430,7 +428,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             var_definition_usages_index = 0
 
-            for v in var_definition_usages:
+            for v in var_definition_and_usages:
                 if v == var_under_caret:
                     quick_panel_selected_index = var_definition_usages_index
 
@@ -454,7 +452,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     return
 
             def on_highlighted(index):
-                selected_var = var_definition_usages[index]
+                selected_var = var_definition_and_usages[index]
 
                 selected_var_region = make_region(selected_var)
 
@@ -462,7 +460,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 self.view.sel().add(selected_var_region)
                 self.view.show_at_center(selected_var_region)
 
-            placeholder = f"{var_under_caret_name} is used {len(var_definition_usages) - 1} times"
+            placeholder = f"{var_under_caret_name} is used {len(var_definition_and_usages) - 1} times"
 
             self.view.window().show_quick_panel(var_quick_panel_items, 
                                                 on_done, 
@@ -484,11 +482,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             # Usage ID seems to be missing in some cases,
             # therefore it must be read as optional.
-            if local_usage.get("id") == region_local["id"]:
+            if local_usage.get("id") == local_under_caret["id"]:
                 usages.append(local_usage)
 
         # Include the local name region.
-        usage_regions = [make_region(region_local)]
+        usage_regions = [make_region(local_under_caret)]
 
         for usage in usages:
             usage_regions.append(make_region(usage))
