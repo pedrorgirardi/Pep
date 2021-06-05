@@ -275,7 +275,6 @@ def find_under_caret(index, row, col):
     Find name under caret in index by row.
     """
     for n in index.get(row, []):
-        print(row, col, n)
         if is_name_under_caret(col, n):
             return n
 
@@ -396,7 +395,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             if var_under_caret is None:
                 return
 
-            is_definition = bool(var_under_caret.get("defined-by"))
+            is_var_under_caret_definition = bool(var_under_caret.get("defined-by"))
             
             var_under_caret_namespace = var_under_caret.get("ns") or var_under_caret.get("to")
             var_under_caret_name = var_under_caret["name"]
@@ -405,7 +404,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             vindex = view_vindex(self.view.id())
 
-            var_definition = var_under_caret if is_definition else vindex[qualified_name]
+            var_definition = var_under_caret if is_var_under_caret_definition else vindex[qualified_name]
 
             var_definition_usages = [var_definition]
 
@@ -419,9 +418,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             var_quick_panel_items = []
 
             for v in var_definition_usages:
-                trigger = f"{v['name']} {v['name-row']}:{v['name-col']}"
+                is_definition = bool(v.get("defined-by"))
+
+                trigger = f"{'Definition' if is_definition else 'Usage'}"
                 details = ""
-                annotation = ""
+                annotation = f"{v['name-row']}:{v['name-col']}"
                 kind = sublime.KIND_VARIABLE
 
                 var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
