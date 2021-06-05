@@ -451,8 +451,14 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 self.view.sel().add(selected_var_region)
                 self.view.show_at_center(selected_var_region)
 
+            placeholder = f"{var_under_caret_name} is used {len(var_definition_usages) - 1} times"
 
-            self.view.window().show_quick_panel(var_quick_panel_items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted, f"Usages of {var_under_caret_name}")
+            self.view.window().show_quick_panel(var_quick_panel_items, 
+                                                on_done, 
+                                                sublime.KEEP_OPEN_ON_FOCUS_LOST, 
+                                                0, 
+                                                on_highlighted, 
+                                                placeholder)
 
             return
 
