@@ -312,22 +312,26 @@ def find_var_usage(vrn_usages, row, col):
     return find_under_caret(vrn_usages, row, col)
 
 
+def name_region(view, data):
+    name_row_start = data["name-row"]
+    name_col_start = data["name-col"]
+
+    name_row_end = data["name-end-row"]
+    name_col_end = data["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
 def local_usage_in_region(view, lrn_usages, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
     usages = lrn_usages.get(region_begin_row + 1)
 
-    for usage in usages:
-        usage_row_start = usage["name-row"]
-        usage_col_start = usage["name-col"]
-
-        usage_row_end = usage["name-end-row"]
-        usage_col_end = usage["name-end-col"]
-
-        usage_start_point = view.text_point(usage_row_start - 1, usage_col_start - 1)
-        usage_end_point = view.text_point(usage_row_end - 1, usage_col_end - 1)
-
-        usage_region = sublime.Region(usage_start_point, usage_end_point)
+    for usage in usages:        
+        usage_region = name_region(view, usage)
 
         if usage_region.contains(region):
             return usage
