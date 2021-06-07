@@ -446,7 +446,7 @@ def thingy_in_region(view, state, region):
 
 
 def find_local_binding(state, local_usage):
-    return state.get("lindex", {}).get(local_usage.get("id"), {})
+    return state.get("lindex", {}).get(local_usage.get("id"))
 
 
 def find_local_usages(state, local_binding):
@@ -462,7 +462,7 @@ def find_local_usages(state, local_binding):
 def find_var_definition(state, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return state.get("vindex", {}).get(var_qualified_name, {})
+    return state.get("vindex", {}).get(var_qualified_name)
 
 
 def find_var_usages(state, var_definition):
@@ -632,6 +632,12 @@ def find_with_local_usage(view, state, thingy, select):
     _, _, thingy_data  = thingy    
 
     local_binding = find_local_binding(state, thingy_data)
+
+    # It's possible to have a local usage without a local binding.
+    # (It looks like a clj-kondo bug.)
+    if local_binding is None:
+        return
+
     local_binding_region_ = local_binding_region(view, local_binding)
 
     local_usages = find_local_usages(state, local_binding)
