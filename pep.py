@@ -324,6 +324,12 @@ def var_usage_region(view, var_usage):
 
 
 def local_usage_in_region(view, lrn_usages, region):
+    """
+    Local usage dictionary, or None.
+
+    Try to find a local usage in the index (lrn_usages).
+    """
+
     region_begin_row, _ = view.rowcol(region.begin())
 
     usages = lrn_usages.get(region_begin_row + 1, [])
