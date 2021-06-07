@@ -149,7 +149,6 @@ def erase_analysis_regions(view):
 
 
 def erase_usage_regions(view):
-    view.erase_regions("pg_pep_usages")
     view.erase_regions("pg_pep_find_local_binding")
     view.erase_regions("pg_pep_find_local_usage")
 
@@ -272,7 +271,7 @@ def local_usage_region(view, local_usage):
     """
     Returns the Region of a local usage.
     """
-    
+
     name_row_start = local_usage["name-row"]
     name_col_start = local_usage["name-col"]
 
