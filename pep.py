@@ -527,7 +527,14 @@ def present_local(view, local_binding_region, local_usages_regions, select):
         view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
 
 
-def present_var(view, var_definition_region, var_usages_regions, select):
+def present_var(view, data):
+    thingy = data["thingy"]
+    var_definition = data["var_definition"]
+    var_definition_region = data["var_definition_region"]
+    var_usages = data["var_usages"]
+    var_usages_regions = data["var_usages_regions"]
+    select = data["select"]
+
     if select:
         view.sel().clear()
 
@@ -619,7 +626,12 @@ def find_with_var_definition(view, state, thingy, select):
     for var_usage in var_usages:
         var_usages_regions.append(var_usage_region(view, var_usage))
 
-    present_var(view, thingy_region, var_usages_regions, select)
+    present_var(view, { "thingy": thingy,
+                        "var_definition": thingy_data,
+                        "var_definition_region": thingy_region,
+                        "var_usages": var_usages,
+                        "var_usages_regions": var_usages_regions,
+                        "select": select })
 
 
 def find_with_var_usage(view, state, thingy, select):
@@ -646,7 +658,12 @@ def find_with_var_usage(view, state, thingy, select):
     for var_usage in var_usages:
         var_usages_regions.append(var_usage_region(view, var_usage))
 
-    present_var(view, var_definition_region_, var_usages_regions, select)
+    present_var(view, { "thingy": thingy,
+                        "var_definition": var_definition,
+                        "var_definition_region": var_definition_region_,
+                        "var_usages": var_usages,
+                        "var_usages_regions": var_usages_regions,
+                        "select": select })
 
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
