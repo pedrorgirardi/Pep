@@ -365,6 +365,23 @@ def var_definition_in_region(view, vrn, region):
 
 
 def thingy_in_region(view, state, region):
+    """
+    Thingy is not a good name, but what to call something that
+    can be a local binding, local usage, Var definition, or Var usage?
+
+    It's difficult to find a good name for it.
+
+    A thingy is a triple:
+        - Type:
+            - local binding
+            - local usage
+            - Var definition
+            - Var usage
+
+        - Region for the symbol
+
+        - The thingy itself - clj-kondo data.
+    """
 
     # 1. Try local usages.
     thingy_region, thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region) or (None, None)
