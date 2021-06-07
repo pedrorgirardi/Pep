@@ -443,6 +443,10 @@ def thingy_in_region(view, state, region):
 # ---
 
 
+def find_local_binding(state, local_usage):
+    return state.get("lindex", {}).get(local_usage.get("id"), {})
+
+
 def find_local_usages(state, local_binding):
     usages = []
 
@@ -500,6 +504,30 @@ def find_with_local_binding(view, state, thingy, select):
         view.add_regions("pg_pep_find_greenish", [thingy_region], scope="region.greenish", flags=region_flags)
         view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
 
+
+def find_with_local_usage(view, state, thingy, select):
+    thingy_type, thingy_region, thingy_data  = thingy    
+
+    local_binding = find_local_binding(state, thingy_data)
+    local_binding_region_ = local_binding_region(view, local_binding)
+
+    local_usages = find_local_usages(state, local_binding)
+    local_usages_regions = []
+
+    for local_usage in local_usages:
+        local_usages_regions.append(local_usage_region(view, local_usage))
+
+    if select:
+        view.sel().clear()
+        view.sel().add(local_binding_region_)
+        view.sel().add_all(local_usages_regions)
+    else:
+        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
+
+        view.add_regions("pg_pep_find_greenish", [local_binding_region_], scope="region.greenish", flags=region_flags)
+        view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+
+
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
@@ -520,10 +548,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_local_binding(self.view, state, thingy, select)
 
         elif thingy_type == "local_usage":
-            if select:
-                pass
-            else:
-                self.view.add_regions("pg_pep_usages", [thingy_region], scope="region.bluish", flags=region_flags)
+            find_with_local_usage(self.view, state, thingy, select)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
