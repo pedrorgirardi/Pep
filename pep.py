@@ -484,8 +484,21 @@ def make_region(view, d):
 
     return sublime.Region(text_point_a, text_point_b)
 
+
+def present_local(view, local_binding_region, local_usages_regions, select):
+    if select:
+        view.sel().clear()
+        view.sel().add(local_binding_region)
+        view.sel().add_all(local_usages_regions)
+    else:
+        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
+
+        view.add_regions("pg_pep_find_greenish", [local_binding_region], scope="region.greenish", flags=region_flags)
+        view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+
+
 def find_with_local_binding(view, state, thingy, select):
-    thingy_type, thingy_region, thingy_data  = thingy    
+    _, thingy_region, thingy_data  = thingy    
 
     local_usages = find_local_usages(state, thingy_data)
 
@@ -494,19 +507,11 @@ def find_with_local_binding(view, state, thingy, select):
     for local_usage in local_usages:
         local_usages_regions.append(local_usage_region(view, local_usage))
 
-    if select:
-        view.sel().clear()
-        view.sel().add(thingy_region)
-        view.sel().add_all(local_usages_regions)
-    else:
-        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
-
-        view.add_regions("pg_pep_find_greenish", [thingy_region], scope="region.greenish", flags=region_flags)
-        view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+    present_local(view, thingy_region, local_usages_regions, select)
 
 
 def find_with_local_usage(view, state, thingy, select):
-    thingy_type, thingy_region, thingy_data  = thingy    
+    _, _, thingy_data  = thingy    
 
     local_binding = find_local_binding(state, thingy_data)
     local_binding_region_ = local_binding_region(view, local_binding)
@@ -517,15 +522,7 @@ def find_with_local_usage(view, state, thingy, select):
     for local_usage in local_usages:
         local_usages_regions.append(local_usage_region(view, local_usage))
 
-    if select:
-        view.sel().clear()
-        view.sel().add(local_binding_region_)
-        view.sel().add_all(local_usages_regions)
-    else:
-        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
-
-        view.add_regions("pg_pep_find_greenish", [local_binding_region_], scope="region.greenish", flags=region_flags)
-        view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+    present_local(view, local_binding_region_, local_usages_regions, select)
 
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
