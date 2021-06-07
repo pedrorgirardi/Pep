@@ -265,57 +265,6 @@ def view_analysis(id):
     return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
 
 
-def is_name_under_caret(col, n):
-    """
-    Returns true if col is within col range of `n`.
-
-    `n` is a dictionary with `col` and `end-col` keys.
-    """
-    col_start = n.get("name-col") or n.get("col")
-    col_end = n.get("name-end-col") or n.get("end-col")
-
-    return col >= col_start and col <= col_end
-
-
-def find_under_caret(index, row, col):
-    """
-    Find name under caret in index by row.
-    """
-    for n in index.get(row, []):
-        if is_name_under_caret(col, n):
-            return n
-
-
-def find_local(lrn, row, col):
-    """
-    Find local definition under caret.
-    """
-    for n in lrn.get(row, []):
-        if is_name_under_caret(col, n):
-            return n
-
-
-def find_local_usage(lrn_usages, row, col):
-    """
-    Find local usage under caret.
-    """
-    for n in lrn_usages.get(row, []):
-        if is_name_under_caret(col, n):
-            return n
-
-def find_var(vrn, row, col):
-    """
-    Find Var definition under caret.
-    """
-    return find_under_caret(vrn, row, col)
-
-def find_var_usage(vrn_usages, row, col):
-    """
-    Find Var usage under caret.
-    """
-    return find_under_caret(vrn_usages, row, col)
-
-
 # ---
 
 
@@ -488,32 +437,6 @@ def find_var_usages_with_usage(state, var_usage):
     return usages
 
 # ---
-
-
-def make_region(view, d):
-    """
-    Usages have row and col for name - name-row, name-col, name-end-col.
-
-    Usage entails more than the location of a symbol,
-    it extends row and col based on how a symbol
-    is used in a particular location.
-
-    Example:
-
-    (fn [f] (f|))
-
-    `f` usage data will extend row and col to match the parenthesis.
-
-    Var or local definition doesn't have row and col for name - it's simply row and col.
-    """
-    line = (d.get("name-row") or d.get("row")) - 1
-    col_start = (d.get("name-col") or d.get("col")) - 1
-    col_end = (d.get("name-end-col") or d.get("end-col")) - 1
-
-    text_point_a = view.text_point(line, col_start)
-    text_point_b = view.text_point(line, col_end)
-
-    return sublime.Region(text_point_a, text_point_b)
 
 
 def present_local(view, local_binding_region, local_usages_regions, select):
@@ -713,7 +636,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, thingy_region, thingy_data  = thingy
+        thingy_type, _, _  = thingy
 
         if thingy_type == "local_binding":
             find_with_local_binding(self.view, state, thingy, select)
@@ -726,179 +649,6 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         elif thingy_type == "var_usage":
             find_with_var_usage(self.view, state, region, thingy, select)
-
-
-class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-
-    def var_quick_panel(self, caret_region, var_under_caret, var_definition_and_usages):
-        var_quick_panel_items = []
-
-        quick_panel_selected_index = 0
-
-        var_definition_usages_index = 0
-
-        for var_definition_or_usage in var_definition_and_usages:
-            if var_definition_or_usage == var_under_caret:
-                quick_panel_selected_index = var_definition_usages_index
-
-            var_definition_usages_index += 1
-
-            is_definition = bool(var_definition_or_usage.get("defined-by"))
-
-            trigger = f"{'Definition' if is_definition else 'Usage'}"
-            details = ""
-            annotation = f"{var_definition_or_usage['name-row']}:{var_definition_or_usage['name-col']}"
-            kind = sublime.KIND_VARIABLE
-
-            var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
-
-
-        def on_done(selected_index, _):
-            if selected_index == -1:
-                self.view.sel().clear()
-                self.view.sel().add(caret_region)
-                self.view.show_at_center(caret_region)
-
-                return
-
-        def on_highlighted(index):
-            selected_var = var_definition_and_usages[index]
-
-            selected_var_region = make_region(self.view, selected_var)
-
-            self.view.sel().clear()
-            self.view.sel().add(selected_var_region)
-            self.view.show_at_center(selected_var_region)
-
-        placeholder = f"{var_under_caret['name']} is used {len(var_definition_and_usages) - 1} times"
-
-        self.view.window().show_quick_panel(var_quick_panel_items, 
-                                            on_done, 
-                                            sublime.WANT_EVENT, 
-                                            quick_panel_selected_index, 
-                                            on_highlighted, 
-                                            placeholder)
-
-
-    def run(self, edit, select=False):
-        debug = settings().get("debug", False)
-
-        # It's the last region because find usages is for a single name.
-        region = self.view.sel()[-1]
-
-        # Question: does it matter which one we use: a (start) or b (end)?
-        row,col = self.view.rowcol(region.a)
-
-        lrn = view_lrn(self.view.id())
-
-        lrn_usages = view_lrn_usages(self.view.id())
-
-        lindex = view_lindex(self.view.id())
-
-        if debug:
-            print(f"(Pep) View({self.view.id()}) lindex", lindex)
-            print(f"(Pep) View({self.view.id()}) lrn", lrn)
-            print(f"(Pep) View({self.view.id()}) lrn_usages", lrn_usages)
-
-        local_under_caret = find_local(lrn, row + 1, col + 1)
-
-        # Try local usages instead.
-        if local_under_caret is None:
-
-            # Potential local usage under caret.
-            local_usage_under_caret = find_local_usage(lrn_usages, row + 1, col + 1)
-
-            if local_usage_under_caret is not None:
-                usage_id = local_usage_under_caret.get("id")
-
-                if usage_id is not None:
-                    # Get local by ID - local and usages share the same ID.
-                    n = lindex.get(usage_id)
-
-                    if n is not None and is_name_under_caret(n["col"] + 1, n):
-                        local_under_caret = n
-
-        # Try Vars instead.
-        if local_under_caret is None:
-            vrn = view_vrn(self.view.id())
-
-            var_under_caret = find_var(vrn, row + 1, col + 1)
-
-            if var_under_caret is None:
-                vrn_usages = view_vrn_usages(self.view.id())
-
-                var_under_caret = find_var_usage(vrn_usages, row + 1, col + 1)
-
-            # Var definition nor usage is found. Interrupt execution.
-            if var_under_caret is None:
-                return
-
-            is_var_under_caret_definition = bool(var_under_caret.get("defined-by"))
-            
-            var_under_caret_namespace = var_under_caret.get("ns") or var_under_caret.get("to")
-
-            var_under_caret_name = var_under_caret["name"]
-
-            # Var is indexed by its qualified name.
-            qualified_name = (var_under_caret_namespace, var_under_caret_name)
-
-            vindex = view_vindex(self.view.id())
-
-            var_definition = var_under_caret if is_var_under_caret_definition else vindex[qualified_name]
-
-            # A list of a Var definition and all its usages.
-            var_definition_and_usages = [var_definition]
-
-            analysis = view_analysis(self.view.id())
-
-            for var_usage in analysis.get("var-usages", []):
-                if var_usage.get("from") == var_under_caret_namespace and var_usage.get("name") == var_under_caret_name:
-                    var_definition_and_usages.append(var_usage)
-
-            # Var definition and usages are shown in a Quick Panel,
-            # but if select arg is true, it will simply select the regions.
-            
-            if select:
-                self.view.sel().clear()
-
-                for var_definition_or_usage in var_definition_and_usages:
-                    self.view.sel().add(make_region(self.view, var_definition_or_usage))
-            else:
-                self.var_quick_panel(region, var_under_caret, var_definition_and_usages)
-
-            return
-
-        analysis = view_analysis(self.view.id())
-
-        usages = []
-
-        for local_usage in analysis.get("local-usages", []):
-            if debug:
-                if local_usage.get("id") is None:
-                    print("(Pep) Usage is missing ID:", local_usage)
-
-            # Usage ID seems to be missing in some cases,
-            # therefore it must be read as optional.
-            if local_usage.get("id") == local_under_caret["id"]:
-                usages.append(local_usage)
-
-        # Include the local name region.
-        usage_regions = [make_region(self.view, local_under_caret)]
-
-        for usage in usages:
-            usage_regions.append(make_region(self.view, usage))
-
-        if usage_regions:
-            if select:
-                self.view.sel().clear()
-                self.view.sel().add_all(usage_regions)
-            else:
-                self.view.add_regions(
-                    "pg_pep_usages",
-                    usage_regions,
-                    scope="region.cyanish",
-                    flags=(sublime.DRAW_NO_FILL)
-                )
 
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
