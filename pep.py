@@ -456,6 +456,16 @@ def find_local_usages(state, local_binding):
 
     return usages
 
+
+def find_var_usages(state, var_definition):
+    usages = []
+
+    for var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
+        if var_usage.get("to") == var_definition.get("ns") and var_usage.get("name") == var_definition.get("name"):
+            usages.append(var_usage)
+
+    return usages
+
 # ---
 
 
@@ -497,6 +507,15 @@ def present_local(view, local_binding_region, local_usages_regions, select):
         view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
 
 
+def present_var(view, var_definition_region, var_usages_regions, select):
+    if select:
+        view.sel().clear()
+        view.sel().add(var_definition_region)
+        view.sel().add_all(var_usages_regions)
+    else:
+        pass
+
+
 def find_with_local_binding(view, state, thingy, select):
     _, thingy_region, thingy_data  = thingy    
 
@@ -525,6 +544,19 @@ def find_with_local_usage(view, state, thingy, select):
     present_local(view, local_binding_region_, local_usages_regions, select)
 
 
+def find_with_var_definition(view, state, thingy, select):
+    _, thingy_region, thingy_data  = thingy
+
+    var_usages = find_var_usages(state, thingy_data)
+
+    var_usages_regions = []
+
+    for var_usage in var_usages:
+        var_usages_regions.append(var_usage_region(view, var_usage))
+
+    present_var(view, thingy_region, var_usages_regions, select)
+
+
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
@@ -546,6 +578,12 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         elif thingy_type == "local_usage":
             find_with_local_usage(self.view, state, thingy, select)
+
+        elif thingy_type == "var_definition":
+            find_with_var_definition(self.view, state, thingy, select)
+
+        elif thingy_type == "var_usage":
+            pass
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
