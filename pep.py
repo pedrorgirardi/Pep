@@ -376,58 +376,66 @@ def local_usage_in_region(view, lrn_usages, region):
     usages = lrn_usages.get(region_begin_row + 1, [])
 
     for usage in usages:        
-        if local_usage_region(view, usage).contains(region):
-            return usage
+        _region = local_usage_region(view, usage)
+
+        if _region.contains(region):
+            return (_region, usage)
 
 
 def local_binding_in_region(view, lrn, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
     for local_binding in lrn.get(region_begin_row + 1, []):
-        if local_binding_region(view, local_binding).contains(region):
-            return local_binding
+        _region = local_binding_region(view, local_binding)
+
+        if _region.contains(region):
+            return (_region, local_binding)
 
 
 def var_usage_in_region(view, vrn_usages, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
     for var_usage in vrn_usages.get(region_begin_row + 1, []):
-        if var_usage_region(view, var_usage).contains(region):
-            return var_usage
+        _region = var_usage_region(view, var_usage)
+
+        if _region.contains(region):
+            return (_region, var_usage)
 
 def var_definition_in_region(view, vrn, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
     for var_definition in vrn.get(region_begin_row + 1, []):
-        if var_definition_region(view, var_definition).contains(region):
-            return var_definition
+        _region = var_definition_region(view, var_definition)
+
+        if _region.contains(region):
+            return (_region, var_definition)
 
 
 def thingy_in_region(view, state, region):
 
     # 1. Try local usages.
-    thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region)
+    thingy_region, thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region) or (None, None)
 
     if thingy_data:
-        return (thingy_data, "local_usage")
+        return ("local_usage", thingy_region, thingy_data)
 
     # 2. Try Var usages. 
-    thingy_data = var_usage_in_region(view, state.get("vrn_usages", {}), region)
+    thingy_region, thingy_data = var_usage_in_region(view, state.get("vrn_usages", {}), region) or (None, None)
 
     if thingy_data:
-        return (thingy_data, "var_usage")
+        return ("var_usage", thingy_region, thingy_data)
 
     # 3. Try local bindings. 
-    thingy_data = local_binding_in_region(view, state.get("lrn", {}), region)
+    thingy_region, thingy_data = local_binding_in_region(view, state.get("lrn", {}), region) or (None, None)
 
     if thingy_data:
-        return (thingy_data, "local_binding")
+        return ("local_binding", thingy_region, thingy_data)
 
     # 4. Try Var definitions. 
-    thingy_data = var_definition_in_region(view, state.get("vrn", {}), region)
+    thingy_region, thingy_data = var_definition_in_region(view, state.get("vrn", {}), region) or (None, None)
 
     if thingy_data:
-        return (thingy_data, "var_definition")
+        return ("var_definition", thingy_region, thingy_data)
 
 
 # ---
@@ -467,7 +475,26 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         thingy = thingy_in_region(self.view, state, sel_region)
 
+        if thingy is None:
+            return
+
+        thingy_type, thingy_region, thingy_data  = thingy
+
         print("thingy", thingy)
+
+        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
+
+        if thingy_type == "local_binding":
+            if select:
+                pass
+            else:
+                self.view.add_regions("pg_pep_usages", [thingy_region], scope="region.greenish", flags=region_flags)
+
+        elif thingy_type == "local_usage":
+            if select:
+                pass
+            else:
+                self.view.add_regions("pg_pep_usages", [thingy_region], scope="region.bluish", flags=region_flags)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
