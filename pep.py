@@ -312,12 +312,15 @@ def find_var_usage(vrn_usages, row, col):
     return find_under_caret(vrn_usages, row, col)
 
 
-def name_region(view, data):
-    name_row_start = data["name-row"]
-    name_col_start = data["name-col"]
+# ---
 
-    name_row_end = data["name-end-row"]
-    name_col_end = data["name-end-col"]
+
+def local_usage_region(view, local_usage):
+    name_row_start = local_usage["name-row"]
+    name_col_start = local_usage["name-col"]
+
+    name_row_end = local_usage["name-end-row"]
+    name_col_end = local_usage["name-end-col"]
 
     name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
     name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
@@ -325,24 +328,109 @@ def name_region(view, data):
     return sublime.Region(name_start_point, name_end_point)
 
 
+def local_binding_region(view, local_binding):
+    row_start = local_binding["row"]
+    col_start = local_binding["col"]
+
+    row_end = local_binding["end-row"]
+    col_end = local_binding["end-col"]
+
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
+
+    return sublime.Region(start_point, end_point)
+
+
+def var_definition_region(view, var_definition):
+    name_row_start = var_definition["name-row"]
+    name_col_start = var_definition["name-col"]
+
+    name_row_end = var_definition["name-end-row"]
+    name_col_end = var_definition["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
+def var_usage_region(view, var_usage):
+    name_row_start = var_usage["name-row"]
+    name_col_start = var_usage["name-col"]
+
+    name_row_end = var_usage["name-end-row"]
+    name_col_end = var_usage["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
+# ---
+
+
 def local_usage_in_region(view, lrn_usages, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
-    usages = lrn_usages.get(region_begin_row + 1)
+    usages = lrn_usages.get(region_begin_row + 1, [])
 
     for usage in usages:        
-        usage_region = name_region(view, usage)
-
-        if usage_region.contains(region):
+        if local_usage_region(view, usage).contains(region):
             return usage
+
+
+def local_binding_in_region(view, lrn, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for local_binding in lrn.get(region_begin_row + 1, []):
+        if local_binding_region(view, local_binding).contains(region):
+            return local_binding
+
+
+def var_usage_in_region(view, vrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for var_usage in vrn_usages.get(region_begin_row + 1, []):
+        if var_usage_region(view, var_usage).contains(region):
+            return var_usage
+
+def var_definition_in_region(view, vrn, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for var_definition in vrn.get(region_begin_row + 1, []):
+        if var_definition_region(view, var_definition).contains(region):
+            return var_definition
 
 
 def thingy_in_region(view, state, region):
 
+    # 1. Try local usages.
     thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region)
 
     if thingy_data:
         return (thingy_data, "local_usage")
+
+    # 2. Try Var usages. 
+    thingy_data = var_usage_in_region(view, state.get("vrn_usages", {}), region)
+
+    if thingy_data:
+        return (thingy_data, "var_usage")
+
+    # 3. Try local bindings. 
+    thingy_data = local_binding_in_region(view, state.get("lrn", {}), region)
+
+    if thingy_data:
+        return (thingy_data, "local_binding")
+
+    # 4. Try Var definitions. 
+    thingy_data = var_definition_in_region(view, state.get("vrn", {}), region)
+
+    if thingy_data:
+        return (thingy_data, "var_definition")
+
+
+# ---
 
 
 def make_region(view, d):
