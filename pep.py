@@ -523,7 +523,7 @@ def present_local(view, local_binding_region, local_usages_regions, select):
     else:
         region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
 
-        view.add_regions("pg_pep_find_greenish", [local_binding_region], scope="region.greenish", flags=region_flags)
+        view.add_regions("pg_pep_find_greenish", [local_binding_region], scope="region.bluish", flags=region_flags)
         view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
 
 
