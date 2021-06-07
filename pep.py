@@ -522,10 +522,10 @@ def present_local(view, local_binding_region, local_usages_regions, select):
         view.sel().add(local_binding_region)
         view.sel().add_all(local_usages_regions)
     else:
-        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
+        region_flags = (sublime.DRAW_NO_FILL)
 
-        view.add_regions("pg_pep_find_local_binding", [local_binding_region], scope="region.orangish", flags=region_flags)
-        view.add_regions("pg_pep_find_local_usage", local_usages_regions, scope="region.orangish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_binding", [local_binding_region], scope="region.yellowish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_usage", local_usages_regions, scope="region.yellowish", flags=region_flags)
 
 
 def present_var(view, data):
