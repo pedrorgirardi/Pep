@@ -480,6 +480,26 @@ def make_region(view, d):
 
     return sublime.Region(text_point_a, text_point_b)
 
+def find_with_local_binding(view, state, thingy, select):
+    thingy_type, thingy_region, thingy_data  = thingy    
+
+    local_usages = find_local_usages(state, thingy_data)
+
+    local_usages_regions = []
+
+    for local_usage in local_usages:
+        local_usages_regions.append(local_usage_region(view, local_usage))
+
+    if select:
+        view.sel().clear()
+        view.sel().add(thingy_region)
+        view.sel().add_all(local_usages_regions)
+    else:
+        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
+
+        view.add_regions("pg_pep_find_greenish", [thingy_region], scope="region.greenish", flags=region_flags)
+        view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
@@ -497,20 +517,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
 
         if thingy_type == "local_binding":
-            local_usages = find_local_usages(state, thingy_data)
-
-            local_usages_regions = []
-
-            for local_usage in local_usages:
-                local_usages_regions.append(local_usage_region(self.view, local_usage))
-
-            if select:
-                self.view.sel().clear()
-                self.view.sel().add(thingy_region)
-                self.view.sel().add_all(local_usages_regions)
-            else:
-                self.view.add_regions("pg_pep_find_greenish", [thingy_region], scope="region.greenish", flags=region_flags)
-                self.view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+            find_with_local_binding(self.view, state, thingy, select)
 
         elif thingy_type == "local_usage":
             if select:
