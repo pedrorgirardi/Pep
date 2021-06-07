@@ -529,6 +529,8 @@ def present_local(view, local_binding_region, local_usages_regions, select):
 
 def present_var(view, data):
     thingy = data["thingy"]
+    thingy_type, thingy_region, thingy_data = thingy
+
     var_definition = data["var_definition"]
     var_definition_region = data["var_definition_region"]
     var_usages = data["var_usages"]
@@ -555,11 +557,10 @@ def present_var(view, data):
 
         var_regions.extend(var_usages_regions)
 
-
         var_quick_panel_items = []
 
         for var_definition_or_usage in var_regions:
-            trigger = "Var"
+            trigger = f"{thingy_data['name']}"
             details = ""
             annotation = ""
             kind = sublime.KIND_VARIABLE
@@ -569,16 +570,20 @@ def present_var(view, data):
 
         def on_done(selected_index, _):
             if selected_index == -1:
-                pass
+                region = data["region"]
+
+                view.sel().clear()
+                view.sel().add(region)
+                view.show_at_center(region)
 
         def on_highlighted(index):
-            selected_var_region = var_regions[index]
+            region = var_regions[index]
 
             view.sel().clear()
-            view.sel().add(selected_var_region)
-            view.show_at_center(selected_var_region)
+            view.sel().add(region)
+            view.show_at_center(region)
 
-        placeholder = f"Used {len(var_usages_regions) - 1} times"
+        placeholder = f"Used {len(var_regions)} times"
 
         view.window().show_quick_panel(var_quick_panel_items, 
                                             on_done, 
@@ -616,7 +621,7 @@ def find_with_local_usage(view, state, thingy, select):
     present_local(view, local_binding_region_, local_usages_regions, select)
 
 
-def find_with_var_definition(view, state, thingy, select):
+def find_with_var_definition(view, state, region, thingy, select):
     _, thingy_region, thingy_data  = thingy
 
     var_usages = find_var_usages(state, thingy_data)
@@ -626,7 +631,8 @@ def find_with_var_definition(view, state, thingy, select):
     for var_usage in var_usages:
         var_usages_regions.append(var_usage_region(view, var_usage))
 
-    present_var(view, { "thingy": thingy,
+    present_var(view, { "region": region,
+                        "thingy": thingy,
                         "var_definition": thingy_data,
                         "var_definition_region": thingy_region,
                         "var_usages": var_usages,
@@ -634,7 +640,7 @@ def find_with_var_definition(view, state, thingy, select):
                         "select": select })
 
 
-def find_with_var_usage(view, state, thingy, select):
+def find_with_var_usage(view, state, region, thingy, select):
     is_debug = debug()
 
     _, thingy_region, thingy_data  = thingy
@@ -658,7 +664,8 @@ def find_with_var_usage(view, state, thingy, select):
     for var_usage in var_usages:
         var_usages_regions.append(var_usage_region(view, var_usage))
 
-    present_var(view, { "thingy": thingy,
+    present_var(view, { "region": region,
+                        "thingy": thingy,
                         "var_definition": var_definition,
                         "var_definition_region": var_definition_region_,
                         "var_usages": var_usages,
@@ -687,10 +694,10 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_local_usage(self.view, state, thingy, select)
 
         elif thingy_type == "var_definition":
-            find_with_var_definition(self.view, state, thingy, select)
+            find_with_var_definition(self.view, state, sel_region, thingy, select)
 
         elif thingy_type == "var_usage":
-            find_with_var_usage(self.view, state, thingy, select)
+            find_with_var_usage(self.view, state, sel_region, thingy, select)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
