@@ -269,6 +269,10 @@ def view_analysis(id):
 
 
 def local_usage_region(view, local_usage):
+    """
+    Returns the Region of a local usage.
+    """
+    
     name_row_start = local_usage["name-row"]
     name_col_start = local_usage["name-col"]
 
@@ -282,6 +286,10 @@ def local_usage_region(view, local_usage):
 
 
 def local_binding_region(view, local_binding):
+    """
+    Returns the Region of a local binding.
+    """
+
     row_start = local_binding["row"]
     col_start = local_binding["col"]
 
@@ -295,6 +303,10 @@ def local_binding_region(view, local_binding):
 
 
 def var_definition_region(view, var_definition):
+    """
+    Returns the Region of a Var definition.
+    """
+
     name_row_start = var_definition["name-row"]
     name_col_start = var_definition["name-col"]
 
@@ -308,6 +320,10 @@ def var_definition_region(view, var_definition):
 
 
 def var_usage_region(view, var_usage):
+    """
+    Returns the Region of a Var usage.
+    """    
+
     name_row_start = var_usage["name-row"]
     name_col_start = var_usage["name-col"]
 
