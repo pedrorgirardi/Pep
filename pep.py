@@ -546,17 +546,19 @@ def present_var(view, data):
 
         view.sel().add_all(var_usages_regions)
     else:
+        var_set = []
         var_regions = []
 
-        if var_definition_region:
+        if var_definition:
+            var_set.append(var_definition)
             var_regions.append(var_definition_region)
 
+        var_set.extend(var_usages)
         var_regions.extend(var_usages_regions)
 
         quick_panel_items = []
 
         region_index = 0
-
         selected_index = 0
 
         for var_region in var_regions:
@@ -564,10 +566,16 @@ def present_var(view, data):
             if var_region == thingy_region:
                 selected_index = region_index
 
-            trigger = f"{thingy_data['name']}"
-            details = ""
+            region_row, region_col = view.rowcol(var_region.begin())
+
+            var_ = var_set[region_index]
+
+            is_definition = bool(var_.get("defined-by"))
+
+            trigger = "Definiton" if is_definition else "Usage"
+            details = f"Line {region_row + 1}, Column {region_col + 1}"
             annotation = ""
-            kind = sublime.KIND_VARIABLE
+            kind = sublime.KIND_AMBIGUOUS
 
             quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
 
@@ -589,9 +597,14 @@ def present_var(view, data):
             view.sel().add(region)
             view.show_at_center(region)
 
-        time_or_times = "times" if len(var_regions) > 1 else "time"
+        var_name = thingy_data.get("name")
 
-        placeholder = f"{thingy_data['name']} is used {len(var_regions)} {time_or_times}"
+        placeholder = None
+
+        if len(var_usages) == 1:
+            placeholder = f"{var_name} is used 1 time"
+        else:
+            placeholder = f"{var_name} is used {len(var_usages)} times"
 
         view.window().show_quick_panel(quick_panel_items, 
                                             on_done, 
