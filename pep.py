@@ -457,11 +457,29 @@ def find_local_usages(state, local_binding):
     return usages
 
 
+def find_var_definition(state, var_usage):
+    var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
+
+    return state.get("vindex", {}).get(var_qualified_name, {})
+
+
 def find_var_usages(state, var_definition):
     usages = []
 
     for var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
         if var_usage.get("to") == var_definition.get("ns") and var_usage.get("name") == var_definition.get("name"):
+            usages.append(var_usage)
+
+    return usages
+
+
+def find_var_usages_with_usage(state, var_usage):
+    usages = []
+
+    for _var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
+        if (_var_usage.get("from") == var_usage.get("from") and 
+            _var_usage.get("to") == var_usage.get("to") and 
+            _var_usage.get("name") == var_usage.get("name")):
             usages.append(var_usage)
 
     return usages
@@ -510,7 +528,11 @@ def present_local(view, local_binding_region, local_usages_regions, select):
 def present_var(view, var_definition_region, var_usages_regions, select):
     if select:
         view.sel().clear()
-        view.sel().add(var_definition_region)
+
+        # Var definition is optional - it's valid to find Var usages from a different namespace.
+        if var_definition_region:
+            view.sel().add(var_definition_region)
+
         view.sel().add_all(var_usages_regions)
     else:
         pass
@@ -557,6 +579,28 @@ def find_with_var_definition(view, state, thingy, select):
     present_var(view, thingy_region, var_usages_regions, select)
 
 
+def find_with_var_usage(view, state, thingy, select):
+    _, thingy_region, thingy_data  = thingy
+
+    var_definition = find_var_definition(state, thingy_data)
+    var_definition_region_ = None
+
+    var_usages = []
+
+    if var_definition:
+        var_definition_region_ = var_definition_region(view, var_definition)
+        var_usages.extend(find_var_usages(state, var_definition))
+    else:
+        var_usages.extend(find_var_usages_with_usage(state, thingy_data))
+
+    var_usages_regions = []
+
+    for var_usage in var_usages:
+        var_usages_regions.append(var_usage_region(view, var_usage))
+
+    present_var(view, var_definition_region_, var_usages_regions, select)
+
+
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
@@ -571,8 +615,6 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         thingy_type, thingy_region, thingy_data  = thingy
 
-        region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
-
         if thingy_type == "local_binding":
             find_with_local_binding(self.view, state, thingy, select)
 
@@ -583,7 +625,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_var_definition(self.view, state, thingy, select)
 
         elif thingy_type == "var_usage":
-            pass
+            find_with_var_usage(self.view, state, thingy, select)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
