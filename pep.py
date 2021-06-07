@@ -150,8 +150,8 @@ def erase_analysis_regions(view):
 
 def erase_usage_regions(view):
     view.erase_regions("pg_pep_usages")
-    view.erase_regions("pg_pep_find_greenish")
-    view.erase_regions("pg_pep_find_bluish")
+    view.erase_regions("pg_pep_find_local_binding")
+    view.erase_regions("pg_pep_find_local_usage")
 
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
@@ -523,8 +523,8 @@ def present_local(view, local_binding_region, local_usages_regions, select):
     else:
         region_flags = (sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SOLID_UNDERLINE)
 
-        view.add_regions("pg_pep_find_greenish", [local_binding_region], scope="region.bluish", flags=region_flags)
-        view.add_regions("pg_pep_find_bluish", local_usages_regions, scope="region.bluish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_binding", [local_binding_region], scope="region.orangish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_usage", local_usages_regions, scope="region.orangish", flags=region_flags)
 
 
 def present_var(view, data):
