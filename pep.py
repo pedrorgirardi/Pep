@@ -546,10 +546,6 @@ def present_var(view, data):
 
         view.sel().add_all(var_usages_regions)
     else:
-        quick_panel_selected_index = 0
-
-        var_definition_usages_index = 0
-
         var_regions = []
 
         if var_definition_region:
@@ -557,15 +553,25 @@ def present_var(view, data):
 
         var_regions.extend(var_usages_regions)
 
-        var_quick_panel_items = []
+        quick_panel_items = []
 
-        for var_definition_or_usage in var_regions:
+        region_index = 0
+
+        selected_index = 0
+
+        for var_region in var_regions:
+            # Find thingy index because we don't want to show a different region.
+            if var_region == thingy_region:
+                selected_index = region_index
+
             trigger = f"{thingy_data['name']}"
             details = ""
             annotation = ""
             kind = sublime.KIND_VARIABLE
 
-            var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+            quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+
+            region_index += 1
 
 
         def on_done(selected_index, _):
@@ -587,10 +593,10 @@ def present_var(view, data):
 
         placeholder = f"{thingy_data['name']} is used {len(var_regions)} {time_or_times}"
 
-        view.window().show_quick_panel(var_quick_panel_items, 
+        view.window().show_quick_panel(quick_panel_items, 
                                             on_done, 
                                             sublime.WANT_EVENT, 
-                                            0, 
+                                            selected_index, 
                                             on_highlighted, 
                                             placeholder)
 
