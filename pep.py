@@ -16,6 +16,8 @@ _state_ = {"view": {}}
 def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
+def debug():
+    return sublime.load_settings("Pep.sublime-settings").get("debug", False)
 
 def set_view_name(view, name):
     if view is not None:
@@ -480,7 +482,7 @@ def find_var_usages_with_usage(state, var_usage):
         if (_var_usage.get("from") == var_usage.get("from") and 
             _var_usage.get("to") == var_usage.get("to") and 
             _var_usage.get("name") == var_usage.get("name")):
-            usages.append(var_usage)
+            usages.append(_var_usage)
 
     return usages
 
@@ -580,6 +582,8 @@ def find_with_var_definition(view, state, thingy, select):
 
 
 def find_with_var_usage(view, state, thingy, select):
+    is_debug = debug()
+
     _, thingy_region, thingy_data  = thingy
 
     var_definition = find_var_definition(state, thingy_data)
@@ -591,6 +595,9 @@ def find_with_var_usage(view, state, thingy, select):
         var_definition_region_ = var_definition_region(view, var_definition)
         var_usages.extend(find_var_usages(state, var_definition))
     else:
+        if is_debug:
+            print("(Pep) Find Var usages with usage:", thingy_data)
+
         var_usages.extend(find_var_usages_with_usage(state, thingy_data))
 
     var_usages_regions = []
