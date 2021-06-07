@@ -16,6 +16,8 @@ _state_ = {"view": {}}
 def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
+def debug():
+    return sublime.load_settings("Pep.sublime-settings").get("debug", False)
 
 def set_view_name(view, name):
     if view is not None:
@@ -148,6 +150,8 @@ def erase_analysis_regions(view):
 
 def erase_usage_regions(view):
     view.erase_regions("pg_pep_usages")
+    view.erase_regions("pg_pep_find_local_binding")
+    view.erase_regions("pg_pep_find_local_usage")
 
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
@@ -160,6 +164,48 @@ class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         erase_usage_regions(self.view)
+
+
+def view_vindex(id):
+    """
+    Returns a dictionary of locals by ID.
+
+    This index can be used to find a local in constant time if you know its ID.
+
+    When finding usages from a usage itself, the first step is to find the usage,
+    once you have found it, you can use its ID to find the local.
+
+    Locals and usages have the same ID, 
+    so it's possible to corretale a usage with a local.
+
+    'lindex' stands for 'local index'.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("vindex", {})
+
+
+def view_vrn(id):
+    """
+    Returns a dictionary of Vars by row.
+
+    This index can be used to quicky find a Var definition by row.
+
+    'vrn' stands for 'var row name'.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("vrn", {})
+
+
+def view_vrn_usages(id):
+    """
+    Returns a dictionary of Var usages by row.
+
+    This index can be used to quicky find a Var usage by row.
+
+    'vrn' stands for 'var row name'.
+    """
+    global _state_
+    return _state_.get("view", {}).get(id, {}).get("vrn_usages", {})
 
 
 def view_lindex(id):
@@ -193,6 +239,9 @@ def view_lrn(id):
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn", {})
 
+def view_state(view_id):
+    global _state_
+    return _state_.get("view", {}).get(view_id, {})
 
 def view_lrn_usages(id):
     """
@@ -216,131 +265,390 @@ def view_analysis(id):
     return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
 
 
-def is_name_under_caret(col, n):
-    """
-    Returns true if col is within col range of `n`.
-
-    `n` is a dictionary with `col` and `end-col` keys.
-    """
-    return col >= n["col"] and col <= n["end-col"]
+# ---
 
 
-def find_local(lrn, row, col):
-    for n in lrn.get(row, []):
-        if is_name_under_caret(col, n):
-            return n
+def local_usage_region(view, local_usage):
+    name_row_start = local_usage["name-row"]
+    name_col_start = local_usage["name-col"]
+
+    name_row_end = local_usage["name-end-row"]
+    name_col_end = local_usage["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
 
 
-def find_local_usage(lrn_usages, row, col):
-    for n in lrn_usages.get(row, []):
-        if is_name_under_caret(col, n):
-            return n
+def local_binding_region(view, local_binding):
+    row_start = local_binding["row"]
+    col_start = local_binding["col"]
+
+    row_end = local_binding["end-row"]
+    col_end = local_binding["end-col"]
+
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
+
+    return sublime.Region(start_point, end_point)
 
 
-class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
+def var_definition_region(view, var_definition):
+    name_row_start = var_definition["name-row"]
+    name_col_start = var_definition["name-col"]
+
+    name_row_end = var_definition["name-end-row"]
+    name_col_end = var_definition["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
+def var_usage_region(view, var_usage):
+    name_row_start = var_usage["name-row"]
+    name_col_start = var_usage["name-col"]
+
+    name_row_end = var_usage["name-end-row"]
+    name_col_end = var_usage["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
+# ---
+
+
+def local_usage_in_region(view, lrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    usages = lrn_usages.get(region_begin_row + 1, [])
+
+    for usage in usages:        
+        _region = local_usage_region(view, usage)
+
+        if _region.contains(region):
+            return (_region, usage)
+
+
+def local_binding_in_region(view, lrn, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for local_binding in lrn.get(region_begin_row + 1, []):
+        _region = local_binding_region(view, local_binding)
+
+        if _region.contains(region):
+            return (_region, local_binding)
+
+
+def var_usage_in_region(view, vrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for var_usage in vrn_usages.get(region_begin_row + 1, []):
+        _region = var_usage_region(view, var_usage)
+
+        if _region.contains(region):
+            return (_region, var_usage)
+
+def var_definition_in_region(view, vrn, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for var_definition in vrn.get(region_begin_row + 1, []):
+        _region = var_definition_region(view, var_definition)
+
+        if _region.contains(region):
+            return (_region, var_definition)
+
+
+def thingy_in_region(view, state, region):
+
+    # 1. Try local usages.
+    thingy_region, thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("local_usage", thingy_region, thingy_data)
+
+    # 2. Try Var usages. 
+    thingy_region, thingy_data = var_usage_in_region(view, state.get("vrn_usages", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("var_usage", thingy_region, thingy_data)
+
+    # 3. Try local bindings. 
+    thingy_region, thingy_data = local_binding_in_region(view, state.get("lrn", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("local_binding", thingy_region, thingy_data)
+
+    # 4. Try Var definitions. 
+    thingy_region, thingy_data = var_definition_in_region(view, state.get("vrn", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("var_definition", thingy_region, thingy_data)
+
+
+# ---
+
+
+def find_local_binding(state, local_usage):
+    return state.get("lindex", {}).get(local_usage.get("id"))
+
+
+def find_local_usages(state, local_binding):
+    usages = []
+
+    for local_usage in state.get("result", {}).get("analysis", {}).get("local-usages", []):
+        if local_usage.get("id") == local_binding.get("id"):
+            usages.append(local_usage)
+
+    return usages
+
+
+def find_var_definition(state, var_usage):
+    var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
+
+    return state.get("vindex", {}).get(var_qualified_name)
+
+
+def find_var_usages(state, var_definition):
+    usages = []
+
+    for var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
+        if (var_usage.get("to") == var_definition.get("ns") and 
+            var_usage.get("name") == var_definition.get("name")):
+            usages.append(var_usage)
+
+    return usages
+
+
+def find_var_usages_with_usage(state, var_usage):
+    usages = []
+
+    for _var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
+        if (_var_usage.get("from") == var_usage.get("from") and 
+            _var_usage.get("to") == var_usage.get("to") and 
+            _var_usage.get("name") == var_usage.get("name")):
+            usages.append(_var_usage)
+
+    return usages
+
+# ---
+
+
+def present_local(view, local_binding_region, local_usages_regions, select):
+    if select:
+        view.sel().clear()
+        view.sel().add(local_binding_region)
+        view.sel().add_all(local_usages_regions)
+    else:
+        region_flags = (sublime.DRAW_NO_FILL)
+
+        view.add_regions("pg_pep_find_local_binding", [local_binding_region], scope="region.yellowish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_usage", local_usages_regions, scope="region.yellowish", flags=region_flags)
+
+
+def present_var(view, data):
+    thingy = data["thingy"]
+    thingy_type, thingy_region, thingy_data = thingy
+
+    var_definition = data["var_definition"]
+    var_definition_region = data["var_definition_region"]
+    var_usages = data["var_usages"]
+    var_usages_regions = data["var_usages_regions"]
+    select = data["select"]
+
+    if select:
+        view.sel().clear()
+
+        # Var definition is optional - it's valid to find Var usages from a different namespace.
+        if var_definition_region:
+            view.sel().add(var_definition_region)
+
+        view.sel().add_all(var_usages_regions)
+    else:
+        var_set = []
+        var_regions = []
+
+        if var_definition:
+            var_set.append(var_definition)
+            var_regions.append(var_definition_region)
+
+        var_set.extend(var_usages)
+        var_regions.extend(var_usages_regions)
+
+        quick_panel_items = []
+
+        region_index = 0
+        selected_index = 0
+
+        for var_region in var_regions:
+            # Find thingy index because we don't want to show a different region.
+            if var_region == thingy_region:
+                selected_index = region_index
+
+            region_row, region_col = view.rowcol(var_region.begin())
+
+            var_ = var_set[region_index]
+
+            is_definition = bool(var_.get("defined-by"))
+
+            trigger = "Definiton" if is_definition else "Usage"
+            details = f"Line {region_row + 1}, Column {region_col + 1}"
+            annotation = ""
+            kind = sublime.KIND_AMBIGUOUS
+
+            quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+
+            region_index += 1
+
+
+        def on_done(selected_index, _):
+            if selected_index == -1:
+                region = data["region"]
+
+                view.sel().clear()
+                view.sel().add(region)
+                view.show_at_center(region)
+
+        def on_highlighted(index):
+            region = var_regions[index]
+
+            view.sel().clear()
+            view.sel().add(region)
+            view.show_at_center(region)
+
+        var_name = thingy_data.get("name")
+
+        placeholder = None
+
+        if len(var_usages) == 1:
+            placeholder = f"{var_name} is used 1 time"
+        else:
+            placeholder = f"{var_name} is used {len(var_usages)} times"
+
+        view.window().show_quick_panel(quick_panel_items, 
+                                            on_done, 
+                                            sublime.WANT_EVENT, 
+                                            selected_index, 
+                                            on_highlighted, 
+                                            placeholder)
+
+
+def find_with_local_binding(view, state, thingy, select):
+    _, thingy_region, thingy_data  = thingy    
+
+    local_usages = find_local_usages(state, thingy_data)
+
+    local_usages_regions = []
+
+    for local_usage in local_usages:
+        local_usages_regions.append(local_usage_region(view, local_usage))
+
+    present_local(view, thingy_region, local_usages_regions, select)
+
+
+def find_with_local_usage(view, state, thingy, select):
+    _, _, thingy_data  = thingy    
+
+    local_binding = find_local_binding(state, thingy_data)
+
+    # It's possible to have a local usage without a local binding.
+    # (It looks like a clj-kondo bug.)
+    if local_binding is None:
+        return
+
+    local_binding_region_ = local_binding_region(view, local_binding)
+
+    local_usages = find_local_usages(state, local_binding)
+    local_usages_regions = []
+
+    for local_usage in local_usages:
+        local_usages_regions.append(local_usage_region(view, local_usage))
+
+    present_local(view, local_binding_region_, local_usages_regions, select)
+
+
+def find_with_var_definition(view, state, region, thingy, select):
+    _, thingy_region, thingy_data  = thingy
+
+    var_usages = find_var_usages(state, thingy_data)
+
+    var_usages_regions = []
+
+    for var_usage in var_usages:
+        var_usages_regions.append(var_usage_region(view, var_usage))
+
+    present_var(view, { "region": region,
+                        "thingy": thingy,
+                        "var_definition": thingy_data,
+                        "var_definition_region": thingy_region,
+                        "var_usages": var_usages,
+                        "var_usages_regions": var_usages_regions,
+                        "select": select })
+
+
+def find_with_var_usage(view, state, region, thingy, select):
+    is_debug = debug()
+
+    _, thingy_region, thingy_data  = thingy
+
+    var_definition = find_var_definition(state, thingy_data)
+    var_definition_region_ = None
+
+    var_usages = []
+
+    if var_definition:
+        var_definition_region_ = var_definition_region(view, var_definition)
+        var_usages.extend(find_var_usages(state, var_definition))
+    else:
+        if is_debug:
+            print("(Pep) Find Var usages with usage:", thingy_data)
+
+        var_usages.extend(find_var_usages_with_usage(state, thingy_data))
+
+    var_usages_regions = []
+
+    for var_usage in var_usages:
+        var_usages_regions.append(var_usage_region(view, var_usage))
+
+    present_var(view, { "region": region,
+                        "thingy": thingy,
+                        "var_definition": var_definition,
+                        "var_definition_region": var_definition_region_,
+                        "var_usages": var_usages,
+                        "var_usages_regions": var_usages_regions,
+                        "select": select })
+
+
+class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
-        debug = settings().get("debug", False)
+        state = view_state(self.view.id())
 
-        # It's the last region because find usages is for a single name.
-        region = self.view.sel()[-1]
+        region = self.view.sel()[0]
 
-        # Question: does it matter which one we use: a (start) or b (end)?
-        row,col = self.view.rowcol(region.a)
+        thingy = thingy_in_region(self.view, state, region)
 
-        lrn = view_lrn(self.view.id())
-
-        lrn_usages = view_lrn_usages(self.view.id())
-
-        lindex = view_lindex(self.view.id())
-
-        if debug:
-            print(f"(Pep) View({self.view.id()}) lindex", lindex)
-            print(f"(Pep) View({self.view.id()}) lrn", lrn)
-            print(f"(Pep) View({self.view.id()}) lrn_usages", lrn_usages)
-
-        # Potential local under caret.
-        region_local = find_local(lrn, row + 1, col + 1)
-
-        # Local not found. Try to find it in usages.
-        if region_local is None:
-
-            if debug:
-                print("(Pep) Local not found. Try usages.")
-
-            # Potential local usage under caret.
-            region_local_usage = find_local_usage(lrn_usages, row + 1, col + 1)
-
-            if region_local_usage is not None:
-                usage_id = region_local_usage.get("id")
-
-                if usage_id is not None:
-                    # Get local by ID - local and usages share the same ID.
-                    n = lindex.get(usage_id)
-
-                    if n is not None and is_name_under_caret(n["col"] + 1, n):
-                        region_local = n
-
-        # Interrupt execution. Could not find local definition or usage.
-        if region_local is None:
+        if thingy is None:
             return
 
-        analysis = view_analysis(self.view.id())
+        thingy_type, _, _  = thingy
 
-        usages = []
+        if thingy_type == "local_binding":
+            find_with_local_binding(self.view, state, thingy, select)
 
-        for local_usage in analysis.get("local-usages", []):
-            if debug:
-                if local_usage.get("id") is None:
-                    print("(Pep) Usage is missing ID:", local_usage)
+        elif thingy_type == "local_usage":
+            find_with_local_usage(self.view, state, thingy, select)
 
-            # Usage ID seems to be missing in some cases,
-            # therefore it must be read as optional.
-            if local_usage.get("id") == region_local["id"]:
-                usages.append(local_usage)
+        elif thingy_type == "var_definition":
+            find_with_var_definition(self.view, state, region, thingy, select)
 
-        def make_region(d):
-            """
-            Usages have row and col for name.
-            Usage entails more than the location of a symbol,
-            it extends row and col based on how a symbol
-            is used in a particular location.
-
-            Example:
-
-            (fn [f] (f))
-
-            `f` usage data will extend row and col to match the parenthesis.
-
-            Local definition doesn't have row and col for name -
-            it's simply row and col.
-            """
-            line = (d.get("name-row") or d.get("row")) - 1
-            col_start = (d.get("name-col") or d.get("col")) - 1
-            col_end = (d.get("name-end-col") or d.get("end-col")) - 1
-
-            pa = self.view.text_point(line, col_start)
-            pb = self.view.text_point(line, col_end)
-
-            return sublime.Region(pa, pb)
-
-        # Include the local name region.
-        usage_regions = [make_region(region_local)]
-
-        for usage in usages:
-            usage_regions.append(make_region(usage))
-
-        if usage_regions:
-            if select:
-                self.view.sel().clear()
-                self.view.sel().add_all(usage_regions)
-            else:
-                self.view.add_regions(
-                    "pg_pep_usages",
-                    usage_regions,
-                    scope="region.cyanish",
-                    flags=(sublime.DRAW_NO_FILL)
-                )
+        elif thingy_type == "var_usage":
+            find_with_var_usage(self.view, state, region, thingy, select)
 
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
@@ -437,19 +745,13 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                 lrn_usages[r] = list(n)
 
             # Update view analysis.
-            _state_.get("view", {})[self.view.id()] = {"result": result, "lindex": lindex, "lrn": lrn, "lrn_usages": lrn_usages}
-
-            
-            # Summary & status bar.
-            summary_errors = result.get("summary", {}).get("error", 0)
-            summary_warnings = result.get("summary", {}).get("warning", 0)
-
-            status_messages = []
-            status_messages.append(f"Errors: {summary_errors}")
-            status_messages.append(f"Warnings: {summary_warnings}")
-
-            sublime.status_message(", ".join(status_messages))
-            
+            _state_.get("view", {})[self.view.id()] = { "result": result,
+                                                        "vindex": vindex, 
+                                                        "vrn": vrn, 
+                                                        "vrn_usages": vrn_usages,
+                                                        "lindex": lindex, 
+                                                        "lrn": lrn, 
+                                                        "lrn_usages": lrn_usages }        
 
             # Region annotations (optional).
             if annotate:
@@ -493,7 +795,16 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
                     annotation_color=orangish,
                     flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
                            sublime.DRAW_NO_FILL |
-                           sublime.DRAW_NO_OUTLINE))                
+                           sublime.DRAW_NO_OUTLINE))
+
+                summary_errors = result.get("summary", {}).get("error", 0)
+                summary_warnings = result.get("summary", {}).get("warning", 0)
+
+                status_messages = []
+                status_messages.append(f"Errors: {summary_errors}")
+                status_messages.append(f"Warnings: {summary_warnings}")
+
+                sublime.status_message(", ".join(status_messages))
 
         except Exception as e:
             print(f"(Pep) Analysis failed.", traceback.format_exc())
