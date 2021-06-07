@@ -680,9 +680,9 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
     def run(self, edit, select=False):
         state = view_state(self.view.id())
 
-        sel_region = self.view.sel()[0]
+        region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, state, sel_region)
+        thingy = thingy_in_region(self.view, state, region)
 
         if thingy is None:
             return
@@ -696,10 +696,10 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_local_usage(self.view, state, thingy, select)
 
         elif thingy_type == "var_definition":
-            find_with_var_definition(self.view, state, sel_region, thingy, select)
+            find_with_var_definition(self.view, state, region, thingy, select)
 
         elif thingy_type == "var_usage":
-            find_with_var_usage(self.view, state, sel_region, thingy, select)
+            find_with_var_usage(self.view, state, region, thingy, select)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
