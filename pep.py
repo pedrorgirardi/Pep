@@ -583,7 +583,9 @@ def present_var(view, data):
             view.sel().add(region)
             view.show_at_center(region)
 
-        placeholder = f"Used {len(var_regions)} times"
+        time_or_times = "times" if len(var_regions) > 1 else "time"
+
+        placeholder = f"{thingy_data['name']} is used {len(var_regions)} {time_or_times}"
 
         view.window().show_quick_panel(var_quick_panel_items, 
                                             on_done, 
