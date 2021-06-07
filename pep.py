@@ -469,7 +469,8 @@ def find_var_usages(state, var_definition):
     usages = []
 
     for var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
-        if var_usage.get("to") == var_definition.get("ns") and var_usage.get("name") == var_definition.get("name"):
+        if (var_usage.get("to") == var_definition.get("ns") and 
+            var_usage.get("name") == var_definition.get("name")):
             usages.append(var_usage)
 
     return usages
