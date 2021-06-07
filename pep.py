@@ -537,7 +537,48 @@ def present_var(view, var_definition_region, var_usages_regions, select):
 
         view.sel().add_all(var_usages_regions)
     else:
-        pass
+        quick_panel_selected_index = 0
+
+        var_definition_usages_index = 0
+
+        var_regions = []
+
+        if var_definition_region:
+            var_regions.append(var_definition_region)
+
+        var_regions.extend(var_usages_regions)
+
+
+        var_quick_panel_items = []
+
+        for var_definition_or_usage in var_regions:
+            trigger = "Var"
+            details = ""
+            annotation = ""
+            kind = sublime.KIND_VARIABLE
+
+            var_quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+
+
+        def on_done(selected_index, _):
+            if selected_index == -1:
+                pass
+
+        def on_highlighted(index):
+            selected_var_region = var_regions[index]
+
+            view.sel().clear()
+            view.sel().add(selected_var_region)
+            view.show_at_center(selected_var_region)
+
+        placeholder = f"Used {len(var_usages_regions) - 1} times"
+
+        view.window().show_quick_panel(var_quick_panel_items, 
+                                            on_done, 
+                                            sublime.WANT_EVENT, 
+                                            0, 
+                                            on_highlighted, 
+                                            placeholder)
 
 
 def find_with_local_binding(view, state, thingy, select):
