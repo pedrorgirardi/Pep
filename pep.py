@@ -568,12 +568,12 @@ def present_var(view, data):
         else:
             placeholder = f"{var_name} is used {len(var_usages)} times"
 
-        view.window().show_quick_panel(quick_panel_items, 
-                                            on_done, 
-                                            sublime.WANT_EVENT, 
-                                            selected_index, 
-                                            on_highlighted, 
-                                            placeholder)
+        view.window().show_quick_panel( quick_panel_items, 
+                                        on_done, 
+                                        sublime.WANT_EVENT, 
+                                        selected_index, 
+                                        on_highlighted, 
+                                        placeholder )
 
 
 def find_with_local_binding(view, state, thingy, select):
