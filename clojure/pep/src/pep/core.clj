@@ -3,6 +3,9 @@
 
 (comment
   
+  (let [a 1]
+    nil)
+  
   (def analysis
     (clj-kondo/run! {:lint ["/Users/pedro/Developer/velos/rex.web/src"]
                      :cache-dir "/Users/pedro/Developer/velos/rex.web/.clj-kondo/.cache"

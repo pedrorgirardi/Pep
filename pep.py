@@ -845,6 +845,90 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
+class PgPepAnnotateCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        try:
+
+            def finding_region(finding):
+                line_start = finding["row"] - 1
+                line_end = (finding.get("end-row") or finding.get("row")) - 1
+                col_start = finding["col"] - 1
+                col_end = (finding.get("end-col") or finding.get("col")) - 1
+
+                pa = self.view.text_point(line_start, col_start)
+                pb = self.view.text_point(line_end, col_end)
+
+                return sublime.Region(pa, pb)
+
+            def finding_minihtml(finding):
+                return f"""
+                <body>
+                <div">
+                    <span>{clj_kondo_finding_message(finding)}</span></div>
+                </div>
+                </body>
+                """
+
+            state = view_state(self.view.id())
+
+            result = state.get("result", {})
+
+            findings = result.get("findings", [])
+
+            warning_region_set = []
+            warning_minihtml_set = []
+
+            error_region_set = []
+            error_minihtml_set = []
+
+            for finding in findings:
+                if finding["level"] == "error":
+                    error_region_set.append(finding_region(finding))
+                    error_minihtml_set.append(finding_minihtml(finding))
+                elif finding["level"] == "warning":
+                    warning_region_set.append(finding_region(finding))
+                    warning_minihtml_set.append(finding_minihtml(finding))
+
+            # Erase regions from previous analysis.
+            erase_analysis_regions(self.view)
+
+            redish = self.view.style_for_scope('region.redish')['foreground']
+            orangish = self.view.style_for_scope('region.orangish')['foreground']
+
+            self.view.add_regions(
+                "pg_pep_analysis_error",
+                error_region_set,
+                scope="region.redish",
+                annotations=error_minihtml_set,
+                annotation_color=redish,
+                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
+                       sublime.DRAW_NO_FILL |
+                       sublime.DRAW_NO_OUTLINE))
+
+            self.view.add_regions(
+                "pg_pep_analysis_warning",
+                warning_region_set,
+                scope="region.orangish",
+                annotations=warning_minihtml_set,
+                annotation_color=orangish,
+                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
+                       sublime.DRAW_NO_FILL |
+                       sublime.DRAW_NO_OUTLINE))
+
+            summary_errors = result.get("summary", {}).get("error", 0)
+            summary_warnings = result.get("summary", {}).get("warning", 0)
+
+            status_messages = []
+            status_messages.append(f"Errors: {summary_errors}")
+            status_messages.append(f"Warnings: {summary_warnings}")
+
+            sublime.status_message(", ".join(status_messages))
+
+        except Exception as e:
+            print(f"(Pep) Annotate failed.", traceback.format_exc())
+
+
 class PgPepReportCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
