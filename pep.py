@@ -864,9 +864,12 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
 
                 return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
 
-            analysis = analize(self.view)
 
-            findings = analysis["findings"] if "findings" in analysis else []
+            state = view_state(self.view.id())
+
+            result = state.get("result", {})
+
+            findings = result.get("findings", [])
 
             warning_str_set = []
 
@@ -902,7 +905,7 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
                 os.remove(path)
 
         except Exception as e:
-            print(f"(Pep) Analysis failed.", traceback.format_exc())
+            print(f"(Pep) Report failed.", traceback.format_exc())
 
 
 class PgPepListener(sublime_plugin.ViewEventListener):
