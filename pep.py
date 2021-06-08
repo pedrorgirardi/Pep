@@ -927,6 +927,10 @@ class PgPepListener(sublime_plugin.ViewEventListener):
         if "on_post_save" in self.analyze_on():
             self.view.run_command("pg_pep_analyze")
 
+    def on_post_save_async(self):
+        if "on_post_save_async" in self.analyze_on():
+            self.view.run_command("pg_pep_analyze")
+
     def on_selection_modified(self):
         if settings().get("clear_usages_on_selection_modified", False):
             self.view.run_command("pg_pep_erase_usage_regions")
