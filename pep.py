@@ -953,3 +953,15 @@ class PgPepListener(sublime_plugin.ViewEventListener):
         if settings().get("clear_usages_on_selection_modified", False):
             self.view.run_command("pg_pep_erase_usage_regions")
 
+    def on_close(self):
+        """
+        It's important to delete a view's state on close.
+        """
+
+        global _state_
+
+        views_state = _state_.get("view", {})
+
+        if self.view.id() in views_state:
+            del views_state[self.view.id()]
+
