@@ -665,11 +665,16 @@ def find_with_var_usage(view, state, region, thingy, select):
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
+        is_debug = debug()
+
         state = view_state(self.view.id())
 
         region = self.view.sel()[0]
 
         thingy = thingy_in_region(self.view, state, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
 
         if thingy is None:
             return
