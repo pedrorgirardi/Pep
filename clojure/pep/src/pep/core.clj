@@ -6,6 +6,10 @@
   (let [a 1]
     nil)
   
+  (inc "")
+  
+  (map inc 1)
+  
   (def analysis
     (clj-kondo/run! {:lint ["/Users/pedro/Developer/velos/rex.web/src"]
                      :cache-dir "/Users/pedro/Developer/velos/rex.web/.clj-kondo/.cache"
