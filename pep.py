@@ -485,8 +485,8 @@ def present_local(view, local_binding_region, local_usages_regions, select):
     else:
         region_flags = (sublime.DRAW_NO_FILL)
 
-        view.add_regions("pg_pep_find_local_binding", [local_binding_region], scope="region.yellowish", flags=region_flags)
-        view.add_regions("pg_pep_find_local_usage", local_usages_regions, scope="region.yellowish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_binding", [local_binding_region], scope="region.cyanish", flags=region_flags)
+        view.add_regions("pg_pep_find_local_usage", local_usages_regions, scope="region.cyanish", flags=region_flags)
 
 
 def present_var(view, data):
