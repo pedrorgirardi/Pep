@@ -675,6 +675,16 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         navigation["thingy_id"] = thingy_id
         navigation["thingy_findings"] = thingy_findings
 
+    def find_position(self, thingy_findings, thingy_data):
+        findings_position = 0
+
+        for finding in thingy_findings:
+            if finding == thingy_data:
+                return findings_position
+
+            findings_position += 1
+
+        return -1
 
     def navigate(self, state, direction, findings_position):
         navigation = view_navigation(state)
@@ -731,20 +741,15 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             thingy_id = thingy_data.get("id")
 
             if thingy_id:
-                findings_position = 0
-
-                for finding in thingy_findings:
-                    if finding == thingy_data:
-                        break
-
-                    findings_position += 1
-
                 if thingy_id != navigation.get("thingy_id"):
                     self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
 
                     set_view_navigation(state, navigation)
 
-                self.navigate(state, direction, findings_position)
+                position = self.find_position(thingy_findings, thingy_data)
+
+                if position != -1:
+                    self.navigate(state, direction, position)
 
         elif thingy_type == "local_usage":
             # Find local binding for this local usage (thingy).
@@ -763,20 +768,15 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             thingy_id = thingy_data.get("id")
 
             if thingy_id:
-                findings_position = 0
-
-                for finding in thingy_findings:
-                    if finding == thingy_data:
-                        break
-
-                    findings_position += 1
-
                 if thingy_id != navigation.get("thingy_id"):
                     self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
 
                     set_view_navigation(state, navigation)
 
-                self.navigate(state, direction, findings_position)
+                position = self.find_position(thingy_findings, thingy_data)
+
+                if position != -1:
+                    self.navigate(state, direction, position)
 
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
