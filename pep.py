@@ -558,14 +558,14 @@ def present_var(view, data):
 
                 view.sel().clear()
                 view.sel().add(region)
-                view.show_at_center(region)
+                view.show(region)
 
         def on_highlighted(index):
             region = var_regions[index]
 
             view.sel().clear()
             view.sel().add(region)
-            view.show_at_center(region)
+            view.show(region)
 
         var_name = thingy_data.get("name")
 
