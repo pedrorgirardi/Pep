@@ -701,8 +701,11 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             finding_at_position = navigation["thingy_findings"][findings_position_after]
 
+            region = local_binding_region(self.view, finding_at_position)
+
             self.view.sel().clear()
-            self.view.sel().add(local_binding_region(self.view, finding_at_position))
+            self.view.sel().add(region)
+            self.view.show_at_center(region)
 
             print("finding_at_position", finding_at_position)
 
