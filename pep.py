@@ -704,7 +704,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             self.view.show_at_center(region)
 
 
-    def run(self, edit, direction="forward"):
+    def run(self, edit, direction):
         is_debug = debug()
 
         state = view_state(self.view.id())
