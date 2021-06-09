@@ -676,7 +676,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         navigation["thingy_findings"] = thingy_findings
         navigation["findings_position"] = findings_position
 
-    def run(self, edit, navigate="forward"):
+    def run(self, edit, direction="forward"):
         is_debug = debug()
 
         state = view_state(self.view.id())
@@ -719,11 +719,11 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                 print("findings_position (before)", findings_position)
 
-                if navigate == "forward":
+                if direction == "forward":
                     if findings_position < len(navigation["thingy_findings"]) - 1:
                         navigation["findings_position"] = findings_position + 1
 
-                elif navigate == "back":
+                elif direction == "back":
                     if findings_position > 0:
                         navigation["findings_position"] = findings_position - 1
 
@@ -771,11 +771,11 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                 findings_position = navigation["findings_position"]
 
-                if navigate == "forward":
+                if direction == "forward":
                     if findings_position < len(navigation["thingy_findings"]) - 1:
                         navigation["findings_position"] = findings_position + 1
 
-                elif navigate == "back":
+                elif direction == "back":
                     if findings_position > 0:
                         navigation["findings_position"] = findings_position - 1
 
