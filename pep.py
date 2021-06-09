@@ -238,10 +238,6 @@ def view_lrn(id):
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn", {})
 
-def view_state(view_id):
-    global _state_
-    return _state_.get("view", {}).get(view_id, {})
-
 def view_lrn_usages(id):
     """
     Returns a dictionary of local usages by row.
@@ -262,6 +258,18 @@ def view_analysis(id):
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
+
+
+def view_state(view_id):
+    global _state_
+    return _state_.get("view", {}).get(view_id, {})
+
+
+def view_navigation(view_state):
+    return view_state.get("navigation", {})
+
+def set_view_navigation(view_state, navigation):
+    view_state["navigation"] = navigation
 
 
 # ---
@@ -661,6 +669,89 @@ def find_with_var_usage(view, state, region, thingy, select):
                         "var_usages_regions": var_usages_regions,
                         "select": select })
 
+class PgPepNavigateCommand(sublime_plugin.TextCommand):
+
+    def initialize_thingy_navigation(self, navigation, thingy_id, thingy_findings, findings_position):
+        navigation["thingy_id"] = thingy_id
+        navigation["thingy_findings"] = thingy_findings
+        navigation["findings_position"] = findings_position
+
+    def run(self, edit, navigate="forward"):
+        is_debug = debug()
+
+        state = view_state(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, state, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy is None:
+            return
+
+        thingy_type, thingy_region, thingy_data  = thingy
+
+        # Navigation is a dictionary with keys:
+        # - thingy_id
+        # - thingy_findings
+        # - findings_position
+        navigation = view_navigation(state)
+
+        if thingy_type == "local_binding":
+            # Find local usages for this local binding (thingy).
+            local_usages = find_local_usages(state, thingy_data)
+
+            thingy_findings = [thingy_data]
+            thingy_findings.extend(local_usages)
+
+            thingy_id = thingy_data.get("id")
+
+            print("thingy_id", thingy_id)
+            print("thingy_findings_len", len(thingy_findings))
+
+            if thingy_id:
+                if thingy_id != navigation.get("thingy_id"):
+                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings, findings_position=0)
+
+                findings_position = navigation["findings_position"]
+
+                print("findings_position (before)", findings_position)
+
+                if navigate == "forward":
+                    if findings_position < len(navigation["thingy_findings"]) - 1:
+                        navigation["findings_position"] = findings_position + 1
+
+                elif navigate == "back":
+                    if findings_position > 0:
+                        navigation["findings_position"] = findings_position - 1
+
+                findings_position_after = navigation["findings_position"]
+
+                print("findings_position (after)", findings_position_after)
+
+                if findings_position != findings_position_after:
+                    set_view_navigation(state, navigation)
+
+                    finding_at_position = navigation["thingy_findings"][findings_position_after]
+
+                    self.view.sel().clear()
+                    self.view.sel().add(local_binding_region(self.view, finding_at_position))
+
+                    print("finding_at_position", finding_at_position)
+
+        elif thingy_type == "local_usage":
+            # Find local binding for this local usage (thingy).
+            local_binding = find_local_binding(state, thingy_data)
+
+            # It's possible to have a local usage without a local binding.
+            # (It looks like a clj-kondo bug.)
+            if local_binding is None:
+                return
+
+            local_usages = find_local_usages(state, local_binding)
+
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
@@ -952,6 +1043,9 @@ class PgPepListener(sublime_plugin.ViewEventListener):
     def on_selection_modified(self):
         if settings().get("clear_usages_on_selection_modified", False):
             self.view.run_command("pg_pep_erase_usage_regions")
+
+        # Reset view navigation.
+        set_view_navigation(view_state(self.view.id()), {})
 
     def on_close(self):
         """

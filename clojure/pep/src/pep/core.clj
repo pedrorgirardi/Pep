@@ -6,6 +6,10 @@
   (let [a 1]
     nil)
   
+  (let [a 1]
+    a
+    a)
+  
   (inc "")
   
   (map inc 1)
