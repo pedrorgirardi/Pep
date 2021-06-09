@@ -752,6 +752,43 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             local_usages = find_local_usages(state, local_binding)
 
+            thingy_findings = [local_binding]
+            thingy_findings.extend(local_usages)
+
+            thingy_id = thingy_data.get("id")
+
+            if thingy_id:
+                if thingy_id != navigation.get("thingy_id"):
+                    findings_position = 0
+
+                    for finding in thingy_findings:
+                        if finding == thingy_data:
+                            break
+
+                        findings_position += 1
+
+                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings, findings_position)
+
+                findings_position = navigation["findings_position"]
+
+                if navigate == "forward":
+                    if findings_position < len(navigation["thingy_findings"]) - 1:
+                        navigation["findings_position"] = findings_position + 1
+
+                elif navigate == "back":
+                    if findings_position > 0:
+                        navigation["findings_position"] = findings_position - 1
+
+                findings_position_after = navigation["findings_position"]
+
+                if findings_position != findings_position_after:
+                    set_view_navigation(state, navigation)
+
+                    finding_at_position = navigation["thingy_findings"][findings_position_after]
+
+                    self.view.sel().clear()
+                    self.view.sel().add(local_binding_region(self.view, finding_at_position))
+
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
@@ -1043,9 +1080,6 @@ class PgPepListener(sublime_plugin.ViewEventListener):
     def on_selection_modified(self):
         if settings().get("clear_usages_on_selection_modified", False):
             self.view.run_command("pg_pep_erase_usage_regions")
-
-        # Reset view navigation.
-        set_view_navigation(view_state(self.view.id()), {})
 
     def on_close(self):
         """
