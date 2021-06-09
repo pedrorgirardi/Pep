@@ -701,7 +701,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             self.view.sel().clear()
             self.view.sel().add(region)
-            self.view.show_at_center(region)
+            self.view.show(region)
 
 
     def run(self, edit, direction):
