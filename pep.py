@@ -5,6 +5,7 @@ import tempfile
 import json
 import traceback
 import itertools
+import pprint
 
 import sublime_plugin
 import sublime
@@ -777,6 +778,42 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                 if position != -1:
                     self.navigate(state, direction, position)
+
+class PgPepShowThingy(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        state = view_state(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, state, region)
+
+        if thingy is None:
+            return
+
+        thingy_type, _, thingy_data  = thingy
+
+        html = f"""
+        <body id='pg-pep-show-thingy'>
+            <style>
+                h1 {{
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    font-family: system;
+                }}
+            </style>
+
+            <h1>{thingy_type}</h1>
+
+            <p>{pprint.pformat(thingy_data)}</p>
+
+        </body>
+        """
+
+        flags = ( sublime.COOPERATE_WITH_AUTO_COMPLETE | 
+                  sublime.HIDE_ON_MOUSE_MOVE_AWAY )
+
+        self.view.show_popup(html, flags, -1, 500)
 
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
