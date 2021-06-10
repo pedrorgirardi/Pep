@@ -793,6 +793,11 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
         thingy_type, _, thingy_data  = thingy
 
+        items_html = ""
+
+        for k,v in thingy_data.items():
+            items_html += f"<li>{k}: {v}</li>"
+
         html = f"""
         <body id='pg-pep-show-thingy'>
             <style>
@@ -805,7 +810,9 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
             <h1>{thingy_type}</h1>
 
-            <p>{pprint.pformat(thingy_data)}</p>
+            <ul>
+                {items_html}
+            </ul>
 
         </body>
         """
