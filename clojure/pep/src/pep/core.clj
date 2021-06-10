@@ -15,12 +15,16 @@
   (map inc 1)
   
   (def analysis
-    (clj-kondo/run! {:lint ["/Users/pedro/Developer/velos/rex.web/src"]
-                     :cache-dir "/Users/pedro/Developer/velos/rex.web/.clj-kondo/.cache"
-                     :config {:output {:analysis true}}}))
+    (clj-kondo/run! 
+      {:lint ["/Users/pedro/Developer/velos/rex.web/src"]
+       :cache-dir "/Users/pedro/Developer/velos/rex.web/.clj-kondo/.cache"
+       :config {:output {:analysis {:arglists true}}}}))
   
   (keys analysis)
   ;; => (:findings :config :summary :analysis)
+
+  (def var-definitions
+    (group-by (juxt :ns :name) (get-in analysis [:analysis :var-definitions])))
   
   (:summary analysis)
   
