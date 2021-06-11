@@ -5,6 +5,6 @@
         }
     ],
     "pep": {
-        "classpath_subprocess_args": ["clojure", "-Spath"]
+        "classpath": ["clojure", "-Spath"]
     }
 }

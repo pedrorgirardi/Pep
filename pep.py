@@ -142,20 +142,19 @@ def analize(view):
 def project_classpath(window):
     project_path = window.extract_variables().get("project_path")
 
-    default_classpath_subprocess_args = ["clojure", "-Spath"]
-
     classpath_subprocess_args = window.project_data().get("pep", {}).get("classpath")
 
-    classpath_completed_process = subprocess.run(
-        classpath_subprocess_args or default_classpath_subprocess_args, 
-        cwd=project_path, 
-        text=True, 
-        capture_output=True
-    )
+    if classpath_subprocess_args:
+        classpath_completed_process = subprocess.run(
+            classpath_subprocess_args, 
+            cwd=project_path, 
+            text=True, 
+            capture_output=True
+        )
 
-    classpath_completed_process.check_returncode()
+        classpath_completed_process.check_returncode()
 
-    return classpath_completed_process.stdout
+        return classpath_completed_process.stdout
 
 
 def classpath_analysis(project_path, classpath):
@@ -193,6 +192,24 @@ def classpath_analysis(project_path, classpath):
     print(f"(Pep) Analysis is complete (Project: {project_path})")
 
     return {"var_definition_indexed": var_definition_indexed}
+
+
+def analyze_classpath_async(window):
+    global _project_cache_
+
+    project_path = window.extract_variables().get("project_path")
+
+    # Only analyze projects.
+    if project_path:
+        def analyze():
+            classpath = project_classpath(window)
+
+            if classpath:
+                analysis = classpath_analysis(project_path, classpath)
+
+                set_project_analysis(_project_cache_, project_path, analysis)
+
+        sublime.set_timeout_async(analyze, 0)
 
 
 def clj_kondo_finding_message(finding):
@@ -776,23 +793,7 @@ def find_with_var_usage(view, state, region, thingy, select):
 class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 
     def run(self):
-        global _project_cache_
-
-        project_path = self.window.extract_variables().get("project_path")
-
-        # Only analyze projects.
-        if project_path is None:
-            return
-
-        def analyze():
-            classpath = project_classpath(self.window)
-
-            analysis = classpath_analysis(project_path, classpath)
-
-            # Update project analysis.
-            set_project_analysis(_project_cache_, project_path, analysis)
-
-        sublime.set_timeout_async(analyze, 0)
+        analyze_classpath_async(self.window)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
@@ -1361,3 +1362,10 @@ class PgPepEventListener(sublime_plugin.EventListener):
         print("(Pep) Clear project cache:", project_path)
 
         set_project_analysis(_project_cache_, project_path, {})
+
+
+def plugin_loaded():
+    window = sublime.active_window()
+
+    if window:
+        analyze_classpath_async(window)
