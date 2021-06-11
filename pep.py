@@ -11,14 +11,7 @@ import sublime_plugin
 import sublime
 
 
-_state_ =  {"view": {},
-            "project": { 
-                "project_path": { 
-                    "analysis": {},
-                    "var_definition": {}
-                    }
-                }
-            }
+_state_ =  {"view": {}}
 
 _project_cache_ = {}
 
