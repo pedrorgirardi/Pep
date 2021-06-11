@@ -22,17 +22,11 @@ _state_ =  {"view": {},
 
 _project_cache_ = {}
 
-def set_project_data(project_cache, project_path, data):
-    project_cache[project_path] = data
+def set_project_analysis(project_cache, project_path, analysis):
+    project_cache[project_path] = analysis
 
-def project_data(project_cache, project_path):
+def project_analysis(project_cache, project_path):
     return project_cache.get(project_path, {})
-
-def project_var_definition(project_cache, project_path):
-    return project_data(project_cache, project_path).get("var_definition", {})
-
-def project_var_usage(project_cache, project_path):
-    return project_data(project_cache, project_path).get("var_usage", {})
 
 # ---    
 
@@ -114,23 +108,27 @@ def analize(view):
         raise e
 
 
-def analize_classpath(window, project_cache):
-    is_debug = settings().get("debug", False)
-
+def project_classpath(window):
     project_path = window.extract_variables().get("project_path")
 
-    # Only analyze projects.
-    if project_path is None:
-        return
+    default_classpath_subprocess_args = ["clojure", "-Spath"]
 
-    classpath_subprocess_args = window.project_data().get("pep", {}).get("classpath") or ["clojure", "-Spath"]
+    classpath_subprocess_args = window.project_data().get("pep", {}).get("classpath_subprocess_args")
 
-    classpath_completed_process = subprocess.run(classpath_subprocess_args, cwd=project_path, text=True, capture_output=True)
+    classpath_completed_process = subprocess.run(
+        classpath_subprocess_args or default_classpath_subprocess_args, 
+        cwd=project_path, 
+        text=True, 
+        capture_output=True
+    )
 
-    classpath = classpath_completed_process.stdout
+    classpath_completed_process.check_returncode()
 
-    if is_debug:
-        print(f"(Pep) Project {project_path}, Classpath {classpath}")
+    return classpath_completed_process.stdout
+
+
+def classpath_analysis(project_path, classpath):
+    is_debug = settings().get("debug", False)
 
     analysis_config = "{:output {:analysis {:arglists true} :format :json}}"
 
@@ -153,18 +151,17 @@ def analize_classpath(window, project_cache):
     var_usages = analysis.get("var-usages", [])
 
     # Var definitions indexed by (namespace, name) tuple.
-    data = {}
+    var_definition_indexed = {}
 
     for var_definition in var_definitions:
         ns = var_definition.get("ns")
         name = var_definition.get("name")
 
-        data[(ns, name)] = var_definition
+        var_definition_indexed[(ns, name)] = var_definition
 
-    # Update global project_cach.
-    set_project_data(project_cache, project_path, data)
+    print(f"(Pep) Analysis is complete (Project: {project_path})")
 
-    print(f"(Pep) Analyzed project {project_path}")
+    return {"var_definition_indexed": var_definition_indexed}
 
 
 def clj_kondo_finding_message(finding):
@@ -750,7 +747,21 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
     def run(self):
         global _project_cache_
 
-        sublime.set_timeout_async(lambda: analize_classpath(self.window, _project_cache_), 0)
+        project_path = self.window.extract_variables().get("project_path")
+
+        # Only analyze projects.
+        if project_path is None:
+            return
+
+        def callback():
+            classpath = project_classpath(self.window)
+
+            analysis = classpath_analysis(project_path, classpath)
+
+            # Update project analysis.
+            set_project_analysis(_project_cache_, project_path, analysis)
+
+        sublime.set_timeout_async(callback, 0)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
@@ -784,7 +795,9 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             
         project_path = self.view.window().extract_variables().get("project_path")
 
-        definition = project_data(_project_cache_, project_path).get(var_key)
+        analysis = project_analysis(_project_cache_, project_path)
+
+        definition = analysis.get("var_definition_indexed", {}).get(var_key)
 
         if definition:
             print("(Pep) Var definition:\n", pprint.pformat(definition))
@@ -1288,4 +1301,4 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
         print("(Pep) Clear project cache:", project_path)
 
-        set_project_data(_project_cache_, project_path, {})
+        set_project_analysis(_project_cache_, project_path, {})
