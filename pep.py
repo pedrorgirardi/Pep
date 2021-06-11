@@ -111,11 +111,12 @@ def analize(view):
         process.kill()
         raise e
 
-def analize_project(window, state):
+def analize_project(window, state, analize_classpath=False):
     is_debug = settings().get("debug", False)
 
     project_path = window.extract_variables().get("project_path")
 
+    # Only analyze projects.
     if project_path is None:
         return
 
@@ -125,20 +126,24 @@ def analize_project(window, state):
 
     lint_path = None
 
-    if project_lint_path:
+    if analize_classpath:
+        completed_process = subprocess.run(["clojure", "-Spath"], cwd=project_path, text=True, capture_output=True)
+
+        lint_path = completed_process.stdout
+
+    elif project_lint_path:
         classpath = []
 
         for path in project_lint_path:
             classpath.append(os.path.join(project_path, path))
 
-        lint_path = "src:" + ":".join(classpath)
+        lint_path = ":".join(classpath)
     else:
         lint_path = project_path
 
     args = [clj_kondo_path(), "--config", config, "--lint", lint_path]
 
-    if is_debug:
-        print("(Pep) Analyze project:\n", pprint.pformat(args))
+    print(f"(Pep) Analyze project {project_path}:\n", pprint.pformat(args))
 
     process = subprocess.Popen(
         args,
@@ -173,28 +178,18 @@ def analize_project(window, state):
             ns = var_definition.get("ns")
             name = var_definition.get("name")
 
-            if is_debug:
-                print(f"(Pep) [{project_path}] Var definition:", f"{ns}/{name}")
+            # if is_debug:
+            #     print(f"(Pep) [{project_path}] Var definition:", f"{ns}/{name}")
 
             var_definition_index[(ns, name)] = var_definition
 
-
-        # Var usages indexed by (namespace, name) tuple.
-        var_usage_index = {}
-
-        for var_usage in var_usages:
-            ns = var_usage.get("to")
-            name = var_usage.get("name")
-
-            if is_debug:
-                print(f"(Pep) [{project_path}] Var usage:", f"{ns}/{name}")
-
-            var_usage_index[(ns, name)] = var_usage
+        merged_var_definition = { **project_var_definition(state, project_path), **var_definition_index }
 
         # Update global state.
         set_project_data(state, project_path, { "analysis": analysis, 
-                                                "var_definition": var_definition_index,
-                                                "var_usage": var_usage_index })
+                                                "var_definition": merged_var_definition})
+
+        print(f"(Pep) Analyzed project {project_path}:\n", pprint.pformat(args))
 
     except subprocess.TimeoutExpired as e:
         process.kill()
@@ -816,9 +811,8 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         if not definition:
             var_usage = project_var_definition(_state_, project_path)
             pass
-
-        if is_debug:
-            print("(Pep) Var definition:\n", pprint.pformat(definition))
+        
+        print("(Pep) Var definition:\n", pprint.pformat(definition))
 
 
 
@@ -1291,10 +1285,16 @@ class PgPepListener(sublime_plugin.ViewEventListener):
 
 class PgPepEventListener(sublime_plugin.EventListener):
 
+    def on_load_project_async(self, window):
+        global _state_
+
+        analize_project(window, _state_, analize_classpath=True)
+
     def on_post_save_async(self, view):
         global _state_
 
         analize_project(view.window(), _state_)
+
 
     def on_pre_close_project(self, window):
         global _state_
