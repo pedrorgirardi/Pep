@@ -1,3 +1,5 @@
+import html
+import inspect
 import subprocess
 import os
 import re
@@ -46,6 +48,15 @@ class ProgressBar:
         after = self.width - before
         sublime.status_message("%s [%s=%s]" % (self.label, " " * before, " " * after))
         sublime.set_timeout(lambda: self.update(status + 1), 100)
+
+
+# Copied from https://github.com/eerohele/Tutkain
+
+def htmlify(text):
+    if text:
+        return re.sub(r"\n", "<br/>", inspect.cleandoc(html.escape(text)))
+    else:
+        return ""
 
 
 ## ---
@@ -830,40 +841,68 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         if definition:
             print("(Pep) Var definition:\n", pprint.pformat(definition))
 
-            arglist_str = ""
+            # Name
+            # ---
 
-            for arg in definition.get("arglist-strs", []):
-                arglist_str += f"{arg}<br>"
+            name = definition.get("name", "")
+            name = inspect.cleandoc(html.escape(name))
 
-            doc = definition.get("doc", "")
+            ns = definition.get("ns", "")
+            ns = inspect.cleandoc(html.escape(ns))
+
+            filename = definition.get("filename")
+
+            name_minihtml = f"""
+            <p class="name">
+                <a href="{filename}">{ns}/{name}</a>
+            </p>
+            """
+
+            # Arglists
+            # ---
+
+            arglists = definition.get("arglist-strs")
+
+            arglists_minihtml = ""
+
+            if arglists:
+                arglists_minihtml = """<p class="arglists">"""
+
+                for arglist in arglists:
+                    arglists_minihtml += f"<code>{htmlify(arglist)}</code>"
+
+                arglists_minihtml += """</p>"""
 
 
-            html = f"""
-            <body id='pg-pep-show-thingy'>
-                <style>
-                    h1 {{
-                        font-size: 1.1rem;
-                        font-weight: 500;
-                        font-family: system;
-                    }}
-                </style>
+            # Doc
+            # ---
 
-                <h1>{definition.get('ns')}/{definition.get('name')}</h1>
+            doc = definition.get("doc")
 
-                {arglist_str}
+            doc_minihtml = ""
 
-                <br>
+            if doc:
+                doc = re.sub(r"\s", "&nbsp;", htmlify(doc))
 
-                {doc}
+                doc_minihtml = f"""<p class="doc">{doc}</p>"""
 
+            content = f"""
+            <body id='pg-pep-show-doc'>
+
+                {name_minihtml}
+
+                {arglists_minihtml}
+
+                {doc_minihtml}
+                
             </body>
             """
 
-            flags = ( sublime.COOPERATE_WITH_AUTO_COMPLETE | 
-                      sublime.HIDE_ON_MOUSE_MOVE_AWAY )
-
-            self.view.show_popup(html, flags, -1, 500)
-
+            self.view.show_popup(
+                content, 
+                location=-1, 
+                max_width=500
+            )
 
 
 class PgPepNavigateCommand(sublime_plugin.TextCommand):
