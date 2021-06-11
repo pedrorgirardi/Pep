@@ -11,8 +11,25 @@ import sublime_plugin
 import sublime
 
 
-_state_ = {"view": {}}
+_state_ =  {"view": {},
+            "project": { 
+                "project_path": { 
+                    "analysis": {},
+                    "var_definition": {}
+                    }
+                }
+            }
 
+def set_project_data(state, project_path, data):
+    state.get("project", {})[project_path] = data
+
+def project_data(state, project_path):
+    return state.get("project", {}).get(project_path, {})
+
+def project_var_definition(state, project_path):
+    return project_data(state, project_path).get("var_definition")
+
+# ---    
 
 def settings():
     return sublime.load_settings("Pep.sublime-settings")
@@ -90,6 +107,63 @@ def analize(view):
     except subprocess.TimeoutExpired as e:
         process.kill()
         raise e
+
+def analize_project(window, state):
+    is_debug = settings().get("debug", False)
+
+    project_path = window.extract_variables().get("project_path")
+
+    if project_path is None:
+        return
+
+    if is_debug:
+        print("(Pep) Analyze project:", project_path)
+
+    config = "{:output {:analysis {:arglists true} :format :json}}"
+
+    args = [clj_kondo_path(), "--config", config, "--lint", project_path]
+
+    process = subprocess.Popen(
+        args,
+        cwd=project_path,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+
+    try:
+        stdout, stderr = process.communicate()
+
+        stderr_decoded = stderr.decode()
+
+        if stderr_decoded:
+            print("(Pep) Failed to analyze project", stderr_decoded)
+
+            return
+
+        output = json.loads(stdout.decode())
+
+        analysis = output.get("analysis", {})
+
+        var_definitions = analysis.get("var-definitions", [])
+
+        # Var definitions indexed by a namespace + name tuple.
+        var_definition_index = {}
+
+        for var_definition in var_definitions:
+            ns = var_definition.get("ns")
+            name = var_definition.get("name")
+
+            if is_debug:
+                print(f"(Pep) [{project_path}] Var definition:", f"{ns}/{name}")
+
+            var_definition_index[(ns, name)] = var_definition
+
+        # Update global state.
+        set_project_data(state, project_path, {"analysis": analysis, "var_definition": var_definition_index})
+
+    except subprocess.TimeoutExpired as e:
+        process.kill()
 
 
 def clj_kondo_finding_message(finding):
@@ -826,6 +900,8 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
+        global _state_
+
         is_debug = debug()
 
         state = view_state(self.view.id())
@@ -840,7 +916,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, _, _  = thingy
+        thingy_type, _, thingy_data  = thingy
 
         if thingy_type == "local_binding":
             find_with_local_binding(self.view, state, thingy, select)
@@ -852,6 +928,19 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_var_definition(self.view, state, region, thingy, select)
 
         elif thingy_type == "var_usage":
+            project_path = self.view.window().extract_variables().get("project_path")
+
+            var_definition = project_var_definition(_state_, project_path)
+
+            namespace = thingy_data.get("to")
+
+            name = thingy_data.get("name")
+
+            definition = var_definition.get((namespace, name))
+
+            if is_debug:
+                print("(Pep) Var definition\n", definition)
+
             find_with_var_usage(self.view, state, region, thingy, select)
 
 
@@ -864,10 +953,6 @@ class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
         try:
             result = analize(self.view)
-
-            # Pretty print clj-kondo result.
-            if is_debug:
-                print(json.dumps(result, indent=4))
 
             def result_locals(result):
                 return result.get("analysis", {}).get("locals", [])
@@ -1126,3 +1211,21 @@ class PgPepListener(sublime_plugin.ViewEventListener):
         if self.view.id() in views_state:
             del views_state[self.view.id()]
 
+class PgPepEventListener(sublime_plugin.EventListener):
+
+    def on_post_save_async(self, view):
+        global _state_
+
+        analize_project(view.window(), _state_)
+
+    def on_pre_close_project(self, window):
+        global _state_
+
+        is_debug = settings().get("debug", False)
+
+        project_path = window.extract_variables().get("project_path")
+
+        if is_debug:
+            print("(Pep) Clear project data", project_path)
+
+        set_project_data(_state_, project_path, {})
