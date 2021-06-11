@@ -30,6 +30,33 @@ def project_analysis(project_cache, project_path):
 
 # ---    
 
+# Copied from https://github.com/SublimeText/UnitTesting/blob/master/unittesting/utils/progress_bar.py
+
+class ProgressBar:
+    def __init__(self, label, width=10):
+        self.label = label
+        self.width = width
+
+    def start(self):
+        self.done = False
+        self.update()
+
+    def stop(self):
+        sublime.status_message("")
+        self.done = True
+
+    def update(self, status=0):
+        if self.done:
+            return
+        status = status % (2 * self.width)
+        before = min(status, (2 * self.width) - status)
+        after = self.width - before
+        sublime.status_message("%s [%s=%s]" % (self.label, " " * before, " " * after))
+        sublime.set_timeout(lambda: self.update(status + 1), 100)
+
+
+## ---
+
 def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
@@ -753,7 +780,11 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
         if project_path is None:
             return
 
-        def callback():
+        def analyze():
+            progress_bar = ProgressBar(label="Analyzing classpath")
+
+            progress_bar.start()
+
             classpath = project_classpath(self.window)
 
             analysis = classpath_analysis(project_path, classpath)
@@ -761,7 +792,9 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
             # Update project analysis.
             set_project_analysis(_project_cache_, project_path, analysis)
 
-        sublime.set_timeout_async(callback, 0)
+            progress_bar.stop()
+
+        sublime.set_timeout_async(analyze, 0)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
