@@ -27,7 +27,7 @@ def project_data(state, project_path):
     return state.get("project", {}).get(project_path, {})
 
 def project_var_definition(state, project_path):
-    return project_data(state, project_path).get("var_definition")
+    return project_data(state, project_path).get("var_definition", {})
 
 # ---    
 
@@ -116,12 +116,26 @@ def analize_project(window, state):
     if project_path is None:
         return
 
-    if is_debug:
-        print("(Pep) Analyze project:", project_path)
-
     config = "{:output {:analysis {:arglists true} :format :json}}"
 
-    args = [clj_kondo_path(), "--config", config, "--lint", project_path]
+    project_lint_path = window.project_data().get("pep", {}).get("analyze")
+
+    lint_path = None
+
+    if project_lint_path:
+        classpath = []
+
+        for path in project_lint_path:
+            classpath.append(os.path.join(project_path, path))
+
+        lint_path = "src:" + ":".join(classpath)
+    else:
+        lint_path = project_path
+
+    args = [clj_kondo_path(), "--config", config, "--lint", lint_path]
+
+    if is_debug:
+        print("(Pep) Analyze project:\n", pprint.pformat(args))
 
     process = subprocess.Popen(
         args,
@@ -939,7 +953,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             definition = var_definition.get((namespace, name))
 
             if is_debug:
-                print("(Pep) Var definition\n", definition)
+                print("(Pep) Var definition:\n", pprint.pformat(definition))
 
             find_with_var_usage(self.view, state, region, thingy, select)
 
