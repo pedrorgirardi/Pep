@@ -150,7 +150,7 @@ def project_classpath(window):
 def classpath_analysis(project_path, classpath):
     is_debug = settings().get("debug", False)
 
-    analysis_config = "{:output {:analysis {:arglists true} :format :json}}"
+    analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
     analysis_subprocess_args = [clj_kondo_path(), 
                                 "--config", analysis_config,
@@ -776,16 +776,18 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
         def analyze():
             progress_bar = ProgressBar(label="Analyzing classpath")
 
-            progress_bar.start()
+            try:
+                progress_bar.start()
 
-            classpath = project_classpath(self.window)
+                classpath = project_classpath(self.window)
 
-            analysis = classpath_analysis(project_path, classpath)
+                analysis = classpath_analysis(project_path, classpath)
 
-            # Update project analysis.
-            set_project_analysis(_project_cache_, project_path, analysis)
-
-            progress_bar.stop()
+                # Update project analysis.
+                set_project_analysis(_project_cache_, project_path, analysis)
+                
+            finally:
+                progress_bar.stop()
 
         sublime.set_timeout_async(analyze, 0)
 
