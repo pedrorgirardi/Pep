@@ -144,7 +144,7 @@ def project_classpath(window):
 
     default_classpath_subprocess_args = ["clojure", "-Spath"]
 
-    classpath_subprocess_args = window.project_data().get("pep", {}).get("classpath_subprocess_args")
+    classpath_subprocess_args = window.project_data().get("pep", {}).get("classpath")
 
     classpath_completed_process = subprocess.run(
         classpath_subprocess_args or default_classpath_subprocess_args, 
@@ -785,20 +785,12 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
             return
 
         def analyze():
-            progress_bar = ProgressBar(label="Analyzing classpath")
+            classpath = project_classpath(self.window)
 
-            try:
-                progress_bar.start()
+            analysis = classpath_analysis(project_path, classpath)
 
-                classpath = project_classpath(self.window)
-
-                analysis = classpath_analysis(project_path, classpath)
-
-                # Update project analysis.
-                set_project_analysis(_project_cache_, project_path, analysis)
-                
-            finally:
-                progress_bar.stop()
+            # Update project analysis.
+            set_project_analysis(_project_cache_, project_path, analysis)
 
         sublime.set_timeout_async(analyze, 0)
 
