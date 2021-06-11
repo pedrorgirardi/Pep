@@ -31,12 +31,6 @@ def project_data(project_cache, project_path):
 def project_var_definition(project_cache, project_path):
     return project_data(project_cache, project_path).get("var_definition", {})
 
-def project_vdi(project_cache, project_path):
-    """
-    Var Definition Index.
-    """
-    return project_data(project_cache, project_path).get("vdi", {})
-
 def project_var_usage(project_cache, project_path):
     return project_data(project_cache, project_path).get("var_usage", {})
 
@@ -93,7 +87,7 @@ def analize(view):
         cwd = os.path.dirname(view_file_name)
 
     if debug:
-        print("(Pep) cwd", cwd)
+        print("(Pep)", clj_kondo_process_args(view.file_name()))
 
     process = subprocess.Popen(
         clj_kondo_process_args(view.file_name()),
@@ -118,89 +112,6 @@ def analize(view):
     except subprocess.TimeoutExpired as e:
         process.kill()
         raise e
-
-def analize_project(window, project_db, analize_classpath=False):
-    is_debug = settings().get("debug", False)
-
-    project_path = window.extract_variables().get("project_path")
-
-    # Only analyze projects.
-    if project_path is None:
-        return
-
-    config = "{:output {:analysis {:arglists true} :format :json}}"
-
-    project_lint_path = window.project_data().get("pep", {}).get("analyze")
-
-    lint_path = None
-
-    if analize_classpath:
-        completed_process = subprocess.run(["clojure", "-Spath"], cwd=project_path, text=True, capture_output=True)
-
-        lint_path = completed_process.stdout
-
-    elif project_lint_path:
-        classpath = []
-
-        for path in project_lint_path:
-            classpath.append(os.path.join(project_path, path))
-
-        lint_path = ":".join(classpath)
-    else:
-        lint_path = project_path
-
-    args = [clj_kondo_path(), "--config", config, "--lint", lint_path]
-
-    print(f"(Pep) Analyze project {project_path}:\n", pprint.pformat(args))
-
-    process = subprocess.Popen(
-        args,
-        cwd=project_path,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-
-    try:
-        stdout, stderr = process.communicate()
-
-        stderr_decoded = stderr.decode()
-
-        if stderr_decoded:
-            print("(Pep) Failed to analyze project", stderr_decoded)
-
-            return
-
-        output = json.loads(stdout.decode())
-
-        analysis = output.get("analysis", {})
-
-        var_definitions = analysis.get("var-definitions", [])
-
-        var_usages = analysis.get("var-usages", [])
-
-        # Var definitions indexed by (namespace, name) tuple.
-        var_definition_index = {}
-
-        for var_definition in var_definitions:
-            ns = var_definition.get("ns")
-            name = var_definition.get("name")
-
-            # if is_debug:
-            #     print(f"(Pep) [{project_path}] Var definition:", f"{ns}/{name}")
-
-            var_definition_index[(ns, name)] = var_definition
-
-        merged_var_definition = { **project_var_definition(project_db, project_path), **var_definition_index }
-
-        # Update global project_db.
-        set_project_data(project_db, project_path, { "analysis": analysis, 
-                                                     "var_definition": merged_var_definition})
-
-        print(f"(Pep) Analyzed project {project_path}:\n", pprint.pformat(args))
-
-    except subprocess.TimeoutExpired as e:
-        process.kill()
 
 
 def analize_classpath(window, project_cache):
@@ -229,7 +140,7 @@ def analize_classpath(window, project_cache):
                                 "--lint", classpath]
 
     if is_debug:
-        print("(Pep) Analyze:", pprint.pformat(analysis_subprocess_args))
+        print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
     analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path, text=True, capture_output=True)
 
@@ -1086,7 +997,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, _, thingy_data  = thingy
+        thingy_type, _, _  = thingy
 
         if thingy_type == "local_binding":
             find_with_local_binding(self.view, state, thingy, select)
@@ -1098,19 +1009,6 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_var_definition(self.view, state, region, thingy, select)
 
         elif thingy_type == "var_usage":
-            project_path = self.view.window().extract_variables().get("project_path")
-
-            var_definition = project_var_definition(_state_, project_path)
-
-            namespace = thingy_data.get("to")
-
-            name = thingy_data.get("name")
-
-            definition = var_definition.get((namespace, name))
-
-            if is_debug:
-                print("(Pep) Var definition:\n", pprint.pformat(definition))
-
             find_with_var_usage(self.view, state, region, thingy, select)
 
 
