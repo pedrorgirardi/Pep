@@ -5,6 +5,6 @@
         }
     ],
     "pep": {
-        "analyze": ["clojure/pep/src"]
+        "classpath": ["clojure", "-Spath"]
     }
 }
