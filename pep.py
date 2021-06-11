@@ -811,6 +811,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         if definition:
             print("(Pep) Var definition:\n", pprint.pformat(definition))
 
+            arglist_str = ""
+
+            for arg in definition.get("arglist-strs", []):
+                arglist_str += f"{arg}<br>"
+
+            doc = definition.get("doc", "")
+
+
             html = f"""
             <body id='pg-pep-show-thingy'>
                 <style>
@@ -822,6 +830,12 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 </style>
 
                 <h1>{definition.get('ns')}/{definition.get('name')}</h1>
+
+                {arglist_str}
+
+                <br>
+
+                {doc}
 
             </body>
             """
