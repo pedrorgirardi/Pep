@@ -29,6 +29,9 @@ def project_data(state, project_path):
 def project_var_definition(state, project_path):
     return project_data(state, project_path).get("var_definition", {})
 
+def project_var_usage(state, project_path):
+    return project_data(state, project_path).get("var_usage", {})
+
 # ---    
 
 def settings():
@@ -161,7 +164,9 @@ def analize_project(window, state):
 
         var_definitions = analysis.get("var-definitions", [])
 
-        # Var definitions indexed by a namespace + name tuple.
+        var_usages = analysis.get("var-usages", [])
+
+        # Var definitions indexed by (namespace, name) tuple.
         var_definition_index = {}
 
         for var_definition in var_definitions:
@@ -173,8 +178,23 @@ def analize_project(window, state):
 
             var_definition_index[(ns, name)] = var_definition
 
+
+        # Var usages indexed by (namespace, name) tuple.
+        var_usage_index = {}
+
+        for var_usage in var_usages:
+            ns = var_usage.get("to")
+            name = var_usage.get("name")
+
+            if is_debug:
+                print(f"(Pep) [{project_path}] Var usage:", f"{ns}/{name}")
+
+            var_usage_index[(ns, name)] = var_usage
+
         # Update global state.
-        set_project_data(state, project_path, {"analysis": analysis, "var_definition": var_definition_index})
+        set_project_data(state, project_path, { "analysis": analysis, 
+                                                "var_definition": var_definition_index,
+                                                "var_usage": var_usage_index })
 
     except subprocess.TimeoutExpired as e:
         process.kill()
@@ -779,19 +799,23 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         thingy_type, _, thingy_data  = thingy
 
-        var_definition_key = None
+        var_key = None
 
         if thingy_type == "var_definition":
-            var_definition_key = (thingy_data.get("ns"), thingy_data.get("name"))
+            var_key = (thingy_data.get("ns"), thingy_data.get("name"))
 
         elif thingy_type == "var_usage":
-            var_definition_key = (thingy_data.get("to"), thingy_data.get("name"))
+            var_key = (thingy_data.get("to"), thingy_data.get("name"))
             
         project_path = self.view.window().extract_variables().get("project_path")
 
         var_definition = project_var_definition(_state_, project_path)
 
-        definition = var_definition.get(var_definition_key)
+        definition = var_definition.get(var_key)
+
+        if not definition:
+            var_usage = project_var_definition(_state_, project_path)
+            pass
 
         if is_debug:
             print("(Pep) Var definition:\n", pprint.pformat(definition))
