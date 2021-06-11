@@ -758,6 +758,46 @@ def find_with_var_usage(view, state, region, thingy, select):
                         "var_usages_regions": var_usages_regions,
                         "select": select })
 
+class PgPepShowDocCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        global _state_
+
+        is_debug = debug()
+
+        state = view_state(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, state, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy is None:
+            return
+
+        thingy_type, _, thingy_data  = thingy
+
+        var_definition_key = None
+
+        if thingy_type == "var_definition":
+            var_definition_key = (thingy_data.get("ns"), thingy_data.get("name"))
+
+        elif thingy_type == "var_usage":
+            var_definition_key = (thingy_data.get("to"), thingy_data.get("name"))
+            
+        project_path = self.view.window().extract_variables().get("project_path")
+
+        var_definition = project_var_definition(_state_, project_path)
+
+        definition = var_definition.get(var_definition_key)
+
+        if is_debug:
+            print("(Pep) Var definition:\n", pprint.pformat(definition))
+
+
+
 class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
     def initialize_thingy_navigation(self, navigation, thingy_id, thingy_findings):
