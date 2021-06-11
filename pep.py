@@ -1321,6 +1321,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
         analize_project(window, _state_, analize_classpath=True)
 
+    
     def on_post_save_async(self, view):
         global _state_
 
@@ -1330,11 +1331,8 @@ class PgPepEventListener(sublime_plugin.EventListener):
     def on_pre_close_project(self, window):
         global _state_
 
-        is_debug = settings().get("debug", False)
-
         project_path = window.extract_variables().get("project_path")
 
-        if is_debug:
-            print("(Pep) Clear project data", project_path)
+        print("(Pep) Clear project data", project_path)
 
         set_project_data(_state_, project_path, {})
