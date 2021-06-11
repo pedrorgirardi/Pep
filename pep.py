@@ -808,11 +808,28 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         definition = var_definition.get(var_key)
 
-        if not definition:
-            var_usage = project_var_definition(_state_, project_path)
-            pass
-        
-        print("(Pep) Var definition:\n", pprint.pformat(definition))
+        if definition:
+            print("(Pep) Var definition:\n", pprint.pformat(definition))
+
+            html = f"""
+            <body id='pg-pep-show-thingy'>
+                <style>
+                    h1 {{
+                        font-size: 1.1rem;
+                        font-weight: 500;
+                        font-family: system;
+                    }}
+                </style>
+
+                <h1>{definition.get('ns')}/{definition.get('name')}</h1>
+
+            </body>
+            """
+
+            flags = ( sublime.COOPERATE_WITH_AUTO_COMPLETE | 
+                      sublime.HIDE_ON_MOUSE_MOVE_AWAY )
+
+            self.view.show_popup(html, flags, -1, 500)
 
 
 
