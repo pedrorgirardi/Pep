@@ -20,17 +20,19 @@ _state_ =  {"view": {},
                 }
             }
 
-def set_project_data(state, project_path, data):
-    state.get("project", {})[project_path] = data
+_project_db_ = {}
 
-def project_data(state, project_path):
-    return state.get("project", {}).get(project_path, {})
+def set_project_data(project_db, project_path, data):
+    project_db[project_path] = data
 
-def project_var_definition(state, project_path):
-    return project_data(state, project_path).get("var_definition", {})
+def project_data(project_db, project_path):
+    return project_db.get(project_path, {})
 
-def project_var_usage(state, project_path):
-    return project_data(state, project_path).get("var_usage", {})
+def project_var_definition(project_db, project_path):
+    return project_data(project_db, project_path).get("var_definition", {})
+
+def project_var_usage(project_db, project_path):
+    return project_data(project_db, project_path).get("var_usage", {})
 
 # ---    
 
@@ -111,7 +113,7 @@ def analize(view):
         process.kill()
         raise e
 
-def analize_project(window, state, analize_classpath=False):
+def analize_project(window, project_db, analize_classpath=False):
     is_debug = settings().get("debug", False)
 
     project_path = window.extract_variables().get("project_path")
@@ -183,11 +185,11 @@ def analize_project(window, state, analize_classpath=False):
 
             var_definition_index[(ns, name)] = var_definition
 
-        merged_var_definition = { **project_var_definition(state, project_path), **var_definition_index }
+        merged_var_definition = { **project_var_definition(project_db, project_path), **var_definition_index }
 
-        # Update global state.
-        set_project_data(state, project_path, { "analysis": analysis, 
-                                                "var_definition": merged_var_definition})
+        # Update global project_db.
+        set_project_data(project_db, project_path, { "analysis": analysis, 
+                                                     "var_definition": merged_var_definition})
 
         print(f"(Pep) Analyzed project {project_path}:\n", pprint.pformat(args))
 
@@ -776,7 +778,7 @@ def find_with_var_usage(view, state, region, thingy, select):
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        global _state_
+        global _project_db_
 
         is_debug = debug()
 
@@ -804,7 +806,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             
         project_path = self.view.window().extract_variables().get("project_path")
 
-        var_definition = project_var_definition(_state_, project_path)
+        var_definition = project_var_definition(_project_db_, project_path)
 
         definition = var_definition.get(var_key)
 
@@ -1317,9 +1319,9 @@ class PgPepListener(sublime_plugin.ViewEventListener):
 class PgPepEventListener(sublime_plugin.EventListener):
 
     def on_load_project_async(self, window):
-        global _state_
+        global _project_db_
 
-        analize_project(window, _state_, analize_classpath=True)
+        analize_project(window, _project_db_, analize_classpath=True)
 
     
     def on_post_save_async(self, view):
