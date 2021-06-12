@@ -235,6 +235,9 @@ def analyze_view(view):
     # Vars indexed by name - tuple of namespace and name.
     vindex = {}
 
+    # Var usages indexed by row.
+    vrn_usages = {}
+
     for var_definition in analysis.get("var-definitions", []):
         ns = var_definition.get("ns")
         name = var_definition.get("name")
@@ -244,12 +247,21 @@ def analyze_view(view):
 
         vindex[(ns, name)] = var_definition
 
+    for var_usage in analysis.get("var-usages", []):
+        ns = var_usage.get("to")
+        name = var_usage.get("name")
+        name_row = var_usage.get("name-row")
+
+        vrn_usages.setdefault(name_row, []).append(var_usage)
+
     if is_debug:
         pprint.pp(vindex)
         pprint.pp(vrn)
+        pprint.pp(vrn_usages)
 
     set_view_analysis(view.id(), { "vindex": vindex, 
-                                   "vrn": vrn })
+                                   "vrn": vrn,
+                                   "vrn_usages": vrn_usages })
 
 
 def analyze_view_async(view):
