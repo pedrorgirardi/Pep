@@ -235,9 +235,6 @@ def analyze_view(view):
     # Vars indexed by name - tuple of namespace and name.
     vindex = {}
 
-    # Var usages indexed by row.
-    vrn_usages = {}
-
     for var_definition in analysis.get("var-definitions", []):
         ns = var_definition.get("ns")
         name = var_definition.get("name")
@@ -247,6 +244,9 @@ def analyze_view(view):
 
         vindex[(ns, name)] = var_definition
 
+    # Var usages indexed by row.
+    vrn_usages = {}
+
     for var_usage in analysis.get("var-usages", []):
         ns = var_usage.get("to")
         name = var_usage.get("name")
@@ -254,14 +254,38 @@ def analyze_view(view):
 
         vrn_usages.setdefault(name_row, []).append(var_usage)
 
-    if is_debug:
-        pprint.pp(vindex)
-        pprint.pp(vrn)
-        pprint.pp(vrn_usages)
+    # Locals indexed by row.
+    lrn = {}
 
+    # Locals indexed by ID.
+    lindex = {}
+
+    for local_binding in analysis.get("locals", []):
+        id = local_binding.get("id")
+        row = local_binding.get("row")
+
+        lrn.setdefault(row, []).append(local_binding)
+
+        lindex[id] = local_binding
+
+
+    # Local usages indexed by row.
+    lrn_usages = {}
+
+    for local_usage in analysis.get("local-usages", []):
+        pprint.pp(local_usage)
+
+        name_row = local_usage.get("name-row")
+
+        lrn_usages.setdefault(name_row, []).append(local_usage)
+
+    
     set_view_analysis(view.id(), { "vindex": vindex, 
                                    "vrn": vrn,
-                                   "vrn_usages": vrn_usages })
+                                   "vrn_usages": vrn_usages,
+                                   "lindex": lindex,
+                                   "lrn": lrn,
+                                   "lrn_usages": lrn_usages })
 
 
 def analyze_view_async(view):
