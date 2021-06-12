@@ -14,15 +14,23 @@ import sublime
 
 _view_analysis_ = {}
 
-_project_cache_ = {}
+_project_analysis_ = {}
 
 
-def set_project_analysis(project_cache, project_path, analysis):
-    project_cache[project_path] = analysis
+def set_project_analysis(project_path, analysis):
+    """
+    Updates analysis for project.
+    """
+    global _project_analysis_
+    _project_analysis_[project_path] = analysis
 
 
-def project_analysis(project_cache, project_path):
-    return project_cache.get(project_path, {})
+def project_analysis(project_path):
+    """
+    Returns analysis for project.
+    """
+    global _project_analysis_
+    return _project_analysis_.get(project_path, {})
 
 
 def set_view_analysis(view_id, analysis):
@@ -402,8 +410,7 @@ def analyze_classpath(window):
 
         analysis = {"var_definition_indexed": var_definition_indexed}
 
-        global _project_cache_
-        set_project_analysis(_project_cache_, project_path(window), analysis)
+        set_project_analysis(project_path(window), analysis)
 
 
 def analyze_classpath_async(window):
@@ -874,7 +881,7 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        global _project_cache_
+        global _project_analysis_
 
         is_debug = debug()
 
@@ -902,7 +909,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             
         project_path = self.view.window().extract_variables().get("project_path")
 
-        analysis = project_analysis(_project_cache_, project_path)
+        analysis = project_analysis(project_path)
 
         definition = analysis.get("var_definition_indexed", {}).get(var_key)
 
@@ -1349,13 +1356,11 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 class PgPepEventListener(sublime_plugin.EventListener):
 
     def on_pre_close_project(self, window):
-        global _project_cache_
-
         project_path = window.extract_variables().get("project_path")
 
         print("(Pep) Clear project cache:", project_path)
 
-        set_project_analysis(_project_cache_, project_path, {})
+        set_project_analysis(project_path, {})
 
 
 def plugin_loaded():
