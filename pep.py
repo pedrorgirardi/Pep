@@ -41,7 +41,7 @@ def view_analysis(view_id):
     return _view_analysis_.get(view_id, {})
 
 
-def view_vindex(view_id):
+def view_vindex(analysis):
     """
     Returns a dictionary of locals by ID.
 
@@ -55,10 +55,10 @@ def view_vindex(view_id):
 
     'lindex' stands for 'local index'.
     """
-    return view_analysis(view_id).get("vindex", {})
+    return analysis.get("vindex", {})
 
 
-def view_vrn(view_id):
+def view_vrn(analysis):
     """
     Returns a dictionary of Vars by row.
 
@@ -66,10 +66,10 @@ def view_vrn(view_id):
 
     'vrn' stands for 'var row name'.
     """
-    return view_analysis(view_id).get("vrn", {})
+    return analysis.get("vrn", {})
 
 
-def view_vrn_usages(view_id):
+def view_vrn_usages(analysis):
     """
     Returns a dictionary of Var usages by row.
 
@@ -77,10 +77,10 @@ def view_vrn_usages(view_id):
 
     'vrn' stands for 'var row name'.
     """
-    return view_analysis(view_id).get("vrn_usages", {})
+    return analysis.get("vrn_usages", {})
 
 
-def view_lindex(view_id):
+def view_lindex(analysis):
     """
     Returns a dictionary of locals by ID.
 
@@ -94,10 +94,10 @@ def view_lindex(view_id):
 
     'lindex' stands for 'local index'.
     """
-    return view_analysis(view_id).get("lindex", {})
+    return analysis.get("lindex", {})
 
 
-def view_lrn(view_id):
+def view_lrn(analysis):
     """
     Returns a dictionary of locals by row.
 
@@ -107,9 +107,9 @@ def view_lrn(view_id):
 
     'lrn' stands for 'local row name'.
     """
-    return view_analysis(view_id).get("lrn", {})
+    return analysis.get("lrn", {})
 
-def view_lrn_usages(view_id):
+def view_lrn_usages(analysis):
     """
     Returns a dictionary of local usages by row.
 
@@ -119,7 +119,7 @@ def view_lrn_usages(view_id):
 
     'lrn' stands for 'local row name'.
     """
-    return view_analysis(view_id).get("lrn_usages", {})
+    return analysis.get("lrn_usages", {})
 
 
 def view_navigation(view_state):
@@ -691,7 +691,7 @@ def thingy_in_region(view, state, region):
 # ---
 
 def find_local_binding(analysis, local_usage):
-    return analysis.get("lindex", {}).get(local_usage.get("id"))
+    return view_lindex(analysis).get(local_usage.get("id"))
 
 
 def find_local_usages(analysis, local_binding):
@@ -701,12 +701,10 @@ def find_local_usages(analysis, local_binding):
 def find_var_definition(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return analysis.get("vindex", {}).get(var_qualified_name)
+    return view_vindex(analysis).get(var_qualified_name)
 
 
 def find_var_usages(analysis, var_definition):
-    print(var_definition)
-
     var_qualified_name = (var_definition.get("ns"), var_definition.get("name"))
 
     return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
