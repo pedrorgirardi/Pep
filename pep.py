@@ -223,48 +223,6 @@ def clj_kondo_process_args(file_name=None):
     return [clj_kondo_path(), "--config", config, "--lint", file_name or "-"]
 
 
-def analize(view):
-    debug = settings().get("debug", False)
-
-    window = view.window()
-    view_file_name = view.file_name()
-    project_file_name = window.project_file_name() if window else None
-
-    cwd = None
-
-    if project_file_name:
-        cwd = os.path.dirname(project_file_name)
-    elif view.file_name():
-        cwd = os.path.dirname(view_file_name)
-
-    if debug:
-        print("(Pep)", clj_kondo_process_args(view.file_name()))
-
-    process = subprocess.Popen(
-        clj_kondo_process_args(view.file_name()),
-        cwd=cwd,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-
-    try:
-        stdout, stderr = process.communicate(
-            view_text(view).encode()) if view.file_name() is None else process.communicate()
-
-        stderr_decoded = stderr.decode()
-
-        # If clj-kondo had any sort of error, we need to raise an exception.
-        # (It's up to the caller to handle it.)
-        if stderr_decoded:
-            raise Exception(stderr_decoded)
-
-        return json.loads(stdout.decode())
-    except subprocess.TimeoutExpired as e:
-        process.kill()
-        raise e
-
-
 def project_classpath(window):
     """
     Returns the project classpath, or None if a classpath setting does not exist.
@@ -281,19 +239,20 @@ def project_classpath(window):
         }
     }
     """
-    classpath_subprocess_args = classpath_project_data(window)
+    if project_path(window):
+        classpath_subprocess_args = classpath_project_data(window)
 
-    if classpath_subprocess_args:
-        classpath_completed_process = subprocess.run(
-            classpath_subprocess_args, 
-            cwd=project_path(window), 
-            text=True, 
-            capture_output=True
-        )
+        if classpath_subprocess_args:
+            classpath_completed_process = subprocess.run(
+                classpath_subprocess_args, 
+                cwd=project_path(window), 
+                text=True, 
+                capture_output=True
+            )
 
-        classpath_completed_process.check_returncode()
+            classpath_completed_process.check_returncode()
 
-        return classpath_completed_process.stdout
+            return classpath_completed_process.stdout
 
 def analyze_view(view):
     is_debug = settings().get("debug", False)
@@ -404,59 +363,51 @@ def analyze_view_async(view):
     sublime.set_timeout_async(lambda: analyze_view(view), 0)
 
 
-def classpath_analysis(project_path, classpath):
+def analyze_classpath(window):
     is_debug = settings().get("debug", False)
 
-    analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
+    classpath = project_classpath(window)
 
-    analysis_subprocess_args = [clj_kondo_path(), 
-                                "--config", analysis_config,
-                                "--parallel", 
-                                "--lint", classpath]
+    if classpath:
+        analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
-    if is_debug:
-        print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
+        analysis_subprocess_args = [clj_kondo_path(), 
+                                    "--config", analysis_config,
+                                    "--parallel", 
+                                    "--lint", classpath]
 
-    analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path, text=True, capture_output=True)
+        if is_debug:
+            print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
-    output = json.loads(analysis_completed_process.stdout)
+        analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path(window), text=True, capture_output=True)
 
-    analysis = output.get("analysis", {})
+        output = json.loads(analysis_completed_process.stdout)
 
-    var_definitions = analysis.get("var-definitions", [])
+        analysis = output.get("analysis", {})
 
-    var_usages = analysis.get("var-usages", [])
+        var_definitions = analysis.get("var-definitions", [])
 
-    # Var definitions indexed by (namespace, name) tuple.
-    var_definition_indexed = {}
+        var_usages = analysis.get("var-usages", [])
 
-    for var_definition in var_definitions:
-        ns = var_definition.get("ns")
-        name = var_definition.get("name")
+        # Var definitions indexed by (namespace, name) tuple.
+        var_definition_indexed = {}
 
-        var_definition_indexed[(ns, name)] = var_definition
+        for var_definition in var_definitions:
+            ns = var_definition.get("ns")
+            name = var_definition.get("name")
 
-    print(f"(Pep) Analysis is complete (Project: {project_path})")
+            var_definition_indexed[(ns, name)] = var_definition
 
-    return {"var_definition_indexed": var_definition_indexed}
+        print(f"(Pep) Analysis is complete (Project: {project_path(window)})")
+
+        analysis = {"var_definition_indexed": var_definition_indexed}
+
+        global _project_cache_
+        set_project_analysis(_project_cache_, project_path(window), analysis)
 
 
 def analyze_classpath_async(window):
-    global _project_cache_
-
-    project_path = window.extract_variables().get("project_path")
-
-    # Only analyze projects.
-    if project_path:
-        def analyze():
-            classpath = project_classpath(window)
-
-            if classpath:
-                analysis = classpath_analysis(project_path, classpath)
-
-                set_project_analysis(_project_cache_, project_path, analysis)
-
-        sublime.set_timeout_async(analyze, 0)
+    sublime.set_timeout_async(lambda: analyze_classpath(window), 0)
 
 
 def clj_kondo_finding_message(finding):
