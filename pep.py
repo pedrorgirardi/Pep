@@ -247,10 +247,15 @@ def analyze_view(view):
     # Var usages indexed by row.
     vrn_usages = {}
 
+    # Var usages indexed by name - var name to a set of var usages.
+    vindex_usages = {}
+
     for var_usage in analysis.get("var-usages", []):
         ns = var_usage.get("to")
         name = var_usage.get("name")
         name_row = var_usage.get("name-row")
+
+        vindex_usages.setdefault((ns, name), []).append(var_usage)
 
         vrn_usages.setdefault(name_row, []).append(var_usage)
 
@@ -284,7 +289,8 @@ def analyze_view(view):
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
     
-    set_view_analysis(view.id(), { "vindex": vindex, 
+    set_view_analysis(view.id(), { "vindex": vindex,
+                                   "vindex_usages": vindex_usages,
                                    "vrn": vrn,
                                    "vrn_usages": vrn_usages,
                                    "lindex": lindex,
@@ -692,7 +698,6 @@ def thingy_in_region(view, state, region):
 
 # ---
 
-
 def find_local_binding(analysis, local_usage):
     return analysis.get("lindex", {}).get(local_usage.get("id"))
 
@@ -708,26 +713,15 @@ def find_var_definition(analysis, var_usage):
 
 
 def find_var_usages(analysis, var_definition):
-    usages = []
+    var_qualified_name = (var_definition.get("ns"), var_definition.get("name"))
 
-    for var_usage in analysis.get("result", {}).get("analysis", {}).get("var-usages", []):
-        if (var_usage.get("to") == var_definition.get("ns") and 
-            var_usage.get("name") == var_definition.get("name")):
-            usages.append(var_usage)
-
-    return usages
+    return analysis.get("vindex_usages", {}).get(var_qualified_name)
 
 
 def find_var_usages_with_usage(analysis, var_usage):
-    usages = []
+    var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    for _var_usage in analysis.get("result", {}).get("analysis", {}).get("var-usages", []):
-        if (_var_usage.get("from") == var_usage.get("from") and 
-            _var_usage.get("to") == var_usage.get("to") and 
-            _var_usage.get("name") == var_usage.get("name")):
-            usages.append(_var_usage)
-
-    return usages
+    return analysis.get("vindex_usages", {}).get(var_qualified_name)
 
 # ---
 
