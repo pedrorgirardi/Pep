@@ -12,18 +12,18 @@ import pprint
 import sublime_plugin
 import sublime
 
-
-_state_ =  {"view": {}}
-
 _view_analysis_ = {}
 
 _project_cache_ = {}
 
+
 def set_project_analysis(project_cache, project_path, analysis):
     project_cache[project_path] = analysis
 
+
 def project_analysis(project_cache, project_path):
     return project_cache.get(project_path, {})
+
 
 def set_view_analysis(view_id, analysis):
     """
@@ -32,12 +32,103 @@ def set_view_analysis(view_id, analysis):
     global _view_analysis_
     _view_analysis_[view_id] = analysis
 
+
 def view_analysis(view_id):
     """
     Returns analysis for a particular view.
     """
     global _view_analysis_
     return _view_analysis_.get(view_id, {})
+
+
+def view_vindex(view_id):
+    """
+    Returns a dictionary of locals by ID.
+
+    This index can be used to find a local in constant time if you know its ID.
+
+    When finding usages from a usage itself, the first step is to find the usage,
+    once you have found it, you can use its ID to find the local.
+
+    Locals and usages have the same ID, 
+    so it's possible to corretale a usage with a local.
+
+    'lindex' stands for 'local index'.
+    """
+    return view_analysis(view_id).get("vindex", {})
+
+
+def view_vrn(view_id):
+    """
+    Returns a dictionary of Vars by row.
+
+    This index can be used to quicky find a Var definition by row.
+
+    'vrn' stands for 'var row name'.
+    """
+    return view_analysis(view_id).get("vrn", {})
+
+
+def view_vrn_usages(view_id):
+    """
+    Returns a dictionary of Var usages by row.
+
+    This index can be used to quicky find a Var usage by row.
+
+    'vrn' stands for 'var row name'.
+    """
+    return view_analysis(view_id).get("vrn_usages", {})
+
+
+def view_lindex(view_id):
+    """
+    Returns a dictionary of locals by ID.
+
+    This index can be used to find a local in constant time if you know its ID.
+
+    When finding usages from a usage itself, the first step is to find the usage,
+    once you have found it, you can use its ID to find the local.
+
+    Locals and usages have the same ID, 
+    so it's possible to corretale a usage with a local.
+
+    'lindex' stands for 'local index'.
+    """
+    return view_analysis(view_id).get("lindex", {})
+
+
+def view_lrn(view_id):
+    """
+    Returns a dictionary of locals by row.
+
+    This index can be used to quicky find a local definition by row.
+
+    Example: (let [a| 1] ...)
+
+    'lrn' stands for 'local row name'.
+    """
+    return view_analysis(view_id).get("lrn", {})
+
+def view_lrn_usages(view_id):
+    """
+    Returns a dictionary of local usages by row.
+
+    This index can be used to quicky find a local usage by row.
+
+    Example: (let [a 1] |a)
+
+    'lrn' stands for 'local row name'.
+    """
+    return view_analysis(view_id).get("lrn_usages", {})
+
+
+def view_navigation(view_state):
+    return view_state.get("navigation", {})
+
+
+def set_view_navigation(view_state, navigation):
+    view_state["navigation"] = navigation
+
 
 def project_path(window):
     return window.extract_variables().get("project_path")
@@ -432,105 +523,6 @@ class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
         erase_usage_regions(self.view)
 
 
-def view_vindex(id):
-    """
-    Returns a dictionary of locals by ID.
-
-    This index can be used to find a local in constant time if you know its ID.
-
-    When finding usages from a usage itself, the first step is to find the usage,
-    once you have found it, you can use its ID to find the local.
-
-    Locals and usages have the same ID, 
-    so it's possible to corretale a usage with a local.
-
-    'lindex' stands for 'local index'.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("vindex", {})
-
-
-def view_vrn(id):
-    """
-    Returns a dictionary of Vars by row.
-
-    This index can be used to quicky find a Var definition by row.
-
-    'vrn' stands for 'var row name'.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("vrn", {})
-
-
-def view_vrn_usages(id):
-    """
-    Returns a dictionary of Var usages by row.
-
-    This index can be used to quicky find a Var usage by row.
-
-    'vrn' stands for 'var row name'.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("vrn_usages", {})
-
-
-def view_lindex(id):
-    """
-    Returns a dictionary of locals by ID.
-
-    This index can be used to find a local in constant time if you know its ID.
-
-    When finding usages from a usage itself, the first step is to find the usage,
-    once you have found it, you can use its ID to find the local.
-
-    Locals and usages have the same ID, 
-    so it's possible to corretale a usage with a local.
-
-    'lindex' stands for 'local index'.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("lindex", {})
-
-
-def view_lrn(id):
-    """
-    Returns a dictionary of locals by row.
-
-    This index can be used to quicky find a local definition by row.
-
-    Example: (let [a| 1] ...)
-
-    'lrn' stands for 'local row name'.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("lrn", {})
-
-def view_lrn_usages(id):
-    """
-    Returns a dictionary of local usages by row.
-
-    This index can be used to quicky find a local usage by row.
-
-    Example: (let [a 1] |a)
-
-    'lrn' stands for 'local row name'.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("lrn_usages", {})
-
-
-def view_state(view_id):
-    global _state_
-    return _state_.get("view", {}).get(view_id, {})
-
-
-def view_navigation(view_state):
-    return view_state.get("navigation", {})
-
-def set_view_navigation(view_state, navigation):
-    view_state["navigation"] = navigation
-
-
 # ---
 
 
@@ -703,7 +695,7 @@ def find_local_binding(analysis, local_usage):
 
 
 def find_local_usages(analysis, local_binding):
-    return analysis.get("lindex_usages", {}).get(local_binding.get("id"))
+    return analysis.get("lindex_usages", {}).get(local_binding.get("id"), [])
 
 
 def find_var_definition(analysis, var_usage):
@@ -713,15 +705,17 @@ def find_var_definition(analysis, var_usage):
 
 
 def find_var_usages(analysis, var_definition):
+    print(var_definition)
+
     var_qualified_name = (var_definition.get("ns"), var_definition.get("name"))
 
-    return analysis.get("vindex_usages", {}).get(var_qualified_name)
+    return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
 
 
 def find_var_usages_with_usage(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return analysis.get("vindex_usages", {}).get(var_qualified_name)
+    return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
 
 # ---
 
@@ -861,10 +855,10 @@ def find_with_local_usage(view, state, thingy, select):
     present_local(view, local_binding_region_, local_usages_regions, select)
 
 
-def find_with_var_definition(view, state, region, thingy, select):
+def find_with_var_definition(view, analysis, region, thingy, select):
     _, thingy_region, thingy_data  = thingy
 
-    var_usages = find_var_usages(state, thingy_data)
+    var_usages = find_var_usages(analysis, thingy_data)
 
     var_usages_regions = []
 
@@ -925,7 +919,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         is_debug = debug()
 
-        state = view_state(self.view.id())
+        state = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
@@ -1063,7 +1057,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
     def run(self, edit, direction):
         is_debug = debug()
 
-        state = view_state(self.view.id())
+        state = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
@@ -1178,15 +1172,13 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
-        global _state_
-
         is_debug = debug()
 
-        state = view_analysis(self.view.id())
+        analysis = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, state, region)
+        thingy = thingy_in_region(self.view, analysis, region)
 
         if is_debug:
             print("(Pep) Thingy", thingy)
@@ -1197,16 +1189,16 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         thingy_type, _, _  = thingy
 
         if thingy_type == "local_binding":
-            find_with_local_binding(self.view, state, thingy, select)
+            find_with_local_binding(self.view, analysis, thingy, select)
 
         elif thingy_type == "local_usage":
-            find_with_local_usage(self.view, state, thingy, select)
+            find_with_local_usage(self.view, analysis, thingy, select)
 
         elif thingy_type == "var_definition":
-            find_with_var_definition(self.view, state, region, thingy, select)
+            find_with_var_definition(self.view, analysis, region, thingy, select)
 
         elif thingy_type == "var_usage":
-            find_with_var_usage(self.view, state, region, thingy, select)
+            find_with_var_usage(self.view, analysis, region, thingy, select)
 
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
@@ -1240,7 +1232,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 </body>
                 """
 
-            state = view_state(self.view.id())
+            state = view_analysis(self.view.id())
 
             result = state.get("result", {})
 
@@ -1309,7 +1301,7 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
                 return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
 
 
-            state = view_state(self.view.id())
+            state = view_analysis(self.view.id())
 
             result = state.get("result", {})
 
@@ -1396,14 +1388,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         """
         It's important to delete a view's state on close.
         """
-
-        global _state_
-
-        views_state = _state_.get("view", {})
-
-        if self.view.id() in views_state:
-            del views_state[self.view.id()]
-
         set_view_analysis(self.view.id(), {})
 
 
