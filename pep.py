@@ -49,15 +49,15 @@ def view_analysis(view_id):
     return _view_analysis_.get(view_id, {})
 
 
-def view_findings(analysis):
+def analysis_findings(analysis):
     return analysis.get("findings", {})
 
 
-def view_summary(analysis):
+def analysis_summary(analysis):
     return analysis.get("summary", {})
 
 
-def view_vindex(analysis):
+def analysis_vindex(analysis):
     """
     Returns a dictionary of locals by ID.
 
@@ -74,7 +74,7 @@ def view_vindex(analysis):
     return analysis.get("vindex", {})
 
 
-def view_vrn(analysis):
+def analysis_vrn(analysis):
     """
     Returns a dictionary of Vars by row.
 
@@ -85,7 +85,7 @@ def view_vrn(analysis):
     return analysis.get("vrn", {})
 
 
-def view_vrn_usages(analysis):
+def analysis_vrn_usages(analysis):
     """
     Returns a dictionary of Var usages by row.
 
@@ -96,7 +96,7 @@ def view_vrn_usages(analysis):
     return analysis.get("vrn_usages", {})
 
 
-def view_lindex(analysis):
+def analysis_lindex(analysis):
     """
     Returns a dictionary of locals by ID.
 
@@ -113,7 +113,7 @@ def view_lindex(analysis):
     return analysis.get("lindex", {})
 
 
-def view_lrn(analysis):
+def analysis_lrn(analysis):
     """
     Returns a dictionary of locals by row.
 
@@ -125,7 +125,8 @@ def view_lrn(analysis):
     """
     return analysis.get("lrn", {})
 
-def view_lrn_usages(analysis):
+
+def analysis_lrn_usages(analysis):
     """
     Returns a dictionary of local usages by row.
 
@@ -659,7 +660,7 @@ def thingy_in_region(view, state, region):
 # ---
 
 def find_local_binding(analysis, local_usage):
-    return view_lindex(analysis).get(local_usage.get("id"))
+    return analysis_lindex(analysis).get(local_usage.get("id"))
 
 
 def find_local_usages(analysis, local_binding):
@@ -669,7 +670,7 @@ def find_local_usages(analysis, local_binding):
 def find_var_definition(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return view_vindex(analysis).get(var_qualified_name)
+    return analysis_vindex(analysis).get(var_qualified_name)
 
 
 def find_var_usages(analysis, var_definition):
@@ -1200,7 +1201,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
             analysis = view_analysis(self.view.id())
 
-            findings = view_findings(analysis)
+            findings = analysis_findings(analysis)
 
             warning_region_set = []
             warning_minihtml_set = []
@@ -1242,8 +1243,8 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                        sublime.DRAW_NO_FILL |
                        sublime.DRAW_NO_OUTLINE))
 
-            summary_errors =  view_summary(analysis).get("error", 0)
-            summary_warnings = view_summary(analysis).get("warning", 0)
+            summary_errors =  analysis_summary(analysis).get("error", 0)
+            summary_warnings = analysis_summary(analysis).get("warning", 0)
 
             status_messages = []
             status_messages.append(f"Errors: {summary_errors}")
@@ -1267,7 +1268,7 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
             
             analysis = view_analysis(self.view.id())
 
-            findings = view_findings(analysis)
+            findings = analysis_findings(analysis)
 
             warning_str_set = []
 
