@@ -15,6 +15,8 @@ import sublime
 
 _state_ =  {"view": {}}
 
+_view_analysis_ = {}
+
 _project_cache_ = {}
 
 def set_project_analysis(project_cache, project_path, analysis):
@@ -22,6 +24,31 @@ def set_project_analysis(project_cache, project_path, analysis):
 
 def project_analysis(project_cache, project_path):
     return project_cache.get(project_path, {})
+
+def set_view_analysis(view_id, analysis):
+    """
+    Updates analysis for a particular view.
+    """
+    global _view_analysis_
+    _view_analysis_[view_id] = analysis
+
+def view_analysis(view_id):
+    """
+    Returns analysis for a particular view.
+    """
+    global _view_analysis_
+    return _view_analysis_.get(view_id, {})
+
+def project_path(window):
+    return window.extract_variables().get("project_path")
+
+def classpath_project_data(window):
+    """
+    Example:
+
+    ["clojure", "-Spath"]
+    """
+    return window.project_data().get("pep", {}).get("classpath")
 
 # ---    
 
@@ -140,14 +167,27 @@ def analize(view):
 
 
 def project_classpath(window):
-    project_path = window.extract_variables().get("project_path")
+    """
+    Returns the project classpath, or None if a classpath setting does not exist.
 
-    classpath_subprocess_args = window.project_data().get("pep", {}).get("classpath")
+    It reads a custom "pep classpath" setting in the project file. 
+
+    Example.sublime-project:
+
+    {
+        ...
+
+        "pep": {
+            "classpath": ["clojure", "-Spath"]
+        }
+    }
+    """
+    classpath_subprocess_args = classpath_project_data(window)
 
     if classpath_subprocess_args:
         classpath_completed_process = subprocess.run(
             classpath_subprocess_args, 
-            cwd=project_path, 
+            cwd=project_path(window), 
             text=True, 
             capture_output=True
         )
@@ -155,7 +195,6 @@ def project_classpath(window):
         classpath_completed_process.check_returncode()
 
         return classpath_completed_process.stdout
-
 
 def classpath_analysis(project_path, classpath):
     is_debug = settings().get("debug", False)
@@ -1300,7 +1339,7 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Report failed.", traceback.format_exc())
 
 
-class PgPepListener(sublime_plugin.ViewEventListener):
+class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
     These 'actions' are configured via settings.
 
@@ -1352,6 +1391,9 @@ class PgPepListener(sublime_plugin.ViewEventListener):
         if self.view.id() in views_state:
             del views_state[self.view.id()]
 
+        set_view_analysis(self.view.id(), {})
+
+
 class PgPepEventListener(sublime_plugin.EventListener):
 
     def on_pre_close_project(self, window):
@@ -1365,7 +1407,4 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 
 def plugin_loaded():
-    window = sublime.active_window()
-
-    if window:
-        analyze_classpath_async(window)
+    print("Pep coding!")
