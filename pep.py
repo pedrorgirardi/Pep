@@ -41,6 +41,14 @@ def view_analysis(view_id):
     return _view_analysis_.get(view_id, {})
 
 
+def view_findings(analysis):
+    return analysis.get("findings", {})
+
+
+def view_summary(analysis):
+    return analysis.get("summary", {})
+
+
 def view_vindex(analysis):
     """
     Returns a dictionary of locals by ID.
@@ -380,7 +388,9 @@ def analyze_view(view):
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
     
-    set_view_analysis(view.id(), { "vindex": vindex,
+    set_view_analysis(view.id(), { "findings": output.get("findings", {}),
+                                   "summary": output.get("summary", {}),
+                                   "vindex": vindex,
                                    "vindex_usages": vindex_usages,
                                    "vrn": vrn,
                                    "vrn_usages": vrn_usages,
@@ -1230,11 +1240,9 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 </body>
                 """
 
-            state = view_analysis(self.view.id())
+            analysis = view_analysis(self.view.id())
 
-            result = state.get("result", {})
-
-            findings = result.get("findings", [])
+            findings = view_findings(analysis)
 
             warning_region_set = []
             warning_minihtml_set = []
@@ -1276,8 +1284,8 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                        sublime.DRAW_NO_FILL |
                        sublime.DRAW_NO_OUTLINE))
 
-            summary_errors = result.get("summary", {}).get("error", 0)
-            summary_warnings = result.get("summary", {}).get("warning", 0)
+            summary_errors =  view_summary(analysis).get("error", 0)
+            summary_warnings = view_summary(analysis).get("warning", 0)
 
             status_messages = []
             status_messages.append(f"Errors: {summary_errors}")
@@ -1298,12 +1306,10 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
 
                 return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
 
+            
+            analysis = view_analysis(self.view.id())
 
-            state = view_analysis(self.view.id())
-
-            result = state.get("result", {})
-
-            findings = result.get("findings", [])
+            findings = view_findings(analysis)
 
             warning_str_set = []
 
