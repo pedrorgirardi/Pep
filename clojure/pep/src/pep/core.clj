@@ -3,6 +3,8 @@
 
 (comment
   
+  (def a 1) (def b 2)
+  
   (let [a 1]
     nil)
   

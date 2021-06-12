@@ -196,6 +196,66 @@ def project_classpath(window):
 
         return classpath_completed_process.stdout
 
+def analyze_view(view):
+    is_debug = settings().get("debug", False)
+
+    window = view.window()
+
+    view_file_name = view.file_name()
+
+    project_file_name = window.project_file_name() if window else None
+
+    # Setting the working directory is important because of the clj-kondo cache.
+    cwd = None
+
+    if project_file_name:
+        cwd = os.path.dirname(project_file_name)
+    elif view_file_name:
+        cwd = os.path.dirname(view_file_name)
+
+    analysis_config = "{:output {:analysis {:arglists true :locals true} :format :json :canonical-paths true} \
+                        :lint-as {reagent.core/with-let clojure.core/let}}"
+
+    analysis_subprocess_args = [clj_kondo_path(), 
+                                "--config", analysis_config,
+                                "--lint", view_file_name or "-"]
+
+    if is_debug:
+        print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
+
+    analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True)
+
+    output = json.loads(analysis_completed_process.stdout)
+
+    analysis = output.get("analysis", {})
+
+    # Vars indexed by row.
+    vrn = {}
+
+    # Vars indexed by name - tuple of namespace and name.
+    vindex = {}
+
+    for var_definition in analysis.get("var-definitions", []):
+        ns = var_definition.get("ns")
+        name = var_definition.get("name")
+        name_row = var_definition.get("name-row")
+
+        vrn.setdefault(name_row, []).append(var_definition)
+
+        vindex[(ns, name)] = var_definition
+
+    if is_debug:
+        pprint.pp(vindex)
+        pprint.pp(vrn)
+
+    set_view_analysis(view.id(), { "vindex": vindex, 
+                                   "vrn": vrn })
+
+
+def analyze_view_async(view):
+    sublime.set_timeout_async(lambda: analyze_view(view), 0)
+
+
 def classpath_analysis(project_path, classpath):
     is_debug = settings().get("debug", False)
 
@@ -410,14 +470,6 @@ def view_lrn_usages(id):
     """
     global _state_
     return _state_.get("view", {}).get(id, {}).get("lrn_usages", {})
-
-
-def view_analysis(id):
-    """
-    Returns clj-kondo analysis.
-    """
-    global _state_
-    return _state_.get("view", {}).get(id, {}).get("result", {}).get("analysis", {})
 
 
 def view_state(view_id):
@@ -1049,11 +1101,13 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 class PgPepShowThingy(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        state = view_state(self.view.id())
-
         region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, state, region)
+        analysis = view_analysis(self.view.id())
+
+        pprint.pp(analysis)
+
+        thingy = thingy_in_region(self.view, analysis, region)
 
         if thingy is None:
             return
@@ -1123,13 +1177,20 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_usage":
             find_with_var_usage(self.view, state, region, thingy, select)
 
-
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        analyze_view_async(self.view)
+
+
+class PgPepAnalyzeOldCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         global _state_
 
         is_debug = settings().get("debug", False)
+
+        analyze_view_async(self.view)
 
         try:
             result = analize(self.view)
@@ -1361,19 +1422,19 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_load_async(self):
         if "on_load_async" in self.analyze_on():
-            self.view.run_command("pg_pep_analyze")
+            analyze_view_async(self.view)
 
     def on_activated_async(self):
         if "on_activated_async" in self.analyze_on():
-            self.view.run_command("pg_pep_analyze")
+            analyze_view_async(self.view)
 
     def on_post_save(self):
         if "on_post_save" in self.analyze_on():
-            self.view.run_command("pg_pep_analyze")
+            analyze_view_async(self.view)
 
     def on_post_save_async(self):
         if "on_post_save_async" in self.analyze_on():
-            self.view.run_command("pg_pep_analyze")
+            analyze_view_async(self.view)
 
     def on_selection_modified(self):
         if settings().get("clear_usages_on_selection_modified", False):
