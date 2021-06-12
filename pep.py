@@ -269,13 +269,17 @@ def analyze_view(view):
         lindex[id] = local_binding
 
 
+    # Local usages indexed by ID - local binding ID to a set of local usages.
+    lindex_usages = {}
+
     # Local usages indexed by row.
     lrn_usages = {}
 
     for local_usage in analysis.get("local-usages", []):
-        pprint.pp(local_usage)
-
+        id = local_usage.get("id")
         name_row = local_usage.get("name-row")
+
+        lindex_usages.setdefault(id, []).append(local_usage)
 
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
@@ -284,6 +288,7 @@ def analyze_view(view):
                                    "vrn": vrn,
                                    "vrn_usages": vrn_usages,
                                    "lindex": lindex,
+                                   "lindex_usages": lindex_usages,
                                    "lrn": lrn,
                                    "lrn_usages": lrn_usages })
 
@@ -688,30 +693,24 @@ def thingy_in_region(view, state, region):
 # ---
 
 
-def find_local_binding(state, local_usage):
-    return state.get("lindex", {}).get(local_usage.get("id"))
+def find_local_binding(analysis, local_usage):
+    return analysis.get("lindex", {}).get(local_usage.get("id"))
 
 
-def find_local_usages(state, local_binding):
-    usages = []
-
-    for local_usage in state.get("result", {}).get("analysis", {}).get("local-usages", []):
-        if local_usage.get("id") == local_binding.get("id"):
-            usages.append(local_usage)
-
-    return usages
+def find_local_usages(analysis, local_binding):
+    return analysis.get("lindex_usages", {}).get(local_binding.get("id"))
 
 
-def find_var_definition(state, var_usage):
+def find_var_definition(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return state.get("vindex", {}).get(var_qualified_name)
+    return analysis.get("vindex", {}).get(var_qualified_name)
 
 
-def find_var_usages(state, var_definition):
+def find_var_usages(analysis, var_definition):
     usages = []
 
-    for var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
+    for var_usage in analysis.get("result", {}).get("analysis", {}).get("var-usages", []):
         if (var_usage.get("to") == var_definition.get("ns") and 
             var_usage.get("name") == var_definition.get("name")):
             usages.append(var_usage)
@@ -719,10 +718,10 @@ def find_var_usages(state, var_definition):
     return usages
 
 
-def find_var_usages_with_usage(state, var_usage):
+def find_var_usages_with_usage(analysis, var_usage):
     usages = []
 
-    for _var_usage in state.get("result", {}).get("analysis", {}).get("var-usages", []):
+    for _var_usage in analysis.get("result", {}).get("analysis", {}).get("var-usages", []):
         if (_var_usage.get("from") == var_usage.get("from") and 
             _var_usage.get("to") == var_usage.get("to") and 
             _var_usage.get("name") == var_usage.get("name")):
@@ -836,6 +835,8 @@ def find_with_local_binding(view, state, thingy, select):
     _, thingy_region, thingy_data  = thingy    
 
     local_usages = find_local_usages(state, thingy_data)
+
+    pprint.pp(local_usages)
 
     local_usages_regions = []
 
@@ -1187,7 +1188,7 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         is_debug = debug()
 
-        state = view_state(self.view.id())
+        state = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
@@ -1213,90 +1214,11 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_usage":
             find_with_var_usage(self.view, state, region, thingy, select)
 
+
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         analyze_view_async(self.view)
-
-
-class PgPepAnalyzeOldCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        global _state_
-
-        is_debug = settings().get("debug", False)
-
-        analyze_view_async(self.view)
-
-        try:
-            result = analize(self.view)
-
-            def result_locals(result):
-                return result.get("analysis", {}).get("locals", [])
-
-            def result_local_usages(result):
-                return result.get("analysis", {}).get("local-usages", [])
-
-            def result_vars(result):
-                return result.get("analysis", {}).get("var-definitions", [])
-
-            def result_var_usages(result):
-                return result.get("analysis", {}).get("var-usages", [])
-
-            # -- Var indexes
-
-            # Vars indexed by row.
-            vrn = {}
-
-            for r,n in itertools.groupby(result_vars(result), lambda d: d["row"]):
-                vrn[r] = list(n)
-
-            # Vars indexed by name - tuple of namespace and name.
-            vindex = {}
-
-            for id,n in itertools.groupby(result_vars(result), lambda d: (d["ns"], d["name"])):
-                vindex[id] = list(n)[0]
-
-            # Var usages indexed by row.
-            vrn_usages = {}
-
-            for r,n in itertools.groupby(result_var_usages(result), lambda d: d["row"]):
-                vrn_usages[r] = list(n)
-
-
-            # -- Local indexes
-
-            # Locals indexed by row.
-            lrn = {}
-
-            for r,n in itertools.groupby(result_locals(result), lambda d: d["row"]):
-                lrn[r] = list(n)
-
-
-            # Locals indexed by ID.
-            lindex = {}
-
-            for id,n in itertools.groupby(result_locals(result), lambda d: d["id"]):
-                lindex[id] = list(n)[0]
-
-
-            # Local usages indexed by row.
-            lrn_usages = {}
-
-            for r,n in itertools.groupby(result_local_usages(result), lambda d: d["row"]):
-                lrn_usages[r] = list(n)
-
-            # Update view analysis.
-            _state_.get("view", {})[self.view.id()] = { "result": result,
-                                                        "vindex": vindex, 
-                                                        "vrn": vrn, 
-                                                        "vrn_usages": vrn_usages,
-                                                        "lindex": lindex, 
-                                                        "lrn": lrn, 
-                                                        "lrn_usages": lrn_usages }
-
-        except Exception as e:
-            print(f"(Pep) Analysis failed.", traceback.format_exc())
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
