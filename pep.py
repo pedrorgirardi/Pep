@@ -372,7 +372,7 @@ def analyze_view(view):
 
 
 def analyze_view_async(view):
-    threading.Thread(target=lambda: analyze_view(view)).start()
+    threading.Thread(target=lambda: analyze_view(view), daemon=True).start()
 
 
 def analyze_classpath(window):
@@ -425,7 +425,7 @@ def analyze_classpath(window):
 
 
 def analyze_classpath_async(window):
-    threading.Thread(target=lambda: analyze_classpath(window)).start()
+    threading.Thread(target=lambda: analyze_classpath(window), daemon=True).start()
 
 
 ## ---
