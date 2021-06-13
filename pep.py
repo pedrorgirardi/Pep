@@ -221,22 +221,8 @@ def view_text(view):
     return view.substr(sublime.Region(0, view.size()))
 
 
-def program_path(program):
-    return os.path.join(sublime.packages_path(), "Pep", "bin", program)
-
-
 def clj_kondo_path():
-    return program_path("clj-kondo")
-
-
-def clj_kondo_process_args(file_name=None):
-    config = "{:lint-as {reagent.core/with-let clojure.core/let} \
-               :output {:analysis {:locals true} :format :json}}"
-
-    # clj-kondo seems to use different analysis based on the file extension.
-    # We might get false positives if we only read from stdin.
-
-    return [clj_kondo_path(), "--config", config, "--lint", file_name or "-"]
+    return os.path.join(sublime.packages_path(), "Pep", "bin", "clj-kondo")
 
 
 def project_classpath(window):
