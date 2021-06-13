@@ -790,8 +790,6 @@ def find_with_local_binding(view, state, thingy, select):
 
     local_usages = find_local_usages(state, thingy_data)
 
-    pprint.pp(local_usages)
-
     local_usages_regions = []
 
     for local_usage in local_usages:
@@ -1112,8 +1110,6 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         region = self.view.sel()[0]
 
         analysis = view_analysis(self.view.id())
-
-        pprint.pp(analysis)
 
         thingy = thingy_in_region(self.view, analysis, region)
 
