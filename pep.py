@@ -16,7 +16,6 @@ _view_analysis_ = {}
 
 _project_analysis_ = {}
 
-
 def set_project_analysis(project_path, analysis):
     """
     Updates analysis for project.
@@ -47,6 +46,9 @@ def view_analysis(view_id):
     """
     global _view_analysis_
     return _view_analysis_.get(view_id, {})
+
+
+# ---
 
 
 def analysis_findings(analysis):
@@ -139,6 +141,9 @@ def analysis_lrn_usages(analysis):
     return analysis.get("lrn_usages", {})
 
 
+# ---
+
+
 def view_navigation(view_state):
     return view_state.get("navigation", {})
 
@@ -158,7 +163,9 @@ def classpath_project_data(window):
     """
     return window.project_data().get("pep", {}).get("classpath")
 
+
 # ---    
+
 
 # Copied from https://github.com/SublimeText/UnitTesting/blob/master/unittesting/utils/progress_bar.py
 
@@ -1318,6 +1325,9 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Report failed.", traceback.format_exc())
 
 
+# ---
+
+
 class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
     These 'actions' are configured via settings.
@@ -1373,6 +1383,9 @@ class PgPepEventListener(sublime_plugin.EventListener):
         print("(Pep) Clear project cache:", project_path)
 
         set_project_analysis(project_path, {})
+
+
+# ---
 
 
 def plugin_loaded():
