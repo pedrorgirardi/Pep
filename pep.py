@@ -292,7 +292,12 @@ def analyze_view(view):
 
     analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True)
 
-    output = json.loads(analysis_completed_process.stdout)
+    output = None
+
+    try:
+        output = json.loads(analysis_completed_process.stdout)
+    except:
+        output = {}
 
     analysis = output.get("analysis", {})
 
@@ -390,7 +395,12 @@ def analyze_classpath(window):
 
         analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path(window), text=True, capture_output=True)
 
-        output = json.loads(analysis_completed_process.stdout)
+        output = None
+
+        try:
+            output = json.loads(analysis_completed_process.stdout)
+        except:
+            output = {}
 
         analysis = output.get("analysis", {})
 
