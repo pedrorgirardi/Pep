@@ -409,17 +409,17 @@ def analyze_classpath(window):
         var_usages = analysis.get("var-usages", [])
 
         # Var definitions indexed by (namespace, name) tuple.
-        var_definition_indexed = {}
+        vindex = {}
 
         for var_definition in var_definitions:
             ns = var_definition.get("ns")
             name = var_definition.get("name")
 
-            var_definition_indexed[(ns, name)] = var_definition
+            vindex[(ns, name)] = var_definition
 
         print(f"(Pep) Analysis is complete (Project: {project_path(window)})")
 
-        analysis = {"var_definition_indexed": var_definition_indexed}
+        analysis = {"vindex": vindex}
 
         set_project_analysis(project_path(window), analysis)
 
@@ -892,15 +892,13 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        global _project_analysis_
-
         is_debug = debug()
 
-        state = view_analysis(self.view.id())
+        view_analysis_ = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, state, region)
+        thingy = thingy_in_region(self.view, view_analysis_, region)
 
         if is_debug:
             print("(Pep) Thingy", thingy)
@@ -918,11 +916,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_usage":
             var_key = (thingy_data.get("to"), thingy_data.get("name"))
             
-        project_path = self.view.window().extract_variables().get("project_path")
+        project_path_ = project_path(self.view.window())
 
-        analysis = project_analysis(project_path)
+        project_analysis_ = project_analysis(project_path_)
 
-        definition = analysis.get("var_definition_indexed", {}).get(var_key)
+        # Try to find Var definition in view first,
+        # only if not found try project analysis.
+        definition = (analysis_vindex(view_analysis_).get(var_key) or 
+                        analysis_vindex(project_analysis_).get(var_key))
 
         if definition:
             print("(Pep) Var definition:\n", pprint.pformat(definition))
