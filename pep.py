@@ -8,21 +8,29 @@ import json
 import traceback
 import itertools
 import pprint
+import threading
 
 import sublime_plugin
 import sublime
 
 _view_analysis_ = {}
 
-_project_cache_ = {}
+_project_analysis_ = {}
+
+def set_project_analysis(project_path, analysis):
+    """
+    Updates analysis for project.
+    """
+    global _project_analysis_
+    _project_analysis_[project_path] = analysis
 
 
-def set_project_analysis(project_cache, project_path, analysis):
-    project_cache[project_path] = analysis
-
-
-def project_analysis(project_cache, project_path):
-    return project_cache.get(project_path, {})
+def project_analysis(project_path):
+    """
+    Returns analysis for project.
+    """
+    global _project_analysis_
+    return _project_analysis_.get(project_path, {})
 
 
 def set_view_analysis(view_id, analysis):
@@ -41,15 +49,18 @@ def view_analysis(view_id):
     return _view_analysis_.get(view_id, {})
 
 
-def view_findings(analysis):
+# ---
+
+
+def analysis_findings(analysis):
     return analysis.get("findings", {})
 
 
-def view_summary(analysis):
+def analysis_summary(analysis):
     return analysis.get("summary", {})
 
 
-def view_vindex(analysis):
+def analysis_vindex(analysis):
     """
     Returns a dictionary of locals by ID.
 
@@ -66,7 +77,7 @@ def view_vindex(analysis):
     return analysis.get("vindex", {})
 
 
-def view_vrn(analysis):
+def analysis_vrn(analysis):
     """
     Returns a dictionary of Vars by row.
 
@@ -77,7 +88,7 @@ def view_vrn(analysis):
     return analysis.get("vrn", {})
 
 
-def view_vrn_usages(analysis):
+def analysis_vrn_usages(analysis):
     """
     Returns a dictionary of Var usages by row.
 
@@ -88,7 +99,7 @@ def view_vrn_usages(analysis):
     return analysis.get("vrn_usages", {})
 
 
-def view_lindex(analysis):
+def analysis_lindex(analysis):
     """
     Returns a dictionary of locals by ID.
 
@@ -105,7 +116,7 @@ def view_lindex(analysis):
     return analysis.get("lindex", {})
 
 
-def view_lrn(analysis):
+def analysis_lrn(analysis):
     """
     Returns a dictionary of locals by row.
 
@@ -117,7 +128,8 @@ def view_lrn(analysis):
     """
     return analysis.get("lrn", {})
 
-def view_lrn_usages(analysis):
+
+def analysis_lrn_usages(analysis):
     """
     Returns a dictionary of local usages by row.
 
@@ -128,6 +140,9 @@ def view_lrn_usages(analysis):
     'lrn' stands for 'local row name'.
     """
     return analysis.get("lrn_usages", {})
+
+
+# ---
 
 
 def view_navigation(view_state):
@@ -149,7 +164,9 @@ def classpath_project_data(window):
     """
     return window.project_data().get("pep", {}).get("classpath")
 
+
 # ---    
+
 
 # Copied from https://github.com/SublimeText/UnitTesting/blob/master/unittesting/utils/progress_bar.py
 
@@ -205,64 +222,8 @@ def view_text(view):
     return view.substr(sublime.Region(0, view.size()))
 
 
-def program_path(program):
-    return os.path.join(sublime.packages_path(), "Pep", "bin", program)
-
-
 def clj_kondo_path():
-    return program_path("clj-kondo")
-
-
-def clj_kondo_process_args(file_name=None):
-    config = "{:lint-as {reagent.core/with-let clojure.core/let} \
-               :output {:analysis {:locals true} :format :json}}"
-
-    # clj-kondo seems to use different analysis based on the file extension.
-    # We might get false positives if we only read from stdin.
-
-    return [clj_kondo_path(), "--config", config, "--lint", file_name or "-"]
-
-
-def analize(view):
-    debug = settings().get("debug", False)
-
-    window = view.window()
-    view_file_name = view.file_name()
-    project_file_name = window.project_file_name() if window else None
-
-    cwd = None
-
-    if project_file_name:
-        cwd = os.path.dirname(project_file_name)
-    elif view.file_name():
-        cwd = os.path.dirname(view_file_name)
-
-    if debug:
-        print("(Pep)", clj_kondo_process_args(view.file_name()))
-
-    process = subprocess.Popen(
-        clj_kondo_process_args(view.file_name()),
-        cwd=cwd,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-
-    try:
-        stdout, stderr = process.communicate(
-            view_text(view).encode()) if view.file_name() is None else process.communicate()
-
-        stderr_decoded = stderr.decode()
-
-        # If clj-kondo had any sort of error, we need to raise an exception.
-        # (It's up to the caller to handle it.)
-        if stderr_decoded:
-            raise Exception(stderr_decoded)
-
-        return json.loads(stdout.decode())
-    except subprocess.TimeoutExpired as e:
-        process.kill()
-        raise e
+    return os.path.join(sublime.packages_path(), "Pep", "bin", "clj-kondo")
 
 
 def project_classpath(window):
@@ -281,19 +242,24 @@ def project_classpath(window):
         }
     }
     """
-    classpath_subprocess_args = classpath_project_data(window)
+    if project_path(window):
+        classpath_subprocess_args = classpath_project_data(window)
 
-    if classpath_subprocess_args:
-        classpath_completed_process = subprocess.run(
-            classpath_subprocess_args, 
-            cwd=project_path(window), 
-            text=True, 
-            capture_output=True
-        )
+        if classpath_subprocess_args:
+            classpath_completed_process = subprocess.run(
+                classpath_subprocess_args, 
+                cwd=project_path(window), 
+                text=True, 
+                capture_output=True
+            )
 
-        classpath_completed_process.check_returncode()
+            classpath_completed_process.check_returncode()
 
-        return classpath_completed_process.stdout
+            return classpath_completed_process.stdout
+
+
+## ---
+
 
 def analyze_view(view):
     is_debug = settings().get("debug", False)
@@ -324,7 +290,12 @@ def analyze_view(view):
 
     analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True)
 
-    output = json.loads(analysis_completed_process.stdout)
+    output = None
+
+    try:
+        output = json.loads(analysis_completed_process.stdout)
+    except:
+        output = {}
 
     analysis = output.get("analysis", {})
 
@@ -401,62 +372,63 @@ def analyze_view(view):
 
 
 def analyze_view_async(view):
-    sublime.set_timeout_async(lambda: analyze_view(view), 0)
+    threading.Thread(target=lambda: analyze_view(view), daemon=True).start()
 
 
-def classpath_analysis(project_path, classpath):
+def analyze_classpath(window):
     is_debug = settings().get("debug", False)
 
-    analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
+    classpath = project_classpath(window)
 
-    analysis_subprocess_args = [clj_kondo_path(), 
-                                "--config", analysis_config,
-                                "--parallel", 
-                                "--lint", classpath]
+    if classpath:
+        print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-    if is_debug:
-        print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
+        analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
-    analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path, text=True, capture_output=True)
+        analysis_subprocess_args = [clj_kondo_path(), 
+                                    "--config", analysis_config,
+                                    "--parallel", 
+                                    "--lint", classpath]
 
-    output = json.loads(analysis_completed_process.stdout)
+        if is_debug:
+            print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
-    analysis = output.get("analysis", {})
+        analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path(window), text=True, capture_output=True)
 
-    var_definitions = analysis.get("var-definitions", [])
+        output = None
 
-    var_usages = analysis.get("var-usages", [])
+        try:
+            output = json.loads(analysis_completed_process.stdout)
+        except:
+            output = {}
 
-    # Var definitions indexed by (namespace, name) tuple.
-    var_definition_indexed = {}
+        analysis = output.get("analysis", {})
 
-    for var_definition in var_definitions:
-        ns = var_definition.get("ns")
-        name = var_definition.get("name")
+        var_definitions = analysis.get("var-definitions", [])
 
-        var_definition_indexed[(ns, name)] = var_definition
+        var_usages = analysis.get("var-usages", [])
 
-    print(f"(Pep) Analysis is complete (Project: {project_path})")
+        # Var definitions indexed by (namespace, name) tuple.
+        vindex = {}
 
-    return {"var_definition_indexed": var_definition_indexed}
+        for var_definition in var_definitions:
+            ns = var_definition.get("ns")
+            name = var_definition.get("name")
+
+            vindex[(ns, name)] = var_definition
+
+        print(f"(Pep) Classpath analysis is completed (Project: {project_path(window)})")
+
+        analysis = {"vindex": vindex}
+
+        set_project_analysis(project_path(window), analysis)
 
 
 def analyze_classpath_async(window):
-    global _project_cache_
+    threading.Thread(target=lambda: analyze_classpath(window), daemon=True).start()
 
-    project_path = window.extract_variables().get("project_path")
 
-    # Only analyze projects.
-    if project_path:
-        def analyze():
-            classpath = project_classpath(window)
-
-            if classpath:
-                analysis = classpath_analysis(project_path, classpath)
-
-                set_project_analysis(_project_cache_, project_path, analysis)
-
-        sublime.set_timeout_async(analyze, 0)
+## ---
 
 
 def clj_kondo_finding_message(finding):
@@ -519,18 +491,6 @@ def erase_analysis_regions(view):
 def erase_usage_regions(view):
     view.erase_regions("pg_pep_find_local_binding")
     view.erase_regions("pg_pep_find_local_usage")
-
-
-class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        erase_analysis_regions(self.view)
-
-
-class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        erase_usage_regions(self.view)
 
 
 # ---
@@ -701,7 +661,7 @@ def thingy_in_region(view, state, region):
 # ---
 
 def find_local_binding(analysis, local_usage):
-    return view_lindex(analysis).get(local_usage.get("id"))
+    return analysis_lindex(analysis).get(local_usage.get("id"))
 
 
 def find_local_usages(analysis, local_binding):
@@ -711,7 +671,7 @@ def find_local_usages(analysis, local_binding):
 def find_var_definition(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return view_vindex(analysis).get(var_qualified_name)
+    return analysis_vindex(analysis).get(var_qualified_name)
 
 
 def find_var_usages(analysis, var_definition):
@@ -724,6 +684,7 @@ def find_var_usages_with_usage(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
     return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
+
 
 # ---
 
@@ -832,8 +793,6 @@ def find_with_local_binding(view, state, thingy, select):
 
     local_usages = find_local_usages(state, thingy_data)
 
-    pprint.pp(local_usages)
-
     local_usages_regions = []
 
     for local_usage in local_usages:
@@ -914,6 +873,22 @@ def find_with_var_usage(view, state, region, thingy, select):
                         "var_usages_regions": var_usages_regions,
                         "select": select })
 
+
+# ---
+
+
+class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        erase_analysis_regions(self.view)
+
+
+class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        erase_usage_regions(self.view)
+
+
 class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 
     def run(self):
@@ -923,15 +898,13 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        global _project_cache_
-
         is_debug = debug()
 
-        state = view_analysis(self.view.id())
+        view_analysis_ = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, state, region)
+        thingy = thingy_in_region(self.view, view_analysis_, region)
 
         if is_debug:
             print("(Pep) Thingy", thingy)
@@ -949,14 +922,18 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_usage":
             var_key = (thingy_data.get("to"), thingy_data.get("name"))
             
-        project_path = self.view.window().extract_variables().get("project_path")
+        project_path_ = project_path(self.view.window())
 
-        analysis = project_analysis(_project_cache_, project_path)
+        project_analysis_ = project_analysis(project_path_)
 
-        definition = analysis.get("var_definition_indexed", {}).get(var_key)
+        # Try to find Var definition in view first,
+        # only if not found try project analysis.
+        definition = (analysis_vindex(view_analysis_).get(var_key) or 
+                        analysis_vindex(project_analysis_).get(var_key))
 
         if definition:
-            print("(Pep) Var definition:\n", pprint.pformat(definition))
+            if is_debug:
+                print("(Pep) Var definition:\n", pprint.pformat(definition))
 
             # Name
             # ---
@@ -1138,8 +1115,6 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
         analysis = view_analysis(self.view.id())
 
-        pprint.pp(analysis)
-
         thingy = thingy_in_region(self.view, analysis, region)
 
         if thingy is None:
@@ -1242,7 +1217,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
             analysis = view_analysis(self.view.id())
 
-            findings = view_findings(analysis)
+            findings = analysis_findings(analysis)
 
             warning_region_set = []
             warning_minihtml_set = []
@@ -1284,8 +1259,8 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                        sublime.DRAW_NO_FILL |
                        sublime.DRAW_NO_OUTLINE))
 
-            summary_errors =  view_summary(analysis).get("error", 0)
-            summary_warnings = view_summary(analysis).get("warning", 0)
+            summary_errors =  analysis_summary(analysis).get("error", 0)
+            summary_warnings = analysis_summary(analysis).get("warning", 0)
 
             status_messages = []
             status_messages.append(f"Errors: {summary_errors}")
@@ -1309,7 +1284,7 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
             
             analysis = view_analysis(self.view.id())
 
-            findings = view_findings(analysis)
+            findings = analysis_findings(analysis)
 
             warning_str_set = []
 
@@ -1346,6 +1321,9 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
 
         except Exception as e:
             print(f"(Pep) Report failed.", traceback.format_exc())
+
+
+# ---
 
 
 class PgPepViewListener(sublime_plugin.ViewEventListener):
@@ -1398,13 +1376,14 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 class PgPepEventListener(sublime_plugin.EventListener):
 
     def on_pre_close_project(self, window):
-        global _project_cache_
-
         project_path = window.extract_variables().get("project_path")
 
         print("(Pep) Clear project cache:", project_path)
 
-        set_project_analysis(_project_cache_, project_path, {})
+        set_project_analysis(project_path, {})
+
+
+# ---
 
 
 def plugin_loaded():

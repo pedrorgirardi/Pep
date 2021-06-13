@@ -5,6 +5,14 @@
   
   (def a 1) (def b 2)
   
+  (defn f 
+    "Docstring."
+    [x]
+    x)
+  
+  
+  (f 1)
+  
   (let [a 1]
     nil)
   
