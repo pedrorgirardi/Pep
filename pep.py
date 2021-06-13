@@ -380,6 +380,8 @@ def analyze_classpath(window):
     classpath = project_classpath(window)
 
     if classpath:
+        print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
+
         analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
         analysis_subprocess_args = [clj_kondo_path(), 
@@ -414,7 +416,7 @@ def analyze_classpath(window):
 
             vindex[(ns, name)] = var_definition
 
-        print(f"(Pep) Analysis is complete (Project: {project_path(window)})")
+        print(f"(Pep) Classpath analysis is completed (Project: {project_path(window)})")
 
         analysis = {"vindex": vindex}
 
