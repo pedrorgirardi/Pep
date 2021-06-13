@@ -8,6 +8,7 @@ import json
 import traceback
 import itertools
 import pprint
+import threading
 
 import sublime_plugin
 import sublime
@@ -371,7 +372,7 @@ def analyze_view(view):
 
 
 def analyze_view_async(view):
-    sublime.set_timeout_async(lambda: analyze_view(view), 0)
+    threading.Thread(target=lambda: analyze_view(view)).start()
 
 
 def analyze_classpath(window):
@@ -424,7 +425,7 @@ def analyze_classpath(window):
 
 
 def analyze_classpath_async(window):
-    sublime.set_timeout_async(lambda: analyze_classpath(window), 0)
+    threading.Thread(target=lambda: analyze_classpath(window)).start()
 
 
 ## ---
