@@ -256,6 +256,10 @@ def project_classpath(window):
 
             return classpath_completed_process.stdout
 
+
+## ---
+
+
 def analyze_view(view):
     is_debug = settings().get("debug", False)
 
@@ -421,6 +425,9 @@ def analyze_classpath_async(window):
     sublime.set_timeout_async(lambda: analyze_classpath(window), 0)
 
 
+## ---
+
+
 def clj_kondo_finding_message(finding):
     def group1(regex):
         matches = re.compile(regex).findall(finding["message"])
@@ -481,18 +488,6 @@ def erase_analysis_regions(view):
 def erase_usage_regions(view):
     view.erase_regions("pg_pep_find_local_binding")
     view.erase_regions("pg_pep_find_local_usage")
-
-
-class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        erase_analysis_regions(self.view)
-
-
-class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        erase_usage_regions(self.view)
 
 
 # ---
@@ -687,6 +682,7 @@ def find_var_usages_with_usage(analysis, var_usage):
 
     return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
 
+
 # ---
 
 
@@ -875,6 +871,22 @@ def find_with_var_usage(view, state, region, thingy, select):
                         "var_usages": var_usages,
                         "var_usages_regions": var_usages_regions,
                         "select": select })
+
+
+# ---
+
+
+class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        erase_analysis_regions(self.view)
+
+
+class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        erase_usage_regions(self.view)
+
 
 class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 
