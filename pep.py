@@ -931,7 +931,8 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                         analysis_vindex(project_analysis_).get(var_key))
 
         if definition:
-            print("(Pep) Var definition:\n", pprint.pformat(definition))
+            if is_debug:
+                print("(Pep) Var definition:\n", pprint.pformat(definition))
 
             # Name
             # ---
