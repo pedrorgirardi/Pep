@@ -214,7 +214,7 @@ def parse_location(var_definition):
         }
 
 
-def goto(window, location):
+def goto(window, location, side_by_side=False):
     if location:
         resource = location["resource"]
         line = location["line"]
@@ -234,8 +234,12 @@ def goto(window, location):
                 with os.fdopen(descriptor, "w") as file:
                     file.write(source_file.decode())
 
-                # TODO: Add setting?
-                flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
+                flags = None
+
+                if side_by_side:
+                    flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
+                else:
+                    flags = sublime.ENCODED_POSITION
                 
                 view = window.open_file(f"{path}:{line}:{column}", flags=flags)
                 view.assign_syntax("Clojure (Tutkain).sublime-syntax")
@@ -247,7 +251,14 @@ def goto(window, location):
                 os.remove(path)
 
         else:
-            view = window.open_file(f"{resource.path}:{line}:{column}", flags=sublime.ENCODED_POSITION)
+            flags = None
+
+            if side_by_side:
+                flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
+            else:
+                flags = sublime.ENCODED_POSITION
+
+            view = window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
 
 
 ## ---
@@ -1048,7 +1059,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 content, 
                 location=-1, 
                 max_width=500,
-                on_navigate=lambda href: goto(self.view.window(), location)
+                on_navigate=lambda href: goto(self.view.window(), location, side_by_side=False)
             )
 
 
@@ -1204,7 +1215,7 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
-    def run(self, edit, select=False):
+    def run(self, edit, side_by_side=False):
         is_debug = debug()
 
         analysis = view_analysis(self.view.id())
@@ -1239,7 +1250,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                             find_var_definition(project_analysis_, thingy_data))
 
             if definition:
-                goto(self.view.window(), parse_location(definition))
+                goto(self.view.window(), parse_location(definition), side_by_side=side_by_side)
 
 
 class PgPepFindCommand(sublime_plugin.TextCommand):
