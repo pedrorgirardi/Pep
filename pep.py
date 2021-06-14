@@ -10,6 +10,9 @@ import itertools
 import pprint
 import threading
 
+from urllib.parse import urlparse
+from zipfile import ZipFile
+
 import sublime_plugin
 import sublime
 
@@ -202,6 +205,51 @@ def htmlify(text):
         return ""
 
 
+def parse_location(var_definition):
+    if var_definition and (file := var_definition.get("filename")):
+        return {
+            "resource": urlparse(file),
+            "line": var_definition.get("name-row") - 1,
+            "column": var_definition.get("name-col") - 1,
+        }
+
+
+def goto(window, location):
+    if location:
+        resource = location["resource"]
+        line = location["line"]
+        column = location["column"]
+
+        if ".jar:" in resource.path:
+            parts = resource.path.split(":")
+            jar_url = urlparse(parts[0])
+            # If the path after the : starts with a forward slash, strip it. ZipFile can't
+            # find the file inside the archive otherwise.
+            path = parts[1][1:] if parts[1].startswith("/") else parts[1]
+            archive = ZipFile(jar_url.path, "r")
+            source_file = archive.read(path)
+            descriptor, path = tempfile.mkstemp()
+
+            try:
+                with os.fdopen(descriptor, "w") as file:
+                    file.write(source_file.decode())
+
+                # TODO: Add setting?
+                flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
+                
+                view = window.open_file(f"{path}:{line}:{column}", flags=flags)
+                view.assign_syntax("Clojure (Tutkain).sublime-syntax")
+                view.set_scratch(True)
+                view.set_read_only(True)
+
+                set_view_name(view, resource.path)
+            finally:
+                os.remove(path)
+
+        else:
+            view = window.open_file(f"{resource.path}:{line}:{column}", flags=sublime.ENCODED_POSITION)
+
+
 ## ---
 
 def settings():
@@ -211,7 +259,7 @@ def debug():
     return sublime.load_settings("Pep.sublime-settings").get("debug", False)
 
 def set_view_name(view, name):
-    if view is not None:
+    if view:
         if view.is_loading():
             sublime.set_timeout(lambda: set_view_name(view, name), 100)
         else:
@@ -992,10 +1040,13 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             </body>
             """
 
+            location = parse_location(definition)
+
             self.view.show_popup(
                 content, 
                 location=-1, 
-                max_width=500
+                max_width=500,
+                on_navigate=lambda href: goto(self.view.window(), location)
             )
 
 
