@@ -1199,6 +1199,44 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         self.view.show_popup(html, flags, -1, 500)
 
 
+class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, select=False):
+        is_debug = debug()
+
+        analysis = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, analysis, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy is None:
+            return
+
+        thingy_type, _, thingy_data  = thingy
+
+        if thingy_type == "local_usage":
+            if (definition := find_local_binding(analysis, thingy_data)):
+                if (goto_region := local_binding_region(self.view, definition)):
+                    self.view.sel().clear()
+                    self.view.sel().add(goto_region)
+                    self.view.show(region)
+
+        elif thingy_type == "var_usage":
+            project_path_ = project_path(self.view.window())
+
+            project_analysis_ = project_analysis(project_path_)
+
+            definition = (find_var_definition(analysis, thingy_data) or 
+                            find_var_definition(project_analysis_, thingy_data))
+
+            if definition:
+                goto(self.view.window(), parse_location(definition))
+
+
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
