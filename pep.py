@@ -209,8 +209,8 @@ def parse_location(var_definition):
     if var_definition and (file := var_definition.get("filename")):
         return {
             "resource": urlparse(file),
-            "line": var_definition.get("name-row") - 1,
-            "column": var_definition.get("name-col") - 1,
+            "line": var_definition.get("name-row"),
+            "column": var_definition.get("name-col"),
         }
 
 
