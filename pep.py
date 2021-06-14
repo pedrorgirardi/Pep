@@ -428,6 +428,8 @@ def analyze_classpath(window):
 
     print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
+    sublime.status_message("Analyzing classpath... (This might take a moment)")
+
     classpath = project_classpath(window)
 
     if classpath:
@@ -465,11 +467,11 @@ def analyze_classpath(window):
 
             vindex[(ns, name)] = var_definition
 
-        print(f"(Pep) Classpath analysis is completed (Project: {project_path(window)})")
-
         analysis = {"vindex": vindex}
 
         set_project_analysis(project_path(window), analysis)
+
+        print(f"(Pep) Classpath analysis is completed (Project: {project_path(window)})")
 
 
 def analyze_classpath_async(window):
