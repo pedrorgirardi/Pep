@@ -1080,6 +1080,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             finding_at_position = navigation["thingy_findings"][findings_position_after]
 
             region = local_binding_region(self.view, finding_at_position)
+            region = sublime.Region(region.begin(), region.begin())
 
             self.view.sel().clear()
             self.view.sel().add(region)
