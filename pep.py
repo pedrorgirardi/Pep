@@ -1222,7 +1222,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             if (definition := find_local_binding(analysis, thingy_data)):
                 if (goto_region := local_binding_region(self.view, definition)):
                     self.view.sel().clear()
-                    self.view.sel().add(goto_region)
+                    self.view.sel().add(sublime.Region(goto_region.begin(), goto_region.begin()))
                     self.view.show(region)
 
         elif thingy_type == "var_usage":
