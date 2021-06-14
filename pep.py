@@ -220,6 +220,13 @@ def goto(window, location, side_by_side=False):
         line = location["line"]
         column = location["column"]
 
+        flags = None
+
+        if side_by_side:
+            flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
+        else:
+            flags = sublime.ENCODED_POSITION
+
         if ".jar:" in resource.path:
             parts = resource.path.split(":")
             jar_url = urlparse(parts[0])
@@ -233,13 +240,6 @@ def goto(window, location, side_by_side=False):
             try:
                 with os.fdopen(descriptor, "w") as file:
                     file.write(source_file.decode())
-
-                flags = None
-
-                if side_by_side:
-                    flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
-                else:
-                    flags = sublime.ENCODED_POSITION
                 
                 view = window.open_file(f"{path}:{line}:{column}", flags=flags)
                 view.assign_syntax("Clojure (Tutkain).sublime-syntax")
@@ -251,13 +251,6 @@ def goto(window, location, side_by_side=False):
                 os.remove(path)
 
         else:
-            flags = None
-
-            if side_by_side:
-                flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
-            else:
-                flags = sublime.ENCODED_POSITION
-
             view = window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
 
 
