@@ -566,11 +566,11 @@ def local_binding_region(view, local_binding):
     Returns the Region of a local binding.
     """
 
-    row_start = local_binding["row"]
-    col_start = local_binding["col"]
+    row_start = local_binding.get("name-row") or local_binding.get("row")
+    col_start = local_binding.get("name-col") or local_binding.get("col")
 
-    row_end = local_binding["end-row"]
-    col_end = local_binding["end-col"]
+    row_end = local_binding.get("name-end-row") or local_binding.get("end-row")
+    col_end = local_binding.get("name-end-col") or local_binding.get("end-col")
 
     start_point = view.text_point(row_start - 1, col_start - 1)
     end_point = view.text_point(row_end - 1, col_end - 1)
@@ -1057,13 +1057,9 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         navigation["thingy_findings"] = thingy_findings
 
     def find_position(self, thingy_findings, thingy_data):
-        findings_position = 0
-
-        for finding in thingy_findings:
+        for position, finding in enumerate(thingy_findings):
             if finding == thingy_data:
-                return findings_position
-
-            findings_position += 1
+                return position
 
         return -1
 
