@@ -426,11 +426,11 @@ def analyze_view_async(view):
 def analyze_classpath(window):
     is_debug = settings().get("debug", False)
 
+    print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
+
     classpath = project_classpath(window)
 
     if classpath:
-        print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
-
         analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
         analysis_subprocess_args = [clj_kondo_path(), 
