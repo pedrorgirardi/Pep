@@ -1162,6 +1162,49 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
                 if position != -1:
                     self.navigate(state, direction, position)
 
+        elif thingy_type == "var_definition":
+            # Find Var usages for this Var definition (thingy).
+            var_usages = find_var_usages(state, thingy_data)
+
+            thingy_findings = [thingy_data]
+            thingy_findings.extend(var_usages)
+
+            thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
+
+            if thingy_id:
+                if thingy_id != navigation.get("thingy_id"):
+                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+
+                    set_view_navigation(state, navigation)
+
+                position = self.find_position(thingy_findings, thingy_data)
+
+                if position != -1:
+                    self.navigate(state, direction, position)
+
+        elif thingy_type == "var_usage":
+            # Find Var definition for this Var usage (thingy).
+            var_definition = find_var_definition(state, thingy_data)
+
+            var_usages = find_var_usages_with_usage(state, thingy_data)
+
+            thingy_findings = [var_definition] if var_definition else []
+            thingy_findings.extend(var_usages)
+
+            thingy_id = (thingy_data.get("to"), thingy_data.get("name"))
+
+            if thingy_id:
+                if thingy_id != navigation.get("thingy_id"):
+                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+
+                    set_view_navigation(state, navigation)
+
+                position = self.find_position(thingy_findings, thingy_data)
+
+                if position != -1:
+                    self.navigate(state, direction, position)
+
+
 class PgPepShowThingy(sublime_plugin.TextCommand):
 
     def run(self, edit):
