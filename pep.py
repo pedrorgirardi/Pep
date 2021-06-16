@@ -1341,7 +1341,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             quick_panel_items = []
 
             for var_region in var_usages:
-                trigger = var_region.get("to", "Usage")
+                trigger = var_region.get("from", "Usage")
                 details = f'Line {var_region.get("row", "Row")}, Column {var_region.get("col", "Col")}'
                 annotation = ""
                 kind = sublime.KIND_AMBIGUOUS
