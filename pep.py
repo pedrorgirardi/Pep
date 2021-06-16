@@ -223,7 +223,7 @@ def goto(window, location, side_by_side=False):
         flags = None
 
         if side_by_side:
-            flags = sublime.ENCODED_POSITION | sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT | sublime.CLEAR_TO_RIGHT
+            flags = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
         else:
             flags = sublime.ENCODED_POSITION
 
@@ -471,7 +471,19 @@ def analyze_classpath(window):
 
             vindex[(ns, name)] = var_definition
 
-        analysis = {"vindex": vindex}
+
+        # Var usages indexed by name - var name to a set of var usages.
+        vindex_usages = {}
+
+        for var_usage in var_usages:
+            ns = var_usage.get("to")
+            name = var_usage.get("name")
+            name_row = var_usage.get("name-row")
+
+            vindex_usages.setdefault((ns, name), []).append(var_usage)
+
+        analysis = {"vindex": vindex,
+                    "vindex_usages": vindex_usages}
 
         set_project_analysis(project_path(window), analysis)
 
@@ -1319,12 +1331,40 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             pass
 
         elif thingy_type == "var_definition":
-            pass
+            var_usages = find_var_usages(project_analysis_, thingy_data)
+
+            pprint.pp(var_usages)
 
         elif thingy_type == "var_usage":
             var_usages = find_var_usages_with_usage(project_analysis_, thingy_data)
 
-            pprint.pp(var_usages)
+            quick_panel_items = []
+
+            for var_region in var_usages:
+                trigger = var_region.get("to", "Usage")
+                details = f'Line {var_region.get("row", "Row")}, Column {var_region.get("col", "Col")}'
+                annotation = ""
+                kind = sublime.KIND_AMBIGUOUS
+
+                quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+
+
+            def on_done(selected_index, _):
+                pass
+
+            def on_highlighted(index):
+                selected_var_usage = var_usages[index]
+
+                location = parse_location(selected_var_usage)
+
+                goto(self.view.window(), location)
+
+            self.view.window().show_quick_panel(quick_panel_items, 
+                                                on_done, 
+                                                sublime.WANT_EVENT, 
+                                                0, 
+                                                on_highlighted, 
+                                                "Usages")
             
 
 
