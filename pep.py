@@ -1289,6 +1289,45 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto(self.view.window(), parse_location(definition), side_by_side=side_by_side)
 
 
+class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        is_debug = debug()
+
+        analysis = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, analysis, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy is None:
+            return
+
+        thingy_type, _, thingy_data  = thingy
+
+        project_path_ = project_path(self.view.window())
+
+        project_analysis_ = project_analysis(project_path_)
+
+        if thingy_type == "local_binding":
+            pass
+
+        elif thingy_type == "local_usage":
+            pass
+
+        elif thingy_type == "var_definition":
+            pass
+
+        elif thingy_type == "var_usage":
+            var_usages = find_var_usages_with_usage(project_analysis_, thingy_data)
+
+            pprint.pp(var_usages)
+            
+
+
 class PgPepFindCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
