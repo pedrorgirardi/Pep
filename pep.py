@@ -1449,38 +1449,45 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
 
         if var_usages:
-            quick_panel_items = []
 
-            for var_region in var_usages:
-                trigger = var_region.get("from", "Usage")
-                details = f'Line {var_region.get("row", "Row")}, Column {var_region.get("col", "Col")}'
-                annotation = ""
-                kind = sublime.KIND_AMBIGUOUS
+            if len(var_usages) == 1:
+                location = parse_location(var_usages[0])
 
-                quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+                goto(self.view.window(), location)
+                
+            else:
+                quick_panel_items = []
 
-            def on_done(selected_index, _):
-                if selected_index == -1:
-                    goto(self.view.window(), parse_location(thingy_data))
+                for var_region in var_usages:
+                    trigger = var_region.get("from", "Usage")
+                    details = f'Line {var_region.get("row", "Row")}, Column {var_region.get("col", "Col")}'
+                    annotation = ""
+                    kind = sublime.KIND_AMBIGUOUS
 
-            def on_highlighted(index):
-                selected_var_usage = var_usages[index]
+                    quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
 
-                location = parse_location(selected_var_usage)
+                def on_done(selected_index, _):
+                    if selected_index == -1:
+                        goto(self.view.window(), parse_location(thingy_data))
 
-                global GOTO_USAGE_FLAGS
+                def on_highlighted(index):
+                    selected_var_usage = var_usages[index]
 
-                goto(self.view.window(), location, flags=GOTO_USAGE_FLAGS)
+                    location = parse_location(selected_var_usage)
+
+                    global GOTO_USAGE_FLAGS
+
+                    goto(self.view.window(), location, flags=GOTO_USAGE_FLAGS)
 
 
-            placeholder = f"{thingy_data.get('name')} is used {len(var_usages)} times"
+                placeholder = f"{thingy_data.get('name')} is used {len(var_usages)} times"
 
-            self.view.window().show_quick_panel(quick_panel_items, 
-                                                on_done, 
-                                                sublime.WANT_EVENT, 
-                                                0, 
-                                                on_highlighted, 
-                                                placeholder)
+                self.view.window().show_quick_panel(quick_panel_items, 
+                                                    on_done, 
+                                                    sublime.WANT_EVENT, 
+                                                    0, 
+                                                    on_highlighted, 
+                                                    placeholder)
             
 
 
