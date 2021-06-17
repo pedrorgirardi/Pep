@@ -525,13 +525,11 @@ def analyze_classpath_async(window):
 def analyze_paths(window):
     is_debug = settings().get("debug", False)
 
-    print(f"(Pep) Analyzing paths... (Project: {project_path(window)})")
+    if (paths := paths_project_data(window)):
+        classpath = ":".join(paths)
 
-    sublime.status_message("Analyzing paths... (This might take a moment)")
+        print(f"(Pep) Analyzing paths... (Project {project_path(window)}, Paths {paths})")
 
-    classpath = ":".join(paths_project_data(window))
-
-    if classpath:
         analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
         analysis_subprocess_args = [clj_kondo_path(), 
@@ -582,7 +580,7 @@ def analyze_paths(window):
 
         set_paths_analysis(project_path(window), analysis)
 
-        print(f"(Pep) Paths analysis is completed (Project: {project_path(window)})")
+        print(f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})")
 
 
 def analyze_paths_async(window):
@@ -1666,24 +1664,30 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
                                           "Packages/Clojure/Clojure.sublime-syntax",
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
-    def analyze_on(self):
-        return set(settings().get("analyze_on", {}))
+    def analyze_view(self):
+        return set(settings().get("analyze_view", {}))
+
+    def analyze_paths(self):
+        return set(settings().get("analyze_paths", {}))
 
     def on_load_async(self):
-        if "on_load_async" in self.analyze_on():
+        if "on_load_async" in self.analyze_view():
             analyze_view_async(self.view)
 
     def on_activated_async(self):
-        if "on_activated_async" in self.analyze_on():
+        if "on_activated_async" in self.analyze_view():
             analyze_view_async(self.view)
 
     def on_post_save(self):
-        if "on_post_save" in self.analyze_on():
+        if "on_post_save" in self.analyze_view():
             analyze_view_async(self.view)
 
     def on_post_save_async(self):
-        if "on_post_save_async" in self.analyze_on():
+        if "on_post_save_async" in self.analyze_view():
             analyze_view_async(self.view)
+
+        if "on_post_save_async" in self.analyze_paths():
+            analyze_paths_async(self.view.window())
 
     def on_selection_modified(self):
         if settings().get("clear_usages_on_selection_modified", False):

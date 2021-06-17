@@ -1,7 +1,9 @@
 {
     "debug": false,
 
-    "analyze_on": ["on_activated_async", "on_post_save_async"],
+    "analyze_view": ["on_activated_async", "on_post_save_async"],
+
+    "analyze_paths": ["on_post_save_async"],
 
     // True if you want to clear usage regions after 
     // the selection has been modified in the view.
