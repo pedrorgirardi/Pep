@@ -18,7 +18,26 @@ import sublime
 
 _view_analysis_ = {}
 
+_paths_analysis_ = {}
+
 _project_analysis_ = {}
+
+
+def set_paths_analysis(project_path, analysis):
+    """
+    Updates analysis for paths.
+    """
+    global _paths_analysis_
+    _paths_analysis_[project_path] = analysis
+
+
+def paths_analysis(project_path):
+    """
+    Returns analysis for paths.
+    """
+    global _paths_analysis_
+    return _paths_analysis_.get(project_path, {})
+
 
 def set_project_analysis(project_path, analysis):
     """
@@ -166,6 +185,15 @@ def classpath_project_data(window):
     ["clojure", "-Spath"]
     """
     return window.project_data().get("pep", {}).get("classpath")
+
+
+def paths_project_data(window):
+    """
+    Example:
+
+    ["src", "test"]
+    """
+    return window.project_data().get("pep", {}).get("paths")
 
 
 # ---    
@@ -493,6 +521,72 @@ def analyze_classpath(window):
 def analyze_classpath_async(window):
     threading.Thread(target=lambda: analyze_classpath(window), daemon=True).start()
 
+
+def analyze_paths(window):
+    is_debug = settings().get("debug", False)
+
+    print(f"(Pep) Analyzing paths... (Project: {project_path(window)})")
+
+    sublime.status_message("Analyzing paths... (This might take a moment)")
+
+    classpath = ":".join(paths_project_data(window))
+
+    if classpath:
+        analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
+
+        analysis_subprocess_args = [clj_kondo_path(), 
+                                    "--config", analysis_config,
+                                    "--parallel", 
+                                    "--lint", classpath]
+
+        if is_debug:
+            print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
+
+        analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path(window), text=True, capture_output=True)
+
+        output = None
+
+        try:
+            output = json.loads(analysis_completed_process.stdout)
+        except:
+            output = {}
+
+        analysis = output.get("analysis", {})
+
+        var_definitions = analysis.get("var-definitions", [])
+
+        var_usages = analysis.get("var-usages", [])
+
+        # Var definitions indexed by (namespace, name) tuple.
+        vindex = {}
+
+        for var_definition in var_definitions:
+            ns = var_definition.get("ns")
+            name = var_definition.get("name")
+
+            vindex[(ns, name)] = var_definition
+
+
+        # Var usages indexed by name - var name to a set of var usages.
+        vindex_usages = {}
+
+        for var_usage in var_usages:
+            ns = var_usage.get("to")
+            name = var_usage.get("name")
+            name_row = var_usage.get("name-row")
+
+            vindex_usages.setdefault((ns, name), []).append(var_usage)
+
+        analysis = {"vindex": vindex,
+                    "vindex_usages": vindex_usages}
+
+        set_paths_analysis(project_path(window), analysis)
+
+        print(f"(Pep) Paths analysis is completed (Project: {project_path(window)})")
+
+
+def analyze_paths_async(window):
+    threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
 
 ## ---
 
@@ -961,6 +1055,12 @@ class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
         analyze_classpath_async(self.window)
 
 
+class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
+
+    def run(self):
+        analyze_paths_async(self.window)
+
+
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
@@ -1322,7 +1422,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         project_path_ = project_path(self.view.window())
 
-        project_analysis_ = project_analysis(project_path_)
+        paths_analysis_ = paths_analysis(project_path_)
 
         if thingy_type == "local_binding":
             pass
@@ -1331,12 +1431,12 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             pass
 
         elif thingy_type == "var_definition":
-            var_usages = find_var_usages(project_analysis_, thingy_data)
+            var_usages = find_var_usages(paths_analysis_, thingy_data)
 
             pprint.pp(var_usages)
 
         elif thingy_type == "var_usage":
-            var_usages = find_var_usages_with_usage(project_analysis_, thingy_data)
+            var_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
             quick_panel_items = []
 
