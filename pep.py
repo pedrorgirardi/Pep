@@ -1094,11 +1094,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             
         project_path_ = project_path(self.view.window())
 
+        paths_analysis_ = paths_analysis(project_path_)
+
         project_analysis_ = project_analysis(project_path_)
 
         # Try to find Var definition in view first,
-        # only if not found try project analysis.
+        # only if not found try paths and project analysis.
         definition = (analysis_vindex(view_analysis_).get(var_key) or 
+                        analysis_vindex(paths_analysis_).get(var_key) or 
                         analysis_vindex(project_analysis_).get(var_key))
 
         if definition:
