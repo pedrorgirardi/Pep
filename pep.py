@@ -19,7 +19,7 @@ import sublime
 
 GOTO_DEFAULT_FLAGS = sublime.ENCODED_POSITION
 
-GOTO_USAGE_FLAGS = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.REPLACE_MRU
+GOTO_USAGE_FLAGS = sublime.ENCODED_POSITION | sublime.TRANSIENT
 
 GOTO_SIDE_BY_SIDE_FLAGS = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
 
@@ -1472,16 +1472,19 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     quick_panel_items.append(sublime.QuickPanelItem(name, namespace, annotation, sublime.KIND_AMBIGUOUS))
 
-                def on_done(selected_index, _):
-                    if selected_index == -1:
-                        goto(self.view.window(), parse_location(thingy_data))
+
+                def on_done(index, _):
+                    if index == -1:
+                        self.view.window().focus_view(self.view)
+                    else:
+                        location = parse_location(thingy_usages[index])
+
+                        goto(self.view.window(), location)
 
                 def on_highlighted(index):
                     location = parse_location(thingy_usages[index])
 
-                    global GOTO_USAGE_FLAGS
-
-                    goto(self.view.window(), location, flags=GOTO_USAGE_FLAGS)
+                    goto(self.view.window(), location, flags=sublime.ENCODED_POSITION | sublime.TRANSIENT)
 
                 placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
 
