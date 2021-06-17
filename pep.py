@@ -241,12 +241,15 @@ def htmlify(text):
         return ""
 
 
-def parse_location(var_definition):
-    if var_definition and (file := var_definition.get("filename")):
+def parse_location(thingy_data):
+    """
+    Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
+    """
+    if thingy_data and (file := thingy_data.get("filename")):
         return {
             "resource": urlparse(file),
-            "line": var_definition.get("name-row"),
-            "column": var_definition.get("name-col"),
+            "line": thingy_data.get("name-row") or thingy_data.get("row"),
+            "column": thingy_data.get("name-col") or thingy_data.get("col"),
         }
 
 
@@ -825,8 +828,8 @@ def find_local_binding(analysis, local_usage):
     return analysis_lindex(analysis).get(local_usage.get("id"))
 
 
-def find_local_usages(analysis, local_binding):
-    return analysis.get("lindex_usages", {}).get(local_binding.get("id"), [])
+def find_local_usages(analysis, local_binding_or_usage):
+    return analysis.get("lindex_usages", {}).get(local_binding_or_usage.get("id"), [])
 
 
 def find_var_definition(analysis, var_usage):
@@ -1433,34 +1436,34 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         paths_analysis_ = paths_analysis(project_path_)
 
-        var_usages = None
+        thingy_usages = None
 
         if thingy_type == "local_binding":
-            pass
+            thingy_usages = find_local_usages(analysis, thingy_data)
 
         elif thingy_type == "local_usage":
-            pass
+            thingy_usages = find_local_usages(analysis, thingy_data)
 
         elif thingy_type == "var_definition":
-            var_usages = find_var_usages(paths_analysis_, thingy_data)
+            thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
         elif thingy_type == "var_usage":
-            var_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
+            thingy_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
 
-        if var_usages:
+        if thingy_usages:
 
-            if len(var_usages) == 1:
-                location = parse_location(var_usages[0])
+            if len(thingy_usages) == 1:
+                location = parse_location(thingy_usages[0])
 
                 goto(self.view.window(), location)
                 
             else:
                 quick_panel_items = []
 
-                for var_region in var_usages:
-                    trigger = var_region.get("from", "Usage")
-                    details = f'Line {var_region.get("row", "Row")}, Column {var_region.get("col", "Col")}'
+                for thingy_usage in thingy_usages:
+                    trigger = thingy_usage.get("from", "Usage")
+                    details = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
                     annotation = ""
                     kind = sublime.KIND_AMBIGUOUS
 
@@ -1471,16 +1474,13 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         goto(self.view.window(), parse_location(thingy_data))
 
                 def on_highlighted(index):
-                    selected_var_usage = var_usages[index]
-
-                    location = parse_location(selected_var_usage)
+                    location = parse_location(thingy_usages[index])
 
                     global GOTO_USAGE_FLAGS
 
                     goto(self.view.window(), location, flags=GOTO_USAGE_FLAGS)
 
-
-                placeholder = f"{thingy_data.get('name')} is used {len(var_usages)} times"
+                placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
 
                 self.view.window().show_quick_panel(quick_panel_items, 
                                                     on_done, 
