@@ -1424,6 +1424,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         paths_analysis_ = paths_analysis(project_path_)
 
+        var_usages = None
+
         if thingy_type == "local_binding":
             pass
 
@@ -1433,11 +1435,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_definition":
             var_usages = find_var_usages(paths_analysis_, thingy_data)
 
-            pprint.pp(var_usages)
-
         elif thingy_type == "var_usage":
             var_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
+
+        if var_usages:
             quick_panel_items = []
 
             for var_region in var_usages:
@@ -1447,7 +1449,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 kind = sublime.KIND_AMBIGUOUS
 
                 quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
-
 
             def on_done(selected_index, _):
                 pass
@@ -1459,12 +1460,15 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                 goto(self.view.window(), location)
 
+
+            placeholder = f"{thingy_data.get('name')} is used {len(var_usages)} times"
+
             self.view.window().show_quick_panel(quick_panel_items, 
                                                 on_done, 
                                                 sublime.WANT_EVENT, 
                                                 0, 
                                                 on_highlighted, 
-                                                "Usages")
+                                                placeholder)
             
 
 
