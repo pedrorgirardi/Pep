@@ -1465,12 +1465,12 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for thingy_usage in thingy_usages:
-                    trigger = thingy_usage.get("from", "Usage")
-                    details = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
-                    annotation = ""
-                    kind = sublime.KIND_AMBIGUOUS
+                    # TODO: See if there's a namespace definition in view.
+                    namespace = thingy_usage.get("from", "")
+                    name = thingy_usage.get("name")
+                    annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
-                    quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
+                    quick_panel_items.append(sublime.QuickPanelItem(name, namespace, annotation, sublime.KIND_AMBIGUOUS))
 
                 def on_done(selected_index, _):
                     if selected_index == -1:
