@@ -16,6 +16,14 @@ from zipfile import ZipFile
 import sublime_plugin
 import sublime
 
+
+GOTO_DEFAULT_FLAGS = sublime.ENCODED_POSITION
+
+GOTO_USAGE_FLAGS = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.REPLACE_MRU
+
+GOTO_SIDE_BY_SIDE_FLAGS = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
+
+
 _view_analysis_ = {}
 
 _paths_analysis_ = {}
@@ -242,18 +250,11 @@ def parse_location(var_definition):
         }
 
 
-def goto(window, location, side_by_side=False):
+def goto(window, location, flags=sublime.ENCODED_POSITION):
     if location:
         resource = location["resource"]
         line = location["line"]
         column = location["column"]
-
-        flags = None
-
-        if side_by_side:
-            flags = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
-        else:
-            flags = sublime.ENCODED_POSITION
 
         if ".jar:" in resource.path:
             parts = resource.path.split(":")
@@ -275,11 +276,13 @@ def goto(window, location, side_by_side=False):
                 view.set_read_only(True)
 
                 set_view_name(view, resource.path)
+
+                return view
             finally:
                 os.remove(path)
 
         else:
-            view = window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
+            return window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
 
 
 ## ---
@@ -1162,7 +1165,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 content, 
                 location=-1, 
                 max_width=500,
-                on_navigate=lambda href: goto(self.view.window(), location, side_by_side=False)
+                on_navigate=lambda href: goto(self.view.window(), location)
             )
 
 
@@ -1399,7 +1402,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                             find_var_definition(project_analysis_, thingy_data))
 
             if definition:
-                goto(self.view.window(), parse_location(definition), side_by_side=side_by_side)
+                global GOTO_SIDE_BY_SIDE_FLAGS
+                global GOTO_DEFAULT_FLAGS
+
+                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+
+                goto(self.view.window(), parse_location(definition), flags=flags)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
@@ -1452,14 +1460,17 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, kind))
 
             def on_done(selected_index, _):
-                pass
+                if selected_index == -1:
+                    goto(self.view.window(), parse_location(thingy_data))
 
             def on_highlighted(index):
                 selected_var_usage = var_usages[index]
 
                 location = parse_location(selected_var_usage)
 
-                goto(self.view.window(), location)
+                global GOTO_USAGE_FLAGS
+
+                goto(self.view.window(), location, flags=GOTO_USAGE_FLAGS)
 
 
             placeholder = f"{thingy_data.get('name')} is used {len(var_usages)} times"
