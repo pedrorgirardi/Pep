@@ -1392,9 +1392,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_usage":
             project_path_ = project_path(self.view.window())
 
+            paths_analysis_ = paths_analysis(project_path_)
+
             project_analysis_ = project_analysis(project_path_)
 
             definition = (find_var_definition(analysis, thingy_data) or 
+                            find_var_definition(paths_analysis_, thingy_data) or 
                             find_var_definition(project_analysis_, thingy_data))
 
             if definition:
