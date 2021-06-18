@@ -852,6 +852,21 @@ def find_var_usages_with_usage(analysis, var_usage):
 
 # ---
 
+def highlight_locals(view, thingy, local_binding_region, local_usages_regions):
+    _, thingy_region, _  = thingy
+
+    regions = [local_binding_region]
+    regions.extend(local_usages_regions)
+
+    for index, region in enumerate(regions):
+        if region == thingy_region:
+            del regions[index]
+
+    view.erase_regions("pg_pep_highligths")
+
+    if regions:
+        view.add_regions("pg_pep_highligths", regions, scope="region.cyanish", flags=sublime.DRAW_NO_FILL)
+
 
 def present_local(view, local_binding_region, local_usages_regions, select):
     if select:
@@ -984,6 +999,47 @@ def find_with_local_usage(view, state, thingy, select):
         local_usages_regions.append(local_usage_region(view, local_usage))
 
     present_local(view, local_binding_region_, local_usages_regions, select)
+
+
+def local_binding_locals(view, analysis, thingy):
+    _, _, thingy_data  = thingy
+
+    local_usages = find_local_usages(analysis, thingy_data)
+
+    local_usages_regions = []
+
+    for local_usage in local_usages:
+        local_usages_regions.append(local_usage_region(view, local_usage))
+
+    return {"local_binding_region": local_binding_region(view, thingy_data),
+            "local_usages_regions": local_usages_regions}
+    
+
+def local_usage_locals(view, analysis, thingy):
+    """
+    Find local binding and all its usages from local usage.
+    """
+
+    _, _, thingy_data  = thingy    
+
+    local_binding = find_local_binding(analysis, thingy_data)
+
+    # It's possible to have a local usage without a local binding.
+    # (It looks like a clj-kondo bug.)
+    if local_binding is None:
+        return
+
+    local_binding_region_ = local_binding_region(view, local_binding)
+
+    local_usages = find_local_usages(analysis, local_binding)
+
+    local_usages_regions = []
+
+    for local_usage in local_usages:
+        local_usages_regions.append(local_usage_region(view, local_usage))
+
+    return {"local_binding_region": local_binding_region_,
+            "local_usages_regions": local_usages_regions}
 
 
 def find_with_var_definition(view, analysis, region, thingy, select):
@@ -1529,6 +1585,47 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
             find_with_var_usage(self.view, analysis, region, thingy, select)
 
 
+class PgPepHighlightCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, select=False):
+        is_debug = debug()
+
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, view_analysis_, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy:
+            thingy_type, _, _  = thingy
+
+            if thingy_type == "local_binding":
+                locals_ = local_binding_locals(self.view, view_analysis_, thingy)
+
+                highlight_locals(self.view, 
+                    thingy=thingy, 
+                    local_binding_region=locals_["local_binding_region"], 
+                    local_usages_regions=locals_["local_usages_regions"])
+
+            elif thingy_type == "local_usage":
+                locals_ = local_usage_locals(self.view, view_analysis_, thingy)
+
+                if locals_:
+                    highlight_locals(self.view, 
+                        thingy=thingy, 
+                        local_binding_region=locals_["local_binding_region"], 
+                        local_usages_regions=locals_["local_usages_regions"])
+
+            elif thingy_type == "var_definition":
+                pass
+
+            elif thingy_type == "var_usage":
+                pass
+
+
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
@@ -1716,6 +1813,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def on_selection_modified(self):
         if settings().get("clear_usages_on_selection_modified", False):
             self.view.run_command("pg_pep_erase_usage_regions")
+
+        self.view.erase_regions("pg_pep_highligths")
 
     def on_close(self):
         """
