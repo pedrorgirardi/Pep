@@ -862,8 +862,6 @@ def highlight_locals(view, thingy, local_binding_region, local_usages_regions):
         if region == thingy_region:
             del regions[index]
 
-    view.erase_regions("pg_pep_highligths")
-
     if regions:
         view.add_regions("pg_pep_highligths", regions, scope="region.cyanish", flags=sublime.DRAW_NO_FILL)
 
@@ -1599,6 +1597,8 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
         if is_debug:
             print("(Pep) Thingy", thingy)
 
+        self.view.erase_regions("pg_pep_highligths")
+
         if thingy:
             thingy_type, _, _  = thingy
 
@@ -1811,10 +1811,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             analyze_paths_async(self.view.window())
 
     def on_selection_modified(self):
-        if settings().get("clear_usages_on_selection_modified", False):
-            self.view.run_command("pg_pep_erase_usage_regions")
-
-        self.view.erase_regions("pg_pep_highligths")
+        sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
     def on_close(self):
         """
