@@ -695,11 +695,6 @@ def erase_analysis_regions(view):
     view.erase_regions("pg_pep_analysis_warning")
 
 
-def erase_usage_regions(view):
-    view.erase_regions("pg_pep_find_local_binding")
-    view.erase_regions("pg_pep_find_local_usage")
-
-
 # ---
 
 
