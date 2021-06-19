@@ -995,45 +995,48 @@ def find_with_local_usage(view, state, thingy, select):
     present_local(view, local_binding_region_, local_usages_regions, select)
 
 
-def local_binding_locals(view, analysis, thingy):
-    _, _, thingy_data  = thingy
+def find_highlight_regions(view, analysis, thingy):
+    thingy_type, _, thingy_data  = thingy
 
-    local_usages = find_local_usages(analysis, thingy_data)
+    regions = []
 
-    local_usages_regions = []
+    if thingy_type == "local_binding":
+        regions.append(local_binding_region(view, thingy_data))
 
-    for local_usage in local_usages:
-        local_usages_regions.append(local_usage_region(view, local_usage))
+        local_usages = find_local_usages(analysis, thingy_data)
 
-    return {"local_binding_region": local_binding_region(view, thingy_data),
-            "local_usages_regions": local_usages_regions}
-    
+        for local_usage in local_usages:
+            regions.append(local_usage_region(view, local_usage))
 
-def local_usage_locals(view, analysis, thingy):
-    """
-    Find local binding and all its usages from local usage.
-    """
+    elif thingy_type == "local_usage":
+        # It's possible to have a local usage without a local binding.
+        # (It looks like a clj-kondo bug.)
+        if local_binding := find_local_binding(analysis, thingy_data):
+            regions.append(local_binding_region(view, local_binding))
 
-    _, _, thingy_data  = thingy    
+        local_usages = find_local_usages(analysis, thingy_data)
 
-    local_binding = find_local_binding(analysis, thingy_data)
+        for local_usage in local_usages:
+            regions.append(local_usage_region(view, local_usage))
 
-    # It's possible to have a local usage without a local binding.
-    # (It looks like a clj-kondo bug.)
-    if local_binding is None:
-        return
+    elif thingy_type == "var_definition":
+        regions.append(var_definition_region(view, thingy_data))
 
-    local_binding_region_ = local_binding_region(view, local_binding)
+        var_usages = find_var_usages(analysis, thingy_data)
 
-    local_usages = find_local_usages(analysis, local_binding)
+        for var_usage in var_usages:
+            regions.append(var_usage_region(view, var_usage))
 
-    local_usages_regions = []
+    elif thingy_type == "var_usage":
+        if var_definition := find_var_definition(analysis, thingy_data):
+            regions.append(var_definition_region(view, var_definition))
 
-    for local_usage in local_usages:
-        local_usages_regions.append(local_usage_region(view, local_usage))
+        var_usages = find_var_usages_with_usage(analysis, thingy_data)
 
-    return {"local_binding_region": local_binding_region_,
-            "local_usages_regions": local_usages_regions}
+        for var_usage in var_usages:
+            regions.append(var_usage_region(view, var_usage))
+
+    return regions
 
 
 def find_with_var_definition(view, analysis, region, thingy, select):
@@ -1596,30 +1599,10 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
         self.view.erase_regions("pg_pep_highligths")
 
         if thingy:
-            thingy_type, _, _  = thingy
+            regions = find_highlight_regions(self.view, view_analysis_, thingy)
 
-            if thingy_type == "local_binding":
-                locals_ = local_binding_locals(self.view, view_analysis_, thingy)
-
-                regions = [locals_["local_binding_region"]]
-                regions.extend(locals_["local_usages_regions"])
-
+            if regions:
                 highlight_regions(self.view, self.view.sel(), regions)
-
-            elif thingy_type == "local_usage":
-                locals_ = local_usage_locals(self.view, view_analysis_, thingy)
-
-                if locals_:
-                    regions = [locals_["local_binding_region"]]
-                    regions.extend(locals_["local_usages_regions"])
-
-                    highlight_regions(self.view, self.view.sel(), regions)
-
-            elif thingy_type == "var_definition":
-                pass
-
-            elif thingy_type == "var_usage":
-                pass
 
 
 class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
