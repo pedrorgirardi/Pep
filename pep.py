@@ -1023,6 +1023,11 @@ class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
     def run(self):
         analyze_paths_async(self.window)
 
+class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        analyze_view_async(self.view)
+
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
@@ -1497,12 +1502,6 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
             if regions:
                 highlight_regions(self.view, self.view.sel(), regions)
-
-
-class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        analyze_view_async(self.view)
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
