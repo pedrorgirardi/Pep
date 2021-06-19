@@ -1088,58 +1088,8 @@ def find_thingy_regions(view, analysis, thingy):
     if thingy_type == "keyword":
         keywords = find_keywords(analysis, thingy_data)
 
-        for local_usage in keywords:
-            regions.append(keyword_region(view, local_usage))
-
-    elif thingy_type == "local_binding":
-        regions.append(local_binding_region(view, thingy_data))
-
-        local_usages = find_local_usages(analysis, thingy_data)
-
-        for local_usage in local_usages:
-            regions.append(local_usage_region(view, local_usage))
-
-    elif thingy_type == "local_usage":
-        # It's possible to have a local usage without a local binding.
-        # (It looks like a clj-kondo bug.)
-        if local_binding := find_local_binding(analysis, thingy_data):
-            regions.append(local_binding_region(view, local_binding))
-
-        local_usages = find_local_usages(analysis, thingy_data)
-
-        for local_usage in local_usages:
-            regions.append(local_usage_region(view, local_usage))
-
-    elif thingy_type == "var_definition":
-        regions.append(var_definition_region(view, thingy_data))
-
-        var_usages = find_var_usages(analysis, thingy_data)
-
-        for var_usage in var_usages:
-            regions.append(var_usage_region(view, var_usage))
-
-    elif thingy_type == "var_usage":
-        if var_definition := find_var_definition(analysis, thingy_data):
-            regions.append(var_definition_region(view, var_definition))
-
-        var_usages = find_var_usages_with_usage(analysis, thingy_data)
-
-        for var_usage in var_usages:
-            regions.append(var_usage_region(view, var_usage))
-
-    return regions
-
-
-def find_highlight_regions(view, analysis, thingy):
-    thingy_type, _, thingy_data  = thingy
-
-    regions = []
-
-    if thingy_type == "keyword":
-        keywords = find_keywords(analysis, thingy_data)
-
-        for local_usage in keywords:
-            regions.append(keyword_region(view, local_usage))
+        for keyword in keywords:
+            regions.append(keyword_region(view, keyword))
 
     elif thingy_type == "local_binding":
         regions.append(local_binding_region(view, thingy_data))
@@ -1761,7 +1711,7 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
         self.view.erase_regions("pg_pep_highligths")
 
         if thingy:
-            regions = find_highlight_regions(self.view, view_analysis_, thingy)
+            regions = find_thingy_regions(self.view, view_analysis_, thingy)
 
             if regions:
                 highlight_regions(self.view, self.view.sel(), regions)
