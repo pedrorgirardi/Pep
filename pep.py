@@ -1080,6 +1080,56 @@ def find_with_local_usage(view, state, thingy, select):
     present_local(view, local_binding_region_, local_usages_regions, select)
 
 
+def find_thingy_regions(view, analysis, thingy):
+    thingy_type, _, thingy_data  = thingy
+
+    regions = []
+
+    if thingy_type == "keyword":
+        keywords = find_keywords(analysis, thingy_data)
+
+        for local_usage in keywords:
+            regions.append(keyword_region(view, local_usage))
+
+    elif thingy_type == "local_binding":
+        regions.append(local_binding_region(view, thingy_data))
+
+        local_usages = find_local_usages(analysis, thingy_data)
+
+        for local_usage in local_usages:
+            regions.append(local_usage_region(view, local_usage))
+
+    elif thingy_type == "local_usage":
+        # It's possible to have a local usage without a local binding.
+        # (It looks like a clj-kondo bug.)
+        if local_binding := find_local_binding(analysis, thingy_data):
+            regions.append(local_binding_region(view, local_binding))
+
+        local_usages = find_local_usages(analysis, thingy_data)
+
+        for local_usage in local_usages:
+            regions.append(local_usage_region(view, local_usage))
+
+    elif thingy_type == "var_definition":
+        regions.append(var_definition_region(view, thingy_data))
+
+        var_usages = find_var_usages(analysis, thingy_data)
+
+        for var_usage in var_usages:
+            regions.append(var_usage_region(view, var_usage))
+
+    elif thingy_type == "var_usage":
+        if var_definition := find_var_definition(analysis, thingy_data):
+            regions.append(var_definition_region(view, var_definition))
+
+        var_usages = find_var_usages_with_usage(analysis, thingy_data)
+
+        for var_usage in var_usages:
+            regions.append(var_usage_region(view, var_usage))
+
+    return regions
+
+
 def find_highlight_regions(view, analysis, thingy):
     thingy_type, _, thingy_data  = thingy
 
@@ -1671,6 +1721,27 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         elif thingy_type == "var_usage":
             find_with_var_usage(self.view, analysis, region, thingy, select)
+
+
+class PgPepSelectCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, select=False):
+        is_debug = debug()
+
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, view_analysis_, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy:
+            regions = find_thingy_regions(self.view, view_analysis_, thingy)
+
+            self.view.sel().clear()
+            self.view.sel().add_all(regions)
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
