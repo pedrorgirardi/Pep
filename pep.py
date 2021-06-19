@@ -418,7 +418,7 @@ def analyze_view(view):
 
         krn.setdefault(row, []).append(keyword)
 
-        kindex[(ns, name)] = keyword
+        kindex.setdefault((ns, name), []).append(keyword)
 
     # Vars indexed by row.
     vrn = {}
@@ -692,7 +692,7 @@ def erase_analysis_regions(view):
 # ---
 
 
-def keyword_usage_region(view, keyword_usage):
+def keyword_region(view, keyword_usage):
     """
     Returns the Region of a keyword_usage.
     """
@@ -946,7 +946,10 @@ def find_highlight_regions(view, analysis, thingy):
     regions = []
 
     if thingy_type == "keyword":
-        pass
+        keywords = find_keywords(analysis, thingy_data)
+
+        for local_usage in keywords:
+            regions.append(keyword_region(view, local_usage))
 
     elif thingy_type == "local_binding":
         regions.append(local_binding_region(view, thingy_data))
