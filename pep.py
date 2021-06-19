@@ -1499,7 +1499,7 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
                 highlight_regions(self.view, self.view.sel(), regions)
 
 
-class PgPepAnalyzeCommand(sublime_plugin.TextCommand):
+class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         analyze_view_async(self.view)
