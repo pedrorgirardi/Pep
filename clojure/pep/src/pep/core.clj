@@ -3,10 +3,7 @@
 
 (comment
   
-  (let [x 1]
-    x
-    x
-    x)
+  (let [x 1] x x x)
   
   (def a 1) (def b 2)
   

@@ -88,6 +88,28 @@ def analysis_summary(analysis):
     return analysis.get("summary", {})
 
 
+def analysis_kindex(analysis):
+    """
+    Returns a dictionary of keywords by (namespace, name).
+
+    This index can be used to find a local in constant time if you know its ID.
+
+    'kindex' stands for 'keyword index'.
+    """
+    return analysis.get("kindex", {})
+
+
+def analysis_krn(analysis):
+    """
+    Returns a dictionary of keywords by row.
+
+    This index can be used to quicky find a keyword by row.
+
+    'krn' stands for 'keyword row name'.
+    """
+    return analysis.get("krn", {})
+
+
 def analysis_vindex(analysis):
     """
     Returns a dictionary of locals by ID.
@@ -362,7 +384,7 @@ def analyze_view(view):
     elif view_file_name:
         cwd = os.path.dirname(view_file_name)
 
-    analysis_config = "{:output {:analysis {:arglists true :locals true} :format :json :canonical-paths true} \
+    analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true} :format :json :canonical-paths true} \
                         :lint-as {reagent.core/with-let clojure.core/let}}"
 
     analysis_subprocess_args = [clj_kondo_path(), 
@@ -372,7 +394,7 @@ def analyze_view(view):
     if is_debug:
         print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
-    analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True)
+    analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True, input=None if view_file_name else view_text(view))
 
     output = None
 
@@ -382,6 +404,21 @@ def analyze_view(view):
         output = {}
 
     analysis = output.get("analysis", {})
+
+    # Keywords indexed by row.
+    krn = {}
+
+    # Keywords indexed by name - tuple of namespace and name.
+    kindex = {}
+
+    for keyword in analysis.get("keywords", []):
+        ns = keyword.get("ns")
+        name = keyword.get("name")
+        row = keyword.get("row")
+
+        krn.setdefault(row, []).append(keyword)
+
+        kindex[(ns, name)] = keyword
 
     # Vars indexed by row.
     vrn = {}
@@ -445,6 +482,8 @@ def analyze_view(view):
     
     set_view_analysis(view.id(), { "findings": output.get("findings", {}),
                                    "summary": output.get("summary", {}),
+                                   "kindex": kindex,
+                                   "krn": krn,
                                    "vindex": vindex,
                                    "vindex_usages": vindex_usages,
                                    "vrn": vrn,
@@ -653,6 +692,23 @@ def erase_analysis_regions(view):
 # ---
 
 
+def keyword_usage_region(view, keyword_usage):
+    """
+    Returns the Region of a keyword_usage.
+    """
+
+    row_start = keyword_usage["row"]
+    col_start = keyword_usage["col"]
+
+    row_end = keyword_usage["end-row"]
+    col_end = keyword_usage["end-col"]
+
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
+
+    return sublime.Region(start_point, end_point)
+
+
 def local_usage_region(view, local_usage):
     """
     Returns the Region of a local usage.
@@ -724,6 +780,22 @@ def var_usage_region(view, var_usage):
 # ---
 
 
+def keyword_in_region(view, krn, region):
+    """
+    Try to find a keyword in region using the krn index.
+    """
+
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    keywords = krn.get(region_begin_row + 1, [])
+
+    for keyword in keywords:
+        _region = keyword_region(view, keyword)
+
+        if _region.contains(region):
+            return (_region, keyword)
+
+
 def local_usage_in_region(view, lrn_usages, region):
     """
     Local usage dictionary, or None.
@@ -771,7 +843,7 @@ def var_definition_in_region(view, vrn, region):
             return (_region, var_definition)
 
 
-def thingy_in_region(view, state, region):
+def thingy_in_region(view, analysis, region):
     """
     Thingy is not a good name, but what to call something that
     can be a local binding, local usage, Var definition, or Var usage?
@@ -790,32 +862,45 @@ def thingy_in_region(view, state, region):
         - The thingy itself - clj-kondo data.
     """
 
-    # 1. Try local usages.
-    thingy_region, thingy_data = local_usage_in_region(view, state.get("lrn_usages", {}), region) or (None, None)
+    # 1. Try keywords.
+    thingy_region, thingy_data = keyword_in_region(view, analysis.get("krn", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("keyword", thingy_region, thingy_data)
+
+    # 2. Try local usages.
+    thingy_region, thingy_data = local_usage_in_region(view, analysis.get("lrn_usages", {}), region) or (None, None)
 
     if thingy_data:
         return ("local_usage", thingy_region, thingy_data)
 
-    # 2. Try Var usages. 
-    thingy_region, thingy_data = var_usage_in_region(view, state.get("vrn_usages", {}), region) or (None, None)
+    # 3. Try Var usages. 
+    thingy_region, thingy_data = var_usage_in_region(view, analysis.get("vrn_usages", {}), region) or (None, None)
 
     if thingy_data:
         return ("var_usage", thingy_region, thingy_data)
 
-    # 3. Try local bindings. 
-    thingy_region, thingy_data = local_binding_in_region(view, state.get("lrn", {}), region) or (None, None)
+    # 4. Try local bindings. 
+    thingy_region, thingy_data = local_binding_in_region(view, analysis.get("lrn", {}), region) or (None, None)
 
     if thingy_data:
         return ("local_binding", thingy_region, thingy_data)
 
-    # 4. Try Var definitions. 
-    thingy_region, thingy_data = var_definition_in_region(view, state.get("vrn", {}), region) or (None, None)
+    # 5. Try Var definitions. 
+    thingy_region, thingy_data = var_definition_in_region(view, analysis.get("vrn", {}), region) or (None, None)
 
     if thingy_data:
         return ("var_definition", thingy_region, thingy_data)
 
 
 # ---
+
+
+def find_keywords(analysis, keyword):
+    keyword_qualified_name = (keyword.get("ns"), keyword.get("name"))
+
+    return analysis.get("kindex", {}).get(keyword_qualified_name, [])
+
 
 def find_local_binding(analysis, local_usage):
     return analysis_lindex(analysis).get(local_usage.get("id"))
@@ -860,7 +945,10 @@ def find_highlight_regions(view, analysis, thingy):
 
     regions = []
 
-    if thingy_type == "local_binding":
+    if thingy_type == "keyword":
+        pass
+
+    elif thingy_type == "local_binding":
         regions.append(local_binding_region(view, thingy_data))
 
         local_usages = find_local_usages(analysis, thingy_data)
