@@ -316,7 +316,11 @@ def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
 def debug():
-    return sublime.load_settings("Pep.sublime-settings").get("debug", False)
+    return settings().get("debug", False)
+
+def automatically_highlight():
+    return settings().get("automatically_highlight", False)    
+
 
 def set_view_name(view, name):
     if view:
@@ -1683,7 +1687,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             analyze_paths_async(self.view.window())
 
     def on_selection_modified(self):
-        sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
+        if automatically_highlight():
+            sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
     def on_close(self):
         """
