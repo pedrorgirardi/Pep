@@ -81,6 +81,12 @@ def view_analysis(view_id):
 
 # ---
 
+def analysis_view_modified(view):
+    """
+    Returns True if view was modified since last analysis.
+    """
+    return view.change_count() != view_analysis(view.id()).get("view_change_count")
+
 
 def analysis_findings(analysis):
     return analysis.get("findings", {})
@@ -400,6 +406,10 @@ def analyze_view(view):
     if is_debug:
         print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
+    # Change count right before analyzing the view.
+    # This will be stored in the analysis.
+    view_change_count = view.change_count()
+
     analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True, input=None if view_file_name else view_text(view))
 
     output = None
@@ -486,7 +496,8 @@ def analyze_view(view):
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
     
-    set_view_analysis(view.id(), { "findings": output.get("findings", {}),
+    set_view_analysis(view.id(), { "view_change_count": view_change_count,
+                                   "findings": output.get("findings", {}),
                                    "summary": output.get("summary", {}),
                                    "kindex": kindex,
                                    "krn": krn,
@@ -1496,7 +1507,9 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
         self.view.erase_regions("pg_pep_highligths")
 
-        if thingy:
+        # We can't highlight if view was modified,
+        # because regions might be different.
+        if thingy and not analysis_view_modified(self.view):
             regions = find_thingy_regions(self.view, view_analysis_, thingy)
 
             if regions:
