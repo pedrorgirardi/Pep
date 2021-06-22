@@ -379,7 +379,7 @@ def project_classpath(window):
 ## ---
 
 
-def analyze_view(view):
+def analyze_view(view, on_completed=None):
     is_debug = settings().get("debug", False)
 
     window = view.window()
@@ -495,24 +495,31 @@ def analyze_view(view):
 
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
+
+    view_analysis_ = { "view_change_count": view_change_count,
+                       "findings": output.get("findings", {}),
+                       "summary": output.get("summary", {}),
+                       "kindex": kindex,
+                       "krn": krn,
+                       "vindex": vindex,
+                       "vindex_usages": vindex_usages,
+                       "vrn": vrn,
+                       "vrn_usages": vrn_usages,
+                       "lindex": lindex,
+                       "lindex_usages": lindex_usages,
+                       "lrn": lrn,
+                       "lrn_usages": lrn_usages }
     
-    set_view_analysis(view.id(), { "view_change_count": view_change_count,
-                                   "findings": output.get("findings", {}),
-                                   "summary": output.get("summary", {}),
-                                   "kindex": kindex,
-                                   "krn": krn,
-                                   "vindex": vindex,
-                                   "vindex_usages": vindex_usages,
-                                   "vrn": vrn,
-                                   "vrn_usages": vrn_usages,
-                                   "lindex": lindex,
-                                   "lindex_usages": lindex_usages,
-                                   "lrn": lrn,
-                                   "lrn_usages": lrn_usages })
+    set_view_analysis(view.id(), view_analysis_)
+
+    if on_completed:
+        on_completed(view_analysis_)
+
+    return True
 
 
-def analyze_view_async(view):
-    threading.Thread(target=lambda: analyze_view(view), daemon=True).start()
+def analyze_view_async(view, on_completed=None):
+    threading.Thread(target=lambda: analyze_view(view, on_completed=on_completed), daemon=True).start()
 
 
 def analyze_classpath(window):
@@ -1669,6 +1676,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
                                           "Packages/Clojure/Clojure.sublime-syntax",
                                           "Packages/Clojure/ClojureScript.sublime-syntax"}
 
+    def highlight_regions(self):
+        if automatically_highlight():
+            sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
+
     def analyze_view(self):
         return set(settings().get("analyze_view", {}))
 
@@ -1683,20 +1694,16 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if "on_activated_async" in self.analyze_view():
             analyze_view_async(self.view)
 
-    def on_post_save(self):
-        if "on_post_save" in self.analyze_view():
-            analyze_view_async(self.view)
-
     def on_post_save_async(self):
         if "on_post_save_async" in self.analyze_view():
-            analyze_view_async(self.view)
+            # Highlight regions post save so the user doesn't need to change selection. 
+            analyze_view_async(self.view, on_completed=lambda _: self.highlight_regions())
 
         if "on_post_save_async" in self.analyze_paths():
             analyze_paths_async(self.view.window())
 
     def on_selection_modified(self):
-        if automatically_highlight():
-            sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
+        self.highlight_regions()
 
     def on_close(self):
         """
