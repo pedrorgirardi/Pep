@@ -869,6 +869,8 @@ def var_definition_in_region(view, vrn, region):
 
 def thingy_in_region(view, analysis, region):
     """
+    Tuple of type, region and data.
+
     Thingy is not a good name, but what to call something that
     can be a local binding, local usage, Var definition, or Var usage?
 
@@ -969,6 +971,24 @@ def find_thingy_regions(view, analysis, thingy):
 
         for keyword in keywords:
             regions.append(keyword_region(view, keyword))
+
+        # It's a little more involved if it's a keys destructuring.
+        # Keys names become locals, so its usages should also be highligthed.
+        if thingy_data.get("keys-destructuring", False):
+            lrn = analysis_lrn(analysis)
+
+            region = keyword_region(view, thingy_data)
+
+            # We should find a local binding for the keyword because of destructuring.
+            thingy_region, thingy_data = local_binding_in_region(view, lrn, region) or (None, None)
+
+            thingy = ("local_binding", thingy_region, thingy_data)
+
+            # Recursive call to find usages regions.
+            local_usages_regions = find_thingy_regions(view, analysis, thingy)
+
+            if local_usages_regions:
+                regions.extend(local_usages_regions)
 
     elif thingy_type == "local_binding":
         regions.append(local_binding_region(view, thingy_data))
