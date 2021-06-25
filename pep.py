@@ -955,11 +955,6 @@ def find_var_usages_with_usage(analysis, var_usage):
 # ---
 
 def highlight_regions(view, selection, regions):
-    for index, thingy_region in enumerate(regions):
-        for sel_region in selection:
-            if thingy_region.contains(sel_region):
-                del regions[index]
-
     if regions:
         view.add_regions("pg_pep_highligths", regions, scope="region.cyanish", flags=sublime.DRAW_NO_FILL)
 
