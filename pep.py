@@ -1230,7 +1230,22 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         # - thingy_findings
         navigation = view_navigation(state)
 
-        if thingy_type == "local_binding":
+        if thingy_type == "keyword":
+            thingy_findings = find_keywords(state, thingy_data)
+
+            thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
+
+            if thingy_id != navigation.get("thingy_id"):
+                self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+
+                set_view_navigation(state, navigation)
+
+            position = self.find_position(thingy_findings, thingy_data)
+
+            if position != -1:
+                self.navigate(state, direction, position)
+
+        elif thingy_type == "local_binding":
             # Find local usages for this local binding (thingy).
             local_usages = find_local_usages(state, thingy_data)
 
