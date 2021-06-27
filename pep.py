@@ -1485,6 +1485,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         thingy_usages = None
 
         if thingy_type == "keyword":
+            # To be considered:
+            # If the keyword is a destructuring key,
+            # should it show its local usages?
+
             thingy_usages = find_keywords(paths_analysis_, thingy_data)
 
         elif thingy_type == "local_binding":
