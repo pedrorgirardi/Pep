@@ -877,6 +877,27 @@ def var_definition_in_region(view, vrn, region):
         if _region.contains(region):
             return (_region, var_definition)
 
+def thingy_kind(thingy):
+    thingy_type, _, thingy_data  = thingy
+
+    if thingy_type == "keyword":
+        return sublime.KIND_KEYWORD
+
+    elif thingy_type == "local_binding":
+        return sublime.KIND_VARIABLE
+
+    elif thingy_type == "local_usage":
+        return sublime.KIND_VARIABLE
+
+    elif thingy_type == "var_definition":
+        return sublime.KIND_VARIABLE
+
+    elif thingy_type == "var_usage":
+        return sublime.KIND_VARIABLE
+
+    else:
+        return sublime.KIND_AMBIGUOUS
+
 
 def thingy_in_region(view, analysis, region):
     """
@@ -1494,7 +1515,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
-                    quick_panel_items.append(sublime.QuickPanelItem(name, details, annotation, sublime.KIND_AMBIGUOUS))
+                    quick_panel_items.append(sublime.QuickPanelItem(name, details, annotation, thingy_kind(thingy)))
 
 
                 def on_done(index, _):
