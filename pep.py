@@ -1262,11 +1262,37 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         # - thingy_findings
         navigation = view_navigation(state)
 
+        thingy_findings = []
+
+        thingy_id = None
+
         if thingy_type == "keyword":
-            thingy_findings = find_keywords(state, thingy_data)
+            # It's a keyword in a keys destructuring context, so it creates a local binding.
+            # Instead of navigating to another keyword, we navigate to the next usage of the local.
+            if thingy_data.get("keys-destructuring", False):
+                lrn = analysis_lrn(state)
 
-            thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
+                region = keyword_region(self.view, thingy_data)
 
+                # We should find a local binding for the keyword because of destructuring.
+                thingy_region, thingy_data = local_binding_in_region(self.view, lrn, region) or (None, None)
+
+                thingy = ("local_binding", thingy_region, thingy_data)
+
+                # Find local usages for this local binding (thingy).
+                local_usages = find_local_usages(state, thingy_data)
+
+                thingy_findings = [thingy_data]
+                thingy_findings.extend(local_usages)
+
+                thingy_id = thingy_data.get("id")
+
+            else:
+                thingy_findings = find_keywords(state, thingy_data)
+
+                thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
+
+            
             if thingy_id != navigation.get("thingy_id"):
                 self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
 
