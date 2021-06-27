@@ -597,7 +597,7 @@ def analyze_paths(window):
 
         print(f"(Pep) Analyzing paths... (Project {project_path(window)}, Paths {paths})")
 
-        analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
+        analysis_config = "{:output {:analysis {:arglists true :keywords true} :format :json :canonical-paths true}}"
 
         analysis_subprocess_args = [clj_kondo_path(), 
                                     "--config", analysis_config,
@@ -617,6 +617,16 @@ def analyze_paths(window):
             output = {}
 
         analysis = output.get("analysis", {})
+
+        # Keywords indexed by name - tuple of namespace and name.
+        kindex = {}
+
+        for keyword in analysis.get("keywords", []):
+            ns = keyword.get("ns")
+            name = keyword.get("name")
+            row = keyword.get("row")
+
+            kindex.setdefault((ns, name), []).append(keyword)
 
         var_definitions = analysis.get("var-definitions", [])
 
@@ -642,7 +652,8 @@ def analyze_paths(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        analysis = {"vindex": vindex,
+        analysis = {"kindex": kindex,
+                    "vindex": vindex,
                     "vindex_usages": vindex_usages}
 
         set_paths_analysis(project_path(window), analysis)
@@ -1452,7 +1463,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         thingy_usages = None
 
-        if thingy_type == "local_binding":
+        if thingy_type == "keyword":
+            thingy_usages = find_keywords(paths_analysis_, thingy_data)
+
+        elif thingy_type == "local_binding":
             thingy_usages = find_local_usages(analysis, thingy_data)
 
         elif thingy_type == "local_usage":
