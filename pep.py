@@ -386,6 +386,11 @@ def analyze_view(view, on_completed=None):
 
     view_file_name = view.file_name()
 
+    # We get a wrong analysis if we analyze a dirty file view.
+    # (It's fine if there isn't a file.)
+    if view_file_name and view.is_dirty():
+        return
+
     project_file_name = window.project_file_name() if window else None
 
     # Setting the working directory is important because of the clj-kondo cache.
