@@ -389,7 +389,7 @@ def analyze_view(view, on_completed=None):
     # We get a wrong analysis if we analyze a dirty file view.
     # (It's fine if there isn't a file.)
     if view_file_name and view.is_dirty():
-        return
+        return False
 
     project_file_name = window.project_file_name() if window else None
 
