@@ -1546,11 +1546,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for thingy_usage in thingy_usages:
-                    name = thingy_usage.get("name")
+                    trigger = os.path.basename(thingy_usage.get("filename"))
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
-                    quick_panel_items.append(sublime.QuickPanelItem(name, details, annotation, thingy_kind(thingy)))
+                    quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, thingy_kind(thingy)))
 
 
                 def on_done(index, _):
