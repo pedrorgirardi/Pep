@@ -898,11 +898,16 @@ def namespace_usage_in_region(view, nrn_usages, region):
 
         if _region.contains(region):
             return (_region, namespace_usage)
-        else:
-            _region = namespace_usage_alias_region(view, namespace_usage)
 
-            if _region.contains(region):
-                return (_region, namespace_usage)
+
+def namespace_usage_alias_in_region(view, nrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for namespace_usage in nrn_usages.get(region_begin_row + 1, []):
+        _region = namespace_usage_alias_region(view, namespace_usage)
+
+        if _region.contains(region):
+            return (_region, namespace_usage)
 
 
 def local_usage_in_region(view, lrn_usages, region):
@@ -1029,6 +1034,12 @@ def thingy_in_region(view, analysis, region):
 
     if thingy_data:
         return ("namespace_usage", thingy_region, thingy_data)
+
+    # 7. Try namespace usages alias. 
+    thingy_region, thingy_data = namespace_usage_alias_in_region(view, analysis.get("nrn_usages", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("namespace_usage_alias", thingy_region, thingy_data)
 
 
 # ---
