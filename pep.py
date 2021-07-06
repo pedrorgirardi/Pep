@@ -1334,16 +1334,12 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         navigation["thingy_id"] = thingy_id
         navigation["thingy_findings"] = thingy_findings
 
-    def find_position(self, thingy_findings, thingy):
+    def find_position(self, thingy, thingy_findings):
         thingy_type, _, thingy_data = thingy
 
         for position, finding in enumerate(thingy_findings):
-            if thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":                
-                if thingy_data.get("to") == finding.get("to"):
-                    return position
-            else:
-                if finding == thingy_data:
-                    return position
+            if finding == thingy_data:
+                return position
 
         return -1
 
@@ -1429,7 +1425,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                 set_view_navigation(state, navigation)
 
-            position = self.find_position(thingy_findings, thingy)
+            position = self.find_position(thingy, thingy_findings)
 
             if position != -1:
                 self.navigate(state, direction, position)
@@ -1449,7 +1445,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                     set_view_navigation(state, navigation)
 
-                position = self.find_position(thingy_findings, thingy)
+                position = self.find_position(thingy, thingy_findings)
 
                 if position != -1:
                     self.navigate(state, direction, position)
@@ -1476,7 +1472,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                     set_view_navigation(state, navigation)
 
-                position = self.find_position(thingy_findings, thingy)
+                position = self.find_position(thingy, thingy_findings)
 
                 if position != -1:
                     self.navigate(state, direction, position)
@@ -1496,7 +1492,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                     set_view_navigation(state, navigation)
 
-                position = self.find_position(thingy_findings, thingy)
+                position = self.find_position(thingy, thingy_findings)
 
                 if position != -1:
                     self.navigate(state, direction, position)
@@ -1518,25 +1514,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                     set_view_navigation(state, navigation)
 
-                position = self.find_position(thingy_findings, thingy)
-
-                if position != -1:
-                    self.navigate(state, direction, position)
-
-        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-
-            # Findings are Var usages.
-            thingy_findings = find_namespace_usages_with_usage(state, thingy_data)
-
-            thingy_id = thingy_data.get("to")
-
-            if thingy_id:
-                if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
-
-                    set_view_navigation(state, navigation)
-
-                position = self.find_position(thingy_findings, thingy)
+                position = self.find_position(thingy, thingy_findings)
 
                 if position != -1:
                     self.navigate(state, direction, position)
