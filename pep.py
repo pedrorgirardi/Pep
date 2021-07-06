@@ -1634,6 +1634,95 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         thingy_type, thingy_region, thingy_data  = thingy
 
+        thingy_usages = None
+
+        if thingy_type == "keyword":
+            # To be considered:
+            # If the keyword is a destructuring key,
+            # should it show its local usages?
+
+            thingy_usages = find_keywords(analysis, thingy_data)
+
+        elif thingy_type == "local_binding":
+            thingy_usages = find_local_usages(analysis, thingy_data)
+
+        elif thingy_type == "local_usage":
+            thingy_usages = find_local_usages(analysis, thingy_data)
+
+        elif thingy_type == "var_definition":
+            thingy_usages = find_var_usages(analysis, thingy_data)
+
+        elif thingy_type == "var_usage":
+            thingy_usages = find_var_usages_with_usage(analysis, thingy_data)
+
+        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+            thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+
+
+        if thingy_usages:
+
+            if len(thingy_usages) == 1:
+                location = parse_location(thingy_usages[0])
+
+                goto(self.view.window(), location)
+                
+            else:
+                quick_panel_items = []
+
+                for thingy_usage in thingy_usages:
+                    trigger = os.path.basename(thingy_usage.get("filename"))
+                    details = thingy_usage.get("filename", "")
+                    annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
+
+                    quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, thingy_kind(thingy)))
+
+
+                def on_done(index, _):
+                    if index == -1:
+                        self.view.window().focus_view(self.view)
+                    else:
+                        location = parse_location(thingy_usages[index])
+
+                        goto(self.view.window(), location)
+
+                def on_highlighted(index):
+                    location = parse_location(thingy_usages[index])
+
+                    goto(self.view.window(), location, flags=sublime.ENCODED_POSITION | sublime.TRANSIENT)
+
+                placeholder = None
+
+                if thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+                    placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                else:
+                    placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+
+                self.view.window().show_quick_panel(quick_panel_items, 
+                                                    on_done, 
+                                                    sublime.WANT_EVENT, 
+                                                    0, 
+                                                    on_highlighted, 
+                                                    placeholder)
+
+class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        is_debug = debug()
+
+        analysis = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        thingy = thingy_in_region(self.view, analysis, region)
+
+        if is_debug:
+            print("(Pep) Thingy", thingy)
+
+        if thingy is None:
+            return
+
+        thingy_type, thingy_region, thingy_data  = thingy
+
         project_path_ = project_path(self.view.window())
 
         paths_analysis_ = paths_analysis(project_path_)
@@ -1647,12 +1736,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_usages = find_keywords(paths_analysis_, thingy_data)
 
-        elif thingy_type == "local_binding":
-            thingy_usages = find_local_usages(analysis, thingy_data)
-
-        elif thingy_type == "local_usage":
-            thingy_usages = find_local_usages(analysis, thingy_data)
-
         elif thingy_type == "var_definition":
             thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
@@ -1660,7 +1743,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             thingy_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
         elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-            thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+            thingy_usages = find_namespace_usages_with_usage(paths_analysis_, thingy_data)
 
 
         if thingy_usages:
