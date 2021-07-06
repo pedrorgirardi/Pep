@@ -1066,6 +1066,21 @@ def find_var_usages_with_usage(analysis, var_usage):
     return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
 
 
+def find_namespace_usages_with_usage(analysis, namespace_usage):
+    """
+    Returns Var usages for the namespace.
+
+    Scan vindex_usages for Vars defined in namespace_usage.
+    """
+
+    for var_qualified_name, var_usages in analysis.get("vindex_usages", {}).items():
+        namespace, _ = var_qualified_name
+
+        if namespace == namespace_usage.get("to"):
+            return var_usages
+
+    return []
+
 # ---
 
 def highlight_regions(view, selection, regions):
@@ -1466,6 +1481,25 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             thingy_findings.extend(var_usages)
 
             thingy_id = (thingy_data.get("to"), thingy_data.get("name"))
+
+            if thingy_id:
+                if thingy_id != navigation.get("thingy_id"):
+                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+
+                    set_view_navigation(state, navigation)
+
+                position = self.find_position(thingy_findings, thingy_data)
+
+                if position != -1:
+                    self.navigate(state, direction, position)
+
+        # TODO
+        elif thingy_type == "namespace_usage":
+
+            # Findings are Var usages.
+            thingy_findings = find_namespace_usages_with_usage(state, thingy_data)
+
+            thingy_id = thingy_data.get("to")
 
             if thingy_id:
                 if thingy_id != navigation.get("thingy_id"):
