@@ -426,6 +426,22 @@ def analyze_view(view, on_completed=None):
 
     analysis = output.get("analysis", {})
 
+    if is_debug:
+        pprint.pp(analysis)
+
+    # Namespace usages indexed by row.
+    nrn_usages = {}
+
+    for namespace_usage in analysis.get("namespace-usages", []):
+        name_row = namespace_usage.get("name-row") 
+
+        nrn_usages.setdefault(name_row, []).append(namespace_usage)
+
+        if namespace_usage.get("alias"):
+            alias_row = namespace_usage.get("alias-row")
+
+            nrn_usages.setdefault(alias_row, []).append(namespace_usage)
+    
     # Keywords indexed by row.
     krn = {}
 
@@ -441,6 +457,7 @@ def analyze_view(view, on_completed=None):
 
         kindex.setdefault((ns, name), []).append(keyword)
 
+    
     # Vars indexed by row.
     vrn = {}
 
@@ -456,6 +473,7 @@ def analyze_view(view, on_completed=None):
 
         vindex[(ns, name)] = var_definition
 
+    
     # Var usages indexed by row.
     vrn_usages = {}
 
@@ -471,6 +489,7 @@ def analyze_view(view, on_completed=None):
 
         vrn_usages.setdefault(name_row, []).append(var_usage)
 
+    
     # Locals indexed by row.
     lrn = {}
 
@@ -510,6 +529,7 @@ def analyze_view(view, on_completed=None):
                        "vindex_usages": vindex_usages,
                        "vrn": vrn,
                        "vrn_usages": vrn_usages,
+                       "nrn_usages": nrn_usages,
                        "lindex": lindex,
                        "lindex_usages": lindex_usages,
                        "lrn": lrn,
@@ -749,6 +769,40 @@ def keyword_region(view, keyword_usage):
     return sublime.Region(start_point, end_point)
 
 
+def namespace_usage_region(view, namespace_usage):
+    """
+    Returns a Region of a namespace usage.
+    """
+
+    row_start = namespace_usage.get("name-row")
+    col_start = namespace_usage.get("name-col")
+
+    row_end = namespace_usage.get("name-end-row")
+    col_end = namespace_usage.get("name-end-col")
+
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
+
+    return sublime.Region(start_point, end_point)
+
+def namespace_usage_alias_region(view, namespace_usage):
+    """
+    Returns a Region of a namespace usage.
+    """
+
+    if namespace_usage.get("alias"):
+        row_start = namespace_usage.get("alias-row")
+        col_start = namespace_usage.get("alias-col")
+
+        row_end = namespace_usage.get("alias-end-row")
+        col_end = namespace_usage.get("alias-end-col")
+
+        start_point = view.text_point(row_start - 1, col_start - 1)
+        end_point = view.text_point(row_end - 1, col_end - 1)
+
+        return sublime.Region(start_point, end_point)
+
+
 def local_usage_region(view, local_usage):
     """
     Returns the Region of a local usage.
@@ -834,6 +888,21 @@ def keyword_in_region(view, krn, region):
 
         if _region.contains(region):
             return (_region, keyword)
+
+
+def namespace_usage_in_region(view, nrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for namespace_usage in nrn_usages.get(region_begin_row + 1, []):
+        _region = namespace_usage_region(view, namespace_usage)
+
+        if _region.contains(region):
+            return (_region, namespace_usage)
+        else:
+            _region = namespace_usage_alias_region(view, namespace_usage)
+
+            if _region.contains(region):
+                return (_region, namespace_usage)
 
 
 def local_usage_in_region(view, lrn_usages, region):
@@ -954,6 +1023,12 @@ def thingy_in_region(view, analysis, region):
 
     if thingy_data:
         return ("var_definition", thingy_region, thingy_data)
+
+    # 6. Try namespace usages. 
+    thingy_region, thingy_data = namespace_usage_in_region(view, analysis.get("nrn_usages", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("namespace_usage", thingy_region, thingy_data)
 
 
 # ---
@@ -1415,7 +1490,7 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         items_html = ""
 
         for k,v in thingy_data.items():
-            items_html += f"<li>{k}: {v}</li>"
+            items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
 
         html = f"""
         <body id='pg-pep-show-thingy'>
@@ -1507,7 +1582,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, _, thingy_data  = thingy
+        thingy_type, thingy_region, thingy_data  = thingy
 
         project_path_ = project_path(self.view.window())
 
