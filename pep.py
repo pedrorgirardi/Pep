@@ -974,7 +974,7 @@ def thingy_kind(thingy):
         return sublime.KIND_VARIABLE
 
     elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-        return sublime.KIND_NAMESPACE
+        return sublime.KIND_VARIABLE
 
     else:
         return sublime.KIND_AMBIGUOUS
