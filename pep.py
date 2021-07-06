@@ -1167,8 +1167,9 @@ def find_thingy_regions(view, analysis, thingy):
     elif thingy_type == "namespace_usage":
         regions.append(namespace_usage_region(view, thingy_data))
 
-        if alias_region := namespace_usage_alias_region(view, thingy_data):
-            regions.append(alias_region)
+    elif thingy_type == "namespace_usage_alias":
+        regions.append(namespace_usage_alias_region(view, thingy_data))
+
 
     return regions
 
