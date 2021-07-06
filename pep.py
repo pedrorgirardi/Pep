@@ -904,10 +904,9 @@ def namespace_usage_alias_in_region(view, nrn_usages, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
     for namespace_usage in nrn_usages.get(region_begin_row + 1, []):
-        _region = namespace_usage_alias_region(view, namespace_usage)
-
-        if _region.contains(region):
-            return (_region, namespace_usage)
+        if _region := namespace_usage_alias_region(view, namespace_usage):
+            if _region.contains(region):
+                return (_region, namespace_usage)
 
 
 def local_usage_in_region(view, lrn_usages, region):
