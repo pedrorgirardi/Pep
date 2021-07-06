@@ -974,6 +974,9 @@ def thingy_kind(thingy):
     elif thingy_type == "var_usage":
         return sublime.KIND_VARIABLE
 
+    elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+        return sublime.KIND_NAMESPACE
+
     else:
         return sublime.KIND_AMBIGUOUS
 
@@ -1656,6 +1659,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         elif thingy_type == "var_usage":
             thingy_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
+        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+            thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+
 
         if thingy_usages:
 
@@ -1688,7 +1694,12 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     goto(self.view.window(), location, flags=sublime.ENCODED_POSITION | sublime.TRANSIENT)
 
-                placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+                placeholder = None
+
+                if thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+                    placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                else:
+                    placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
 
                 self.view.window().show_quick_panel(quick_panel_items, 
                                                     on_done, 
