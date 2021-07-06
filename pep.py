@@ -1138,6 +1138,12 @@ def find_thingy_regions(view, analysis, thingy):
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
 
+    elif thingy_type == "namespace_usage":
+        regions.append(namespace_usage_region(view, thingy_data))
+
+        if alias_region := namespace_usage_alias_region(view, thingy_data):
+            regions.append(alias_region)
+
     return regions
 
 
