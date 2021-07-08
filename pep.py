@@ -135,6 +135,15 @@ def analysis_vindex(analysis):
     return analysis.get("vindex", {})
 
 
+def analysis_vindex_usages(analysis):
+    """
+    Returns a dictionary of Var usages by qualified name.
+
+    'vindex_usages' stands for 'Var index'.
+    """
+    return analysis.get("vindex_usages", {})
+
+
 def analysis_vrn(analysis):
     """
     Returns a dictionary of Vars by row.
@@ -200,7 +209,20 @@ def analysis_lrn_usages(analysis):
     return analysis.get("lrn_usages", {})
 
 
+def var_usages(analysis, name):
+    usages = analysis_vindex_usages(analysis).get(name, [])
+
+    return remove_empty_rows(usages)
+
 # ---
+
+def remove_empty_rows(thingies):
+    """
+    For some reason, maybe a clj-kondo bug, a Var usage might have a None row.
+
+    This function is suitable for any thingy data - not only Var usages.
+    """
+    return [thingy_data for thingy_data in thingies if thingy_data["row"] != None]
 
 
 def view_navigation(view_state):
@@ -1070,13 +1092,13 @@ def find_var_definition(analysis, var_usage):
 def find_var_usages(analysis, var_definition):
     var_qualified_name = (var_definition.get("ns"), var_definition.get("name"))
 
-    return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
+    return var_usages(analysis, var_qualified_name)
 
 
 def find_var_usages_with_usage(analysis, var_usage):
     var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
 
-    return analysis.get("vindex_usages", {}).get(var_qualified_name, [])
+    return var_usages(analysis, var_qualified_name)
 
 
 def find_namespace_usages_with_usage(analysis, namespace_usage):
