@@ -1131,14 +1131,9 @@ def find_thingy_regions(view, analysis, thingy):
     regions = []
 
     if thingy_type == "keyword":
-        keywords = find_keywords(analysis, thingy_data)
-
-        for keyword in keywords:
-            regions.append(keyword_region(view, keyword))
-
-        # It's a little more involved if it's a keys destructuring.
-        # Keys names become locals, so its usages should also be highligthed.
-        if thingy_data.get("keys-destructuring", False):
+        # It's a little more involved if it's a 'keys destructuring'.
+        # Keys names become locals, so their usages must be highligthed.
+        if thingy_data.get("keys-destructuring"):
             lrn = analysis_lrn(analysis)
 
             region = keyword_region(view, thingy_data)
@@ -1153,6 +1148,11 @@ def find_thingy_regions(view, analysis, thingy):
 
             if local_usages_regions:
                 regions.extend(local_usages_regions)
+        else:
+            keywords = find_keywords(analysis, thingy_data)
+
+            for keyword in keywords:
+                regions.append(keyword_region(view, keyword))    
 
     elif thingy_type == "local_binding":
         regions.append(local_binding_region(view, thingy_data))
