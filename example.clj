@@ -4,6 +4,8 @@
   
   age)
 
+{:person/age 33}
+
 
 (let [x 1]
   x)
