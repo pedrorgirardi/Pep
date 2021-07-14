@@ -57,7 +57,7 @@ If you configure `paths`, you will be able to go to definition, show documentati
 A paths analysis usually doesn't take long and it will run whenever you save a file - see **Settings** `"analyze_paths"`.
 
 If you configure `classpath`, you will be able to go to definition and show documentation of Vars defined in libraries.
-Classpath analysis does take a little longer and it doesn't run automatically, you need to invoke a command.
+Classpath analysis does take a little longer and it doesn't run automatically, you need to invoke a command (`pg_pep_analyze_classpath`).
 
 ```json
 {
