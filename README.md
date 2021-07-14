@@ -53,8 +53,11 @@
 
 To analyze your project's classpath and paths (your own files), you need to configure Pep in your Sublime Project.
 
-If you configure `paths`, you will be able go to definition, show documentation and find usages of Vars in your project.
-A paths analysis usually doesn't take long and it will run behind the scenes whenever you save a file - see **Settings** `"analyze_paths"`.
+If you configure `paths`, you will be able to go to definition, show documentation and find usages of Vars in your project.
+A paths analysis usually doesn't take long and it will run whenever you save a file - see **Settings** `"analyze_paths"`.
+
+If you configure `classpath`, you will be able to go to definition and show documentation of Vars defined in libraries.
+Classpath analysis does take a little longer and it doesn't run automatically, you need to invoke a command.
 
 ```json
 {
