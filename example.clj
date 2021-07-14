@@ -1,3 +1,6 @@
+(ns user
+  (:require [clojure.pprint :as pprint]))
+
 (let [{:person/keys [age]} {:person/age 33}]
   
   :person/age

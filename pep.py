@@ -214,6 +214,21 @@ def var_usages(analysis, name):
 
     return remove_empty_rows(usages)
 
+def nindex(analysis):
+    """
+    Returns a dictionary of namespace definition by name.
+
+    'nindex' stands for 'Namespace index'.
+    """
+    return analysis.get("nindex", {})
+
+def namespace_definition(analysis, name):
+    """
+    Returns namespace definition, or None of there isn't one.
+    """
+
+    return nindex(analysis).get(name)
+
 # ---
 
 def remove_empty_rows(thingies):
@@ -600,6 +615,17 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
+        namespace_definitions = analysis.get("namespace-definitions", [])
+
+        # Namespace definitions indexed by name.
+        nindex = {}
+
+        for namespace_definition in namespace_definitions:
+            name = namespace_definition.get("name")
+
+            nindex[name] = namespace_definition
+
+
         var_definitions = analysis.get("var-definitions", [])
 
         var_usages = analysis.get("var-usages", [])
@@ -624,7 +650,8 @@ def analyze_classpath(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        analysis = {"vindex": vindex,
+        analysis = {"nindex": nindex,
+                    "vindex": vindex,
                     "vindex_usages": vindex_usages}
 
         set_project_analysis(project_path(window), analysis)
@@ -665,6 +692,16 @@ def analyze_paths(window):
 
         analysis = output.get("analysis", {})
 
+        namespace_definitions = analysis.get("namespace-definitions", [])
+
+        # Namespace definitions indexed by name.
+        nindex = {}
+
+        for namespace_definition in namespace_definitions:
+            name = namespace_definition.get("name")
+
+            nindex[name] = namespace_definition
+
         # Keywords indexed by name - tuple of namespace and name.
         kindex = {}
 
@@ -699,7 +736,8 @@ def analyze_paths(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        analysis = {"kindex": kindex,
+        analysis = {"nindex": nindex,
+                    "kindex": kindex,
                     "vindex": vindex,
                     "vindex_usages": vindex_usages}
 
@@ -1100,6 +1138,11 @@ def find_var_usages_with_usage(analysis, var_usage):
 
     return var_usages(analysis, var_qualified_name)
 
+
+def find_namespace_definition(analysis, namespace_usage):
+    name = namespace_usage.get("to")
+
+    return namespace_definition(analysis, name);
 
 def find_namespace_usages_with_usage(analysis, namespace_usage):
     """
@@ -1591,6 +1634,9 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, side_by_side=False):
+        global GOTO_SIDE_BY_SIDE_FLAGS
+        global GOTO_DEFAULT_FLAGS
+
         is_debug = debug()
 
         analysis = view_analysis(self.view.id())
@@ -1616,6 +1662,22 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     self.view.sel().add(goto_region)
                     self.view.show(goto_region)
 
+        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+            project_path_ = project_path(self.view.window())
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            project_analysis_ = project_analysis(project_path_)
+
+            definition = (find_namespace_definition(analysis, thingy_data) or 
+                            find_namespace_definition(paths_analysis_, thingy_data) or 
+                            find_namespace_definition(project_analysis_, thingy_data))
+
+            if definition:
+                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+
+                goto(self.view.window(), parse_location(definition), flags=flags)
+
         elif thingy_type == "var_usage":
             project_path_ = project_path(self.view.window())
 
@@ -1628,9 +1690,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                             find_var_definition(project_analysis_, thingy_data))
 
             if definition:
-                global GOTO_SIDE_BY_SIDE_FLAGS
-                global GOTO_DEFAULT_FLAGS
-
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
 
                 goto(self.view.window(), parse_location(definition), flags=flags)
