@@ -1,0 +1,93 @@
+[
+    // Pep: Analyze Paths
+    { 
+        "keys": ["ctrl+x", "p", "p"], 
+        "command": "pg_pep_analyze_paths"
+    },
+
+    // Pep: Analyze Classpath
+    { 
+        "keys": ["ctrl+x", "p", "P"], 
+        "command": "pg_pep_analyze_classpath"
+    },
+
+    // Pep: Find Usages
+    { 
+        "keys": ["ctrl+u"], 
+        "command": "pg_pep_find_usages",
+        "context": [
+            {
+                "key": "selector", 
+                "operator": "equal", 
+                "operand": "source.clojure"
+            }
+        ]
+    },
+
+    // Pep: Find Usages in Project
+    { 
+        "keys": ["ctrl+super+u"], 
+        "command": "pg_pep_find_usages_in_project",
+        "context": [
+            {
+                "key": "selector", 
+                "operator": "equal", 
+                "operand": "source.clojure"
+            }
+        ]
+    },
+
+    // Pep: Select
+    { 
+        "keys": ["ctrl+s", "s"], 
+        "command": "pg_pep_select",
+        "context": [
+            {
+                "key": "selector", 
+                "operator": "equal", 
+                "operand": "source.clojure"
+            }
+        ]
+    },
+
+    // Pep: Navigate Back
+    { 
+    	"keys": ["ctrl+alt+up"], 
+    	"command": "pg_pep_navigate", 
+    	"args": {"direction": "back"} 
+    },
+
+    // Pep: Navigate Forward
+    { 
+    	"keys": ["ctrl+alt+down"], 
+    	"command": "pg_pep_navigate", 
+    	"args": {"direction": "forward"} 
+    },
+    
+
+    // Pep: Show Doc
+    {
+        "keys": ["ctrl+i"],
+        "command": "pg_pep_show_doc",
+        "context": [{"key": "selector", "operator": "equal", "operand": "source.clojure"}]
+    },
+
+    // Pep: Goto Definition
+    {
+        "keys": ["ctrl+d"],
+        "command": "pg_pep_goto_definition",
+        "context": [{"key": "selector", 
+                     "operator": "equal", 
+                     "operand": "source.clojure"}]
+    },
+
+    // Pep: Goto Definition Side by Side
+    {
+        "keys": ["ctrl+o"],
+        "command": "pg_pep_goto_definition",
+        "args": {"side_by_side": "true"},
+        "context": [{"key": "selector", 
+                     "operator": "equal", 
+                     "operand": "source.clojure"}]
+    }
+]
