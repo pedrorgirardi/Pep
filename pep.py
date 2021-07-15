@@ -1820,6 +1820,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             thingy_usages = find_var_usages_with_usage(analysis, thingy_data)
 
         elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+            # Usages of a namespace, in the scope of a single view, works a little different;
+            # It shows usages of Vars instead of namespace.
+            # Although a bit different, I think it's safe to assume that this behavior
+            # is what you expect in this particular situation.
+
             thingy_usages = find_namespace_vars_usages(analysis, thingy_data)
 
 
