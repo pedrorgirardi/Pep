@@ -1351,12 +1351,6 @@ class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
         erase_analysis_regions(self.view)
 
 
-class PgPepEraseUsageRegionsCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit):
-        erase_usage_regions(self.view)
-
-
 class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
 
     def run(self):
