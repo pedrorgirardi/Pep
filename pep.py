@@ -209,12 +209,7 @@ def analysis_lrn_usages(analysis):
     return analysis.get("lrn_usages", {})
 
 
-def var_usages(analysis, name):
-    usages = analysis_vindex_usages(analysis).get(name, [])
-
-    return remove_empty_rows(usages)
-
-def nindex(analysis):
+def analysis_nindex(analysis):
     """
     Returns a dictionary of namespace definition by name.
 
@@ -231,12 +226,22 @@ def analysis_nindex_usages(analysis):
     return analysis.get("nindex_usages", {})
 
 
+def var_usages(analysis, name):
+    """
+    Returns Var usages for name.
+    """
+
+    usages = analysis_vindex_usages(analysis).get(name, [])
+
+    return remove_empty_rows(usages)
+
+
 def namespace_definition(analysis, name):
     """
     Returns namespace definition, or None of there isn't one.
     """
 
-    return nindex(analysis).get(name)
+    return analysis_nindex(analysis).get(name)
 
 # ---
 
