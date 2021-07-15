@@ -1225,6 +1225,23 @@ def find_namespace_usages_with_usage(analysis, namespace_usage):
 
     return analysis_nindex_usages(analysis).get(name, [])
 
+def find_namespace_vars_usages(analysis, namespace_usage):
+    """
+    Returns usages of Vars from namespace_usage.
+
+    It's useful when you want to see Vars (from namespace_usage) being used in your namespace.
+    """
+
+    usages = []
+
+    for var_qualified_name, var_usages in analysis.get("vindex_usages", {}).items():
+        namespace, _ = var_qualified_name
+
+        if namespace == namespace_usage.get("to"):
+            usages.extend(var_usages)
+
+    return usages
+
 # ---
 
 def highlight_regions(view, selection, regions):
@@ -1803,7 +1820,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             thingy_usages = find_var_usages_with_usage(analysis, thingy_data)
 
         elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-            thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+            thingy_usages = find_namespace_vars_usages(analysis, thingy_data)
 
 
         if thingy_usages:
