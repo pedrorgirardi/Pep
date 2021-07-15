@@ -466,6 +466,14 @@ def analyze_view(view, on_completed=None):
     if is_debug:
         pprint.pp(analysis)
 
+    # Namespace definitions indexed by row.
+    nrn = {}
+
+    for namespace_definition in analysis.get("namespace-definitions", []):
+        name_row = namespace_definition.get("name-row") 
+
+        nrn.setdefault(name_row, []).append(namespace_definition)
+
     # Namespace usages indexed by row.
     nrn_usages = {}
 
@@ -566,6 +574,7 @@ def analyze_view(view, on_completed=None):
                        "vindex_usages": vindex_usages,
                        "vrn": vrn,
                        "vrn_usages": vrn_usages,
+                       "nrn": nrn,
                        "nrn_usages": nrn_usages,
                        "lindex": lindex,
                        "lindex_usages": lindex_usages,
@@ -829,21 +838,37 @@ def keyword_region(view, keyword_usage):
     return sublime.Region(start_point, end_point)
 
 
-def namespace_usage_region(view, namespace_usage):
+def namespace_region(view, namespace):
     """
     Returns a Region of a namespace usage.
     """
 
-    row_start = namespace_usage.get("name-row")
-    col_start = namespace_usage.get("name-col")
+    row_start = namespace.get("name-row")
+    col_start = namespace.get("name-col")
 
-    row_end = namespace_usage.get("name-end-row")
-    col_end = namespace_usage.get("name-end-col")
+    row_end = namespace.get("name-end-row")
+    col_end = namespace.get("name-end-col")
 
     start_point = view.text_point(row_start - 1, col_start - 1)
     end_point = view.text_point(row_end - 1, col_end - 1)
 
     return sublime.Region(start_point, end_point)
+
+
+def namespace_definition_region(view, namespace_definition):
+    """
+    Returns a Region of a namespace definition.
+    """
+
+    return namespace_region(view, namespace_definition)
+
+
+def namespace_usage_region(view, namespace_usage):
+    """
+    Returns a Region of a namespace usage.
+    """
+
+    return namespace_region(view, namespace_usage)
 
 def namespace_usage_alias_region(view, namespace_usage):
     """
@@ -950,6 +975,16 @@ def keyword_in_region(view, krn, region):
             return (_region, keyword)
 
 
+def namespace_definition_in_region(view, nrn, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for namespace_definition in nrn.get(region_begin_row + 1, []):
+        _region = namespace_definition_region(view, namespace_definition)
+
+        if _region.contains(region):
+            return (_region, namespace_definition)
+
+
 def namespace_usage_in_region(view, nrn_usages, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
@@ -1051,10 +1086,14 @@ def thingy_in_region(view, analysis, region):
 
     A thingy is a triple:
         - Type:
-            - local binding
-            - local usage
+            - Local binding
+            - Local usage
             - Var definition
             - Var usage
+            - Namespace definition
+            - Namespace usage
+            - Namespace usage alias
+            - Keywords
 
         - Region for the symbol
 
@@ -1103,6 +1142,12 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return ("namespace_usage_alias", thingy_region, thingy_data)
 
+    # 8. Try namespace definitions. 
+    thingy_region, thingy_data = namespace_definition_in_region(view, analysis.get("nrn", {}), region) or (None, None)
+
+    if thingy_data:
+        return ("namespace_definition", thingy_region, thingy_data)
+
 
 # ---
 
@@ -1143,6 +1188,23 @@ def find_namespace_definition(analysis, namespace_usage):
     name = namespace_usage.get("to")
 
     return namespace_definition(analysis, name);
+
+def find_namespace_usages(analysis, namespace_definition):
+    """
+    Returns Var usages for the namespace.
+
+    Scan vindex_usages for Vars defined in namespace_definition.
+    """
+
+    usages = []
+
+    for var_qualified_name, var_usages in vindex_usages(analysis).items():
+        namespace, _ = var_qualified_name
+
+        if namespace == namespace_definition.get("name"):
+            usages.extend(var_usages)
+
+    return usages
 
 def find_namespace_usages_with_usage(analysis, namespace_usage):
     """
@@ -1232,6 +1294,9 @@ def find_thingy_regions(view, analysis, thingy):
 
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
+
+    elif thingy_type == "namespace_definition":
+        regions.append(namespace_definition_region(view, thingy_data))
 
     elif thingy_type == "namespace_usage":
         regions.append(namespace_usage_region(view, thingy_data))
@@ -1821,6 +1886,9 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
 
         elif thingy_type == "var_usage":
             thingy_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
+
+        elif thingy_type == "namespace_definition":
+            thingy_usages = find_namespace_usages(paths_analysis_, thingy_data)
 
         elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
             thingy_usages = find_namespace_usages_with_usage(paths_analysis_, thingy_data)
