@@ -1,17 +1,14 @@
 [
     {
-        "caption": "Pep: Find Usages",
-        "command": "pg_pep_find_usages",
-        "args": {
-            "select": false,
-        }
+        "caption": "Pep: Analyze View",
+        "command": "pg_pep_analyze_view"
     },
-
     {
-        "caption": "Pep: Select Usages",
-        "command": "pg_pep_find_usages",
-        "args": {
-            "select": true,
-        }
+        "caption": "Pep: Analyze Classpath",
+        "command": "pg_pep_analyze_classpath"
     },
+    {
+        "caption": "Pep: Analyze Paths",
+        "command": "pg_pep_analyze_paths"
+    }
 ]
