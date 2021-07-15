@@ -1202,7 +1202,10 @@ def find_namespace_usages(analysis, namespace_definition):
         namespace, _ = var_qualified_name
 
         if namespace == namespace_definition.get("name"):
-            usages.extend(var_usages)
+            for var_usage in var_usages:
+                # Exclude usages from the same namespace.
+                if var_usage.get("from") != namespace_definition.get("name"):
+                    usages.append(var_usage)
 
     return usages
 
