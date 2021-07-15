@@ -222,6 +222,15 @@ def nindex(analysis):
     """
     return analysis.get("nindex", {})
 
+def analysis_nindex_usages(analysis):
+    """
+    Returns a dictionary of namespace usages by name.
+
+    'nindex' stands for 'namespace index'.
+    """
+    return analysis.get("nindex_usages", {})
+
+
 def namespace_definition(analysis, name):
     """
     Returns namespace definition, or None of there isn't one.
@@ -711,6 +720,14 @@ def analyze_paths(window):
 
             nindex[name] = namespace_definition
 
+        # Namespace usages indexed by name.
+        nindex_usages = {}
+
+        for namespace_usage in analysis.get("namespace-usages", []):
+            name = namespace_usage.get("to")
+
+            nindex_usages.setdefault(name, []).append(namespace_usage)
+
         # Keywords indexed by name - tuple of namespace and name.
         kindex = {}
 
@@ -746,9 +763,10 @@ def analyze_paths(window):
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
         analysis = {"nindex": nindex,
-                    "kindex": kindex,
+                    "nindex_usages": nindex_usages,
                     "vindex": vindex,
-                    "vindex_usages": vindex_usages}
+                    "vindex_usages": vindex_usages,
+                    "kindex": kindex}
 
         set_paths_analysis(project_path(window), analysis)
 
@@ -1191,40 +1209,21 @@ def find_namespace_definition(analysis, namespace_usage):
 
 def find_namespace_usages(analysis, namespace_definition):
     """
-    Returns Var usages for the namespace.
-
-    Scan vindex_usages for Vars defined in namespace_definition.
+    Returns usages of namespace_definition.
     """
 
-    usages = []
+    name = namespace_definition.get("name")
 
-    for var_qualified_name, var_usages in vindex_usages(analysis).items():
-        namespace, _ = var_qualified_name
-
-        if namespace == namespace_definition.get("name"):
-            for var_usage in var_usages:
-                # Exclude usages from the same namespace.
-                if var_usage.get("from") != namespace_definition.get("name"):
-                    usages.append(var_usage)
-
-    return usages
+    return analysis_nindex_usages(analysis).get(name, [])
 
 def find_namespace_usages_with_usage(analysis, namespace_usage):
     """
-    Returns Var usages for the namespace.
-
-    Scan vindex_usages for Vars defined in namespace_usage.
+    Returns usages of namespace_usage.
     """
 
-    usages = []
+    name = namespace_usage.get("to")
 
-    for var_qualified_name, var_usages in analysis.get("vindex_usages", {}).items():
-        namespace, _ = var_qualified_name
-
-        if namespace == namespace_usage.get("to"):
-            usages.extend(var_usages)
-
-    return usages
+    return analysis_nindex_usages(analysis).get(name, [])
 
 # ---
 
