@@ -1,5 +1,23 @@
 # Pep
 
+## Jump
+
+Jump to occurrences of symbol under cursor. 
+
+It works for locals, vars and keywords.
+
+## Select
+
+Select occurrences of symbol under cursor. 
+
+It works for locals, vars and keywords.
+
+It behaves like a 'smart multi-cursor' and you can use it to rename symbols.
+
+## Goto Definition
+
+Goto definition of local or var.
+
 ## Commands
 
 `pg_pep_goto_definition`
