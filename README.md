@@ -6,6 +6,8 @@ Jump to occurrences of symbol under cursor.
 
 It works for locals, vars and keywords.
 
+![Pep Jump](docs/Jump.gif)
+
 ## Select
 
 Select occurrences of symbol under cursor. 
@@ -13,6 +15,8 @@ Select occurrences of symbol under cursor.
 It works for locals, vars and keywords.
 
 It behaves like a 'smart multi-cursor' and you can use it to rename symbols.
+
+![Pep Jump](docs/Select.gif)
 
 ## Goto Definition
 
