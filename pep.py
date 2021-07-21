@@ -1365,7 +1365,7 @@ class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
 class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        analyze_view_async(self.view)
+        analyze_view_async(self.view, on_completed=lambda _: sublime.status_message("Analyzed"))
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
