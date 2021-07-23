@@ -1,12 +1,14 @@
 # Pep
 
+Elemental Clojure & ClojureScript code navigation, documentation and usages analysis for Sublime Text.
+
 ## Rationale
 
 Pep doesn't have anything new, and it doesn't do much. But being less is intentional.
 
-The project started because I wanted to have a minimal setup to work with Clojure & ClojureScript with Sublime Text. Minimal, in this case, meaning as little software as possible.
+The project started because I wanted to have a minimal setup to work with Clojure & ClojureScript with Sublime Text.
 
-Pep is fundamentally a clj-kondo client for Sublime Text. It leverages clj-kondo analysis data to provide code navigation, documentation, usages analysis. clj-kondo is the sole dependency, and everything else is supplied by built-in Sublime Text APIs.
+Pep is fundamentally a clj-kondo client for Sublime Text. It leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis. clj-kondo is the sole dependency, and everything else is supplied by built-in Sublime Text APIs.
 
 Because clj-kondo analysis data is the source of everything Pep does, it is relatively simple to debug it when things don't work as expected.
 
