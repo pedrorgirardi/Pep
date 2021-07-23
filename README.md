@@ -16,19 +16,19 @@ Because clj-kondo analysis data is the source of everything Pep does, it is rela
 
 Jump to occurrences of symbol under cursor. 
 
-It works for locals, vars and keywords.
-
 ![Pep Jump](docs/Jump.gif)
+
+It works for locals, vars and keywords.
 
 ## Select
 
 Select occurrences of symbol under cursor. 
 
+![Pep Jump](docs/Select.gif)
+
 It works for locals, vars and keywords.
 
 It behaves like a 'smart multi-cursor' and you can use it to rename symbols.
-
-![Pep Jump](docs/Select.gif)
 
 ## Goto Definition
 
