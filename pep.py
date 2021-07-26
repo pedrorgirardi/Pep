@@ -2200,6 +2200,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
 class PgPepEventListener(sublime_plugin.EventListener):
 
+    def on_load_project_async(self, window):
+        window.run_command("pg_pep_analyze_paths")
+        window.run_command("pg_pep_analyze_classpath")
+
     def on_pre_close_project(self, window):
         project_path = window.extract_variables().get("project_path")
 
