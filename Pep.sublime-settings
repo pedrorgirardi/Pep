@@ -3,7 +3,9 @@
 
     "analyze_view": ["on_activated_async", "on_post_save_async"],
 
-    "analyze_paths": ["on_post_save_async"],
+    "analyze_paths": ["on_load_project_async", "on_post_save_async"],
+
+    "analyze_classpath": ["on_load_project_async"],
 
     "automatically_highlight": false
 }
