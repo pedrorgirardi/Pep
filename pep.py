@@ -612,8 +612,6 @@ def analyze_classpath(window):
 
     print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-    sublime.status_message("Analyzing classpath... (This might take a moment)")
-
     classpath = project_classpath(window)
 
     if classpath:
