@@ -2219,3 +2219,11 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 def plugin_loaded():
     print("Pep coding!")
+
+    if window := sublime.active_window():
+
+        if "plugin_loaded" in set(settings().get("analyze_paths", {})):
+            analyze_paths_async(window)
+
+        if "plugin_loaded" in set(settings().get("analyze_classpath", {})):
+            analyze_classpath_async(window)
