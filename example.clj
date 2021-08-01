@@ -1,5 +1,7 @@
 (ns user
-  (:require [clojure.pprint :as pprint]))
+  (:require [clojure.pprint :as pp]))
+
+(pp/pprint {:a 1})
 
 (let [{:person/keys [age]} {:person/age 33}]
   
