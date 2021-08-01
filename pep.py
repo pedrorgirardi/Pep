@@ -442,6 +442,14 @@ def analyze_view(view, on_completed=None):
     if view_file_name and view.is_dirty():
         return False
 
+    # Change count right before analyzing the view.
+    # This will be stored in the analysis.
+    view_change_count = view.change_count()
+
+    # Skip analysis if view hasn't changed since last analysis.
+    if view_analysis(view.id()).get("view_change_count") == view_change_count:
+        return False;
+
     project_file_name = window.project_file_name() if window else None
 
     # Setting the working directory is important because of the clj-kondo cache.
@@ -461,10 +469,6 @@ def analyze_view(view, on_completed=None):
 
     if is_debug:
         print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
-
-    # Change count right before analyzing the view.
-    # This will be stored in the analysis.
-    view_change_count = view.change_count()
 
     analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True, input=None if view_file_name else view_text(view))
 
