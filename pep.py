@@ -977,6 +977,25 @@ def var_usage_region(view, var_usage):
     return sublime.Region(name_start_point, name_end_point)
 
 
+def var_usage_namespace_region(view, var_usage):
+    """
+    Returns the namespace Region of var_usage.
+    """
+
+    alias_or_to = var_usage.get("alias") or var_usage.get("to")
+
+    name_row_start = var_usage["name-row"]
+    name_col_start = var_usage["name-col"]
+
+    name_row_end = var_usage["name-end-row"]
+    name_col_end = var_usage["name-end-col"]
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = name_start_point + len(alias_or_to)    
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
 # ---
 
 
@@ -1326,7 +1345,7 @@ def find_thingy_regions(view, analysis, thingy):
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
-            regions.append(var_usage_region(view, var_usage))
+            regions.append(var_usage_namespace_region(view, var_usage))
 
     elif thingy_type == "namespace_usage_alias":
         regions.append(namespace_usage_alias_region(view, thingy_data))
@@ -1334,8 +1353,7 @@ def find_thingy_regions(view, analysis, thingy):
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
-            regions.append(var_usage_region(view, var_usage))
-
+            regions.append(var_usage_namespace_region(view, var_usage))
 
     return regions
 
@@ -1994,23 +2012,18 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, select=False):
-        is_debug = debug()
-
-        view_analysis_ = view_analysis(self.view.id())
+        analysis = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, view_analysis_, region)
-
-        if is_debug:
-            print("(Pep) Thingy", thingy)
+        thingy = thingy_in_region(self.view, analysis, region)
 
         self.view.erase_regions("pg_pep_highligths")
 
         # We can't highlight if view was modified,
         # because regions might be different.
         if thingy and not analysis_view_modified(self.view):
-            regions = find_thingy_regions(self.view, view_analysis_, thingy)
+            regions = find_thingy_regions(self.view, analysis, thingy)
 
             if regions:
                 highlight_regions(self.view, self.view.sel(), regions)
