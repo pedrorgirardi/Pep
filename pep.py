@@ -1323,7 +1323,7 @@ def find_thingy_regions(view, analysis, thingy):
     elif thingy_type == "namespace_usage":
         regions.append(namespace_usage_region(view, thingy_data))
 
-        var_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+        var_usages = find_namespace_vars_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
@@ -1331,7 +1331,7 @@ def find_thingy_regions(view, analysis, thingy):
     elif thingy_type == "namespace_usage_alias":
         regions.append(namespace_usage_alias_region(view, thingy_data))
 
-        var_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+        var_usages = find_namespace_vars_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
