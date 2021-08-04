@@ -26,20 +26,6 @@ It behaves like a 'smart multi-cursor' and you can use it to rename symbols.
 
 Goto definition of local or var.
 
-## Commands
-
-- `pg_pep_goto_definition`
-- `pg_pep_navigate`
-- `pg_pep_find_usages`
-- `pg_pep_find_usages_in_project`
-- `pg_pep_show_doc`
-- `pg_pep_select`
-- `pg_pep_report`
-- `pg_pep_annotate`
-- `pg_pep_analyze_view`
-- `pg_pep_analyze_paths`
-- `pg_pep_analyze_classpath`
-
 ## Settings
 
 ```json
