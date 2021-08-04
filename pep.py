@@ -271,7 +271,8 @@ def classpath_project_data(window):
 
     ["clojure", "-Spath"]
     """
-    return window.project_data().get("pep", {}).get("classpath")
+    if project_data := window.project_data():
+        return project_data.get("pep", {}).get("classpath")
 
 
 def paths_project_data(window):
@@ -280,7 +281,8 @@ def paths_project_data(window):
 
     ["src", "test"]
     """
-    return window.project_data().get("pep", {}).get("paths")
+    if project_data := window.project_data():
+        return project_data.get("pep", {}).get("paths")
 
 
 # ---    
@@ -411,20 +413,18 @@ def project_classpath(window):
         }
     }
     """
-    if project_path(window):
-        classpath_subprocess_args = classpath_project_data(window)
+    if classpath := classpath_project_data(window):
+        
+        classpath_completed_process = subprocess.run(
+            classpath, 
+            cwd=project_path(window), 
+            text=True, 
+            capture_output=True
+        )
 
-        if classpath_subprocess_args:
-            classpath_completed_process = subprocess.run(
-                classpath_subprocess_args, 
-                cwd=project_path(window), 
-                text=True, 
-                capture_output=True
-            )
+        classpath_completed_process.check_returncode()
 
-            classpath_completed_process.check_returncode()
-
-            return classpath_completed_process.stdout
+        return classpath_completed_process.stdout
 
 
 ## ---
@@ -614,11 +614,9 @@ def analyze_view_async(view, on_completed=None):
 def analyze_classpath(window):
     is_debug = settings().get("debug", False)
 
-    print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
+    if classpath := project_classpath(window):
+        print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-    classpath = project_classpath(window)
-
-    if classpath:
         analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
 
         analysis_subprocess_args = [clj_kondo_path(), 
