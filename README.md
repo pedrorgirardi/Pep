@@ -28,38 +28,17 @@ Goto definition of local or var.
 
 ## Commands
 
-`pg_pep_goto_definition`
-- Status: stable
-
-`pg_pep_navigate`
-- Status: in development
-
-`pg_pep_find_usages`
-- Status: stable
-
-`pg_pep_find_usages_in_project`
-- Status: stable
-
-`pg_pep_show_doc`
-- Status: stable
-
-`pg_pep_select`
-- Status: stable
-
-`pg_pep_report`
-- Status: in development
-
-`pg_pep_annotate`
-- Status: in development
-
-`pg_pep_analyze_view`
-- Status: stable
-
-`pg_pep_analyze_paths`
-- Status: stable
-
-`pg_pep_analyze_classpath`
-- Status: stable
+- `pg_pep_goto_definition`
+- `pg_pep_navigate`
+- `pg_pep_find_usages`
+- `pg_pep_find_usages_in_project`
+- `pg_pep_show_doc`
+- `pg_pep_select`
+- `pg_pep_report`
+- `pg_pep_annotate`
+- `pg_pep_analyze_view`
+- `pg_pep_analyze_paths`
+- `pg_pep_analyze_classpath`
 
 ## Settings
 
@@ -69,7 +48,9 @@ Goto definition of local or var.
 
     "analyze_view": ["on_activated_async", "on_post_save_async"],
 
-    "analyze_paths": ["on_post_save_async"],
+    "analyze_paths": ["plugin_loaded", "on_load_project_async", "on_post_save_async"],
+
+    "analyze_classpath": ["plugin_loaded", "on_load_project_async"],
 
     "automatically_highlight": false
 }
