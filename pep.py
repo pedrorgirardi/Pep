@@ -265,7 +265,7 @@ def set_view_navigation(view_state, navigation):
 def project_path(window):
     return window.extract_variables().get("project_path")
 
-def classpath_project_data(window):
+def project_data_classpath(window):
     """
     Example:
 
@@ -275,7 +275,7 @@ def classpath_project_data(window):
         return project_data.get("pep", {}).get("classpath")
 
 
-def paths_project_data(window):
+def project_data_paths(window):
     """
     Example:
 
@@ -413,7 +413,7 @@ def project_classpath(window):
         }
     }
     """
-    if classpath := classpath_project_data(window):
+    if classpath := project_data_classpath(window):
         
         classpath_completed_process = subprocess.run(
             classpath, 
@@ -689,7 +689,7 @@ def analyze_classpath_async(window):
 def analyze_paths(window):
     is_debug = settings().get("debug", False)
 
-    if (paths := paths_project_data(window)):
+    if (paths := project_data_paths(window)):
         classpath = ":".join(paths)
 
         print(f"(Pep) Analyzing paths... (Project {project_path(window)}, Paths {paths})")
