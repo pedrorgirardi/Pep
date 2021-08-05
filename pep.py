@@ -984,16 +984,18 @@ def var_usage_namespace_region(view, var_usage):
     Returns the namespace Region of var_usage.
     """
 
-    alias_or_to = var_usage.get("alias") or var_usage.get("to")
-
     name_row_start = var_usage["name-row"]
     name_col_start = var_usage["name-col"]
 
     name_row_end = var_usage["name-end-row"]
     name_col_end = var_usage["name-end-col"]
 
+    alias = var_usage.get("alias")
+
+    # If a var doesn't have an alias, its name is the region.
+    # But if a var has an alias, alias is the region.
     name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = name_start_point + len(alias_or_to)    
+    name_end_point = name_start_point + len(alias) if alias else view.text_point(name_row_end - 1, name_col_end - 1)
 
     return sublime.Region(name_start_point, name_end_point)
 
