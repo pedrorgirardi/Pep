@@ -981,23 +981,28 @@ def var_usage_region(view, var_usage):
 
 def var_usage_namespace_region(view, var_usage):
     """
-    Returns the namespace Region of var_usage.
+    Returns the namespace Region of var_usage, or None.
+
+    For some (odd) reason, a var_usage might not have name row & col.
     """
 
-    name_row_start = var_usage["name-row"]
-    name_col_start = var_usage["name-col"]
+    try:
+        name_row_start = var_usage["name-row"]
+        name_col_start = var_usage["name-col"]
 
-    name_row_end = var_usage["name-end-row"]
-    name_col_end = var_usage["name-end-col"]
+        name_row_end = var_usage["name-end-row"]
+        name_col_end = var_usage["name-end-col"]
 
-    alias = var_usage.get("alias")
+        alias = var_usage.get("alias")
 
-    # If a var doesn't have an alias, its name is the region.
-    # But if a var has an alias, alias is the region.
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = name_start_point + len(alias) if alias else view.text_point(name_row_end - 1, name_col_end - 1)
+        # If a var doesn't have an alias, its name is the region.
+        # But if a var has an alias, alias is the region.
+        name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+        name_end_point = name_start_point + len(alias) if alias else view.text_point(name_row_end - 1, name_col_end - 1)
 
-    return sublime.Region(name_start_point, name_end_point)
+        return sublime.Region(name_start_point, name_end_point)
+    except:
+        return None
 
 
 # ---
@@ -1349,7 +1354,8 @@ def find_thingy_regions(view, analysis, thingy):
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
-            regions.append(var_usage_namespace_region(view, var_usage))
+            if region := var_usage_namespace_region(view, var_usage):
+                regions.append(region)
 
     elif thingy_type == "namespace_usage_alias":
         regions.append(namespace_usage_alias_region(view, thingy_data))
@@ -1357,7 +1363,8 @@ def find_thingy_regions(view, analysis, thingy):
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
-            regions.append(var_usage_namespace_region(view, var_usage))
+            if region := var_usage_namespace_region(view, var_usage):
+                regions.append(region)
 
     return regions
 
