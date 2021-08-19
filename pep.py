@@ -378,8 +378,10 @@ def debug():
     return settings().get("debug", False)
 
 def automatically_highlight():
-    return settings().get("automatically_highlight", False)    
+    return settings().get("automatically_highlight", False)
 
+def highlight_region_scope():
+    return settings().get("highlight_region_scope", "region.cyanish")
 
 def set_view_name(view, name):
     if view:
@@ -1277,7 +1279,7 @@ def find_namespace_vars_usages(analysis, namespace_usage):
 
 def highlight_regions(view, selection, regions):
     if regions:
-        view.add_regions("pg_pep_highligths", regions, scope="region.cyanish", flags=sublime.DRAW_NO_FILL)
+        view.add_regions("pg_pep_highligths", regions, scope=highlight_region_scope(), flags=sublime.DRAW_NO_FILL)
 
 
 def find_thingy_regions(view, analysis, thingy):

@@ -7,5 +7,7 @@
 
     "analyze_classpath": ["plugin_loaded", "on_load_project_async"],
 
-    "automatically_highlight": false
+    "automatically_highlight": false,
+
+    "highlight_region_scope": "region.cyanish"
 }
