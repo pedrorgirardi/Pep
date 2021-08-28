@@ -2,7 +2,7 @@
 
 Status: in development
 
-Pep is fundamentally a clj-kondo client for Sublime Text. It leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis.
+**Pep** leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis.
 
 clj-kondo is the sole dependency, and everything else is supplied by built-in Sublime Text APIs.
 
