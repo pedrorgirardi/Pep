@@ -394,7 +394,12 @@ def view_text(view):
 
 
 def clj_kondo_path():
-    return os.path.join(sublime.packages_path(), "Pep", "bin", "clj-kondo")
+    # Bundled:
+    # os.path.join(sublime.packages_path(), "Pep", "bin", "clj-kondo")
+    #
+    # TODO: Setting to configure clj-kondo path.
+
+    return "clj-kondo"
 
 
 def project_classpath(window):
