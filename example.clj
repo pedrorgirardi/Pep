@@ -3,6 +3,10 @@
 
 (pp/pprint {:a 1})
 
+(require '[clojure.string :as str])
+
+(str/blank? "Pep")
+
 (let [{:person/keys [age]} {:person/age 33}]
   
   :person/age
