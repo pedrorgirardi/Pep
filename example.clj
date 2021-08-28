@@ -1,5 +1,5 @@
 (ns user
-  (:require [clojure.pprint :as pp]))
+  (:require [clojure.pprint :as pp :refer [pprint]]))
 
 (pp/pprint {:a 1})
 
