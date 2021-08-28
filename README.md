@@ -4,6 +4,8 @@ Pep is fundamentally a clj-kondo client for Sublime Text. It leverages clj-kondo
 
 clj-kondo is the sole dependency, and everything else is supplied by built-in Sublime Text APIs.
 
+Status: in development.
+
 ## Highlight
 
 Highlight symbol or keyword under cursor and its usages.
