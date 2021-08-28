@@ -10,6 +10,12 @@ Highlight symbol or keyword under cursor and its usages.
 
 ![Pep Highlight](docs/Highlight.png)
 
+## Documentation
+
+Show documentation.
+
+![Pep Show documentation](docs/Documentation.png)
+
 ## Jump
 
 Jump to occurrences of symbol under cursor. 
