@@ -4,6 +4,12 @@ Pep is fundamentally a clj-kondo client for Sublime Text. It leverages clj-kondo
 
 clj-kondo is the sole dependency, and everything else is supplied by built-in Sublime Text APIs.
 
+## Highlight
+
+Highlight symbol or keyword under cursor and its usages.
+
+![Pep Highlight](docs/Highlight.png)
+
 ## Jump
 
 Jump to occurrences of symbol under cursor. 
@@ -16,7 +22,7 @@ It works for locals, vars and keywords.
 
 Select occurrences of symbol under cursor. 
 
-![Pep Jump](docs/Select.gif)
+![Pep Select](docs/Select.gif)
 
 It works for locals, vars and keywords.
 
