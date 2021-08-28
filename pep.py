@@ -2256,7 +2256,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 
 def plugin_loaded():
-    print("Pep coding!")
+    print("(Pep) Plugin loaded")
 
     if window := sublime.active_window():
 
