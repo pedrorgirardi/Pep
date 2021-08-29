@@ -14,17 +14,15 @@ Highlight symbol or keyword under cursor and its usages.
 
 ## Documentation
 
-Show documentation for symbol under cursor.
+Show documentation for var under cursor.
 
 ![Pep Show documentation](docs/Documentation.png)
 
 ## Jump
 
-Jump to occurrences of symbol under cursor. 
+Jump to occurrences of symbol or keyword under cursor.
 
 ![Pep Jump](docs/Jump.gif)
-
-It works for locals, vars and keywords.
 
 ## Find Usages
 
@@ -38,8 +36,6 @@ Select occurrences of symbol or keyword under cursor.
 
 ![Pep Select](docs/Select.gif)
 
-It works for locals, vars and keywords.
-
 It behaves like a 'smart multi-cursor' and you can use it to rename symbols.
 
 ## Goto Definition
@@ -47,6 +43,8 @@ It behaves like a 'smart multi-cursor' and you can use it to rename symbols.
 Goto definition of local or var.
 
 ## Settings
+
+Default settings:
 
 ```json
 {
@@ -66,11 +64,13 @@ Goto definition of local or var.
 
 To analyze your project's classpath and paths (your own files), you need to configure Pep in your Sublime Project.
 
-If you configure `paths`, you will be able to go to definition, show documentation and find usages of Vars in your project.
+If you configure `paths`, you will be able to go to definition, show documentation and find usages of vars in your project.
 A paths analysis usually doesn't take long and it will run whenever you save a file - see **Settings** `"analyze_paths"`.
 
-If you configure `classpath`, you will be able to go to definition and show documentation of Vars defined in libraries.
-Classpath analysis does take a little longer and it doesn't run automatically, you need to invoke a command (`pg_pep_analyze_classpath`).
+If you configure `classpath`, you will be able to go to definition and show documentation of vars defined in libraries.
+Classpath analysis does take a little longer and it will run only when the plugin is loaded or a project is loaded - see **Settings** `"analyze_classpath"`.
+
+Sublime Project example:
 
 ```json
 {
