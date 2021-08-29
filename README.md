@@ -14,7 +14,7 @@ Highlight symbol or keyword under cursor and its usages.
 
 ## Documentation
 
-Show documentation.
+Show documentation for symbol under cursor.
 
 ![Pep Show documentation](docs/Documentation.png)
 
@@ -26,9 +26,15 @@ Jump to occurrences of symbol under cursor.
 
 It works for locals, vars and keywords.
 
+## Find Usages
+
+Find usages of symbol or keyword under cursor.
+
+![Pep Find Usages](docs/FindUsages.png)
+
 ## Select
 
-Select occurrences of symbol under cursor. 
+Select occurrences of symbol or keyword under cursor. 
 
 ![Pep Select](docs/Select.gif)
 
