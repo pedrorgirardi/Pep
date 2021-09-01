@@ -21,7 +21,12 @@ GOTO_DEFAULT_FLAGS = sublime.ENCODED_POSITION
 
 GOTO_USAGE_FLAGS = sublime.ENCODED_POSITION | sublime.TRANSIENT
 
-GOTO_SIDE_BY_SIDE_FLAGS = sublime.ENCODED_POSITION | sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
+GOTO_SIDE_BY_SIDE_FLAGS = (
+    sublime.ENCODED_POSITION
+    | sublime.SEMI_TRANSIENT
+    | sublime.ADD_TO_SELECTION
+    | sublime.CLEAR_TO_RIGHT
+)
 
 
 _view_analysis_ = {}
@@ -81,6 +86,7 @@ def view_analysis(view_id):
 
 # ---
 
+
 def analysis_view_modified(view):
     """
     Returns True if view was modified since last analysis.
@@ -127,7 +133,7 @@ def analysis_vindex(analysis):
     When finding usages from a usage itself, the first step is to find the usage,
     once you have found it, you can use its ID to find the local.
 
-    Locals and usages have the same ID, 
+    Locals and usages have the same ID,
     so it's possible to corretale a usage with a local.
 
     'lindex' stands for 'local index'.
@@ -175,7 +181,7 @@ def analysis_lindex(analysis):
     When finding usages from a usage itself, the first step is to find the usage,
     once you have found it, you can use its ID to find the local.
 
-    Locals and usages have the same ID, 
+    Locals and usages have the same ID,
     so it's possible to corretale a usage with a local.
 
     'lindex' stands for 'local index'.
@@ -217,6 +223,7 @@ def analysis_nindex(analysis):
     """
     return analysis.get("nindex", {})
 
+
 def analysis_nindex_usages(analysis):
     """
     Returns a dictionary of namespace usages by name.
@@ -243,7 +250,9 @@ def namespace_definition(analysis, name):
 
     return analysis_nindex(analysis).get(name)
 
+
 # ---
+
 
 def remove_empty_rows(thingies):
     """
@@ -265,6 +274,7 @@ def set_view_navigation(view_state, navigation):
 def project_path(window):
     return window.extract_variables().get("project_path")
 
+
 def project_data_classpath(window):
     """
     Example:
@@ -285,10 +295,11 @@ def project_data_paths(window):
         return project_data.get("pep", {}).get("paths")
 
 
-# ---    
+# ---
 
 
 # Copied from https://github.com/SublimeText/UnitTesting/blob/master/unittesting/utils/progress_bar.py
+
 
 class ProgressBar:
     def __init__(self, label, width=10):
@@ -314,6 +325,7 @@ class ProgressBar:
 
 
 # Copied from https://github.com/eerohele/Tutkain
+
 
 def htmlify(text):
     if text:
@@ -353,7 +365,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             try:
                 with os.fdopen(descriptor, "w") as file:
                     file.write(source_file.decode())
-                
+
                 view = window.open_file(f"{path}:{line}:{column}", flags=flags)
                 view.assign_syntax("Clojure (Tutkain).sublime-syntax")
                 view.set_scratch(True)
@@ -371,14 +383,17 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
 ## ---
 
+
 def settings():
     return sublime.load_settings("Pep.sublime-settings")
+
 
 def debug():
     return settings().get("debug", False)
 
+
 def automatically_highlight():
-    return settings().get("automatically_highlight", False)    
+    return settings().get("automatically_highlight", False)
 
 
 def set_view_name(view, name):
@@ -406,7 +421,7 @@ def project_classpath(window):
     """
     Returns the project classpath, or None if a classpath setting does not exist.
 
-    It reads a custom "pep classpath" setting in the project file. 
+    It reads a custom "pep classpath" setting in the project file.
 
     Example.sublime-project:
 
@@ -419,12 +434,9 @@ def project_classpath(window):
     }
     """
     if classpath := project_data_classpath(window):
-        
+
         classpath_completed_process = subprocess.run(
-            classpath, 
-            cwd=project_path(window), 
-            text=True, 
-            capture_output=True
+            classpath, cwd=project_path(window), text=True, capture_output=True
         )
 
         classpath_completed_process.check_returncode()
@@ -453,7 +465,7 @@ def analyze_view(view, on_completed=None):
 
     # Skip analysis if view hasn't changed since last analysis.
     if view_analysis(view.id()).get("view_change_count") == view_change_count:
-        return False;
+        return False
 
     project_file_name = window.project_file_name() if window else None
 
@@ -468,14 +480,24 @@ def analyze_view(view, on_completed=None):
     analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true} :format :json :canonical-paths true} \
                         :lint-as {reagent.core/with-let clojure.core/let}}"
 
-    analysis_subprocess_args = [clj_kondo_path(), 
-                                "--config", analysis_config,
-                                "--lint", view_file_name or "-"]
+    analysis_subprocess_args = [
+        clj_kondo_path(),
+        "--config",
+        analysis_config,
+        "--lint",
+        view_file_name or "-",
+    ]
 
     if is_debug:
         print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
-    analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=cwd, text=True, capture_output=True, input=None if view_file_name else view_text(view))
+    analysis_completed_process = subprocess.run(
+        analysis_subprocess_args,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        input=None if view_file_name else view_text(view),
+    )
 
     output = None
 
@@ -493,7 +515,7 @@ def analyze_view(view, on_completed=None):
     nrn = {}
 
     for namespace_definition in analysis.get("namespace-definitions", []):
-        name_row = namespace_definition.get("name-row") 
+        name_row = namespace_definition.get("name-row")
 
         nrn.setdefault(name_row, []).append(namespace_definition)
 
@@ -501,7 +523,7 @@ def analyze_view(view, on_completed=None):
     nrn_usages = {}
 
     for namespace_usage in analysis.get("namespace-usages", []):
-        name_row = namespace_usage.get("name-row") 
+        name_row = namespace_usage.get("name-row")
 
         nrn_usages.setdefault(name_row, []).append(namespace_usage)
 
@@ -509,7 +531,7 @@ def analyze_view(view, on_completed=None):
             alias_row = namespace_usage.get("alias-row")
 
             nrn_usages.setdefault(alias_row, []).append(namespace_usage)
-    
+
     # Keywords indexed by row.
     krn = {}
 
@@ -525,7 +547,6 @@ def analyze_view(view, on_completed=None):
 
         kindex.setdefault((ns, name), []).append(keyword)
 
-    
     # Vars indexed by row.
     vrn = {}
 
@@ -541,7 +562,6 @@ def analyze_view(view, on_completed=None):
 
         vindex[(ns, name)] = var_definition
 
-    
     # Var usages indexed by row.
     vrn_usages = {}
 
@@ -557,7 +577,6 @@ def analyze_view(view, on_completed=None):
 
         vrn_usages.setdefault(name_row, []).append(var_usage)
 
-    
     # Locals indexed by row.
     lrn = {}
 
@@ -571,7 +590,6 @@ def analyze_view(view, on_completed=None):
         lrn.setdefault(row, []).append(local_binding)
 
         lindex[id] = local_binding
-
 
     # Local usages indexed by ID - local binding ID to a set of local usages.
     lindex_usages = {}
@@ -587,23 +605,24 @@ def analyze_view(view, on_completed=None):
 
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
+    view_analysis_ = {
+        "view_change_count": view_change_count,
+        "findings": output.get("findings", {}),
+        "summary": output.get("summary", {}),
+        "kindex": kindex,
+        "krn": krn,
+        "vindex": vindex,
+        "vindex_usages": vindex_usages,
+        "vrn": vrn,
+        "vrn_usages": vrn_usages,
+        "nrn": nrn,
+        "nrn_usages": nrn_usages,
+        "lindex": lindex,
+        "lindex_usages": lindex_usages,
+        "lrn": lrn,
+        "lrn_usages": lrn_usages,
+    }
 
-    view_analysis_ = { "view_change_count": view_change_count,
-                       "findings": output.get("findings", {}),
-                       "summary": output.get("summary", {}),
-                       "kindex": kindex,
-                       "krn": krn,
-                       "vindex": vindex,
-                       "vindex_usages": vindex_usages,
-                       "vrn": vrn,
-                       "vrn_usages": vrn_usages,
-                       "nrn": nrn,
-                       "nrn_usages": nrn_usages,
-                       "lindex": lindex,
-                       "lindex_usages": lindex_usages,
-                       "lrn": lrn,
-                       "lrn_usages": lrn_usages }
-    
     set_view_analysis(view.id(), view_analysis_)
 
     if on_completed:
@@ -613,7 +632,9 @@ def analyze_view(view, on_completed=None):
 
 
 def analyze_view_async(view, on_completed=None):
-    threading.Thread(target=lambda: analyze_view(view, on_completed=on_completed), daemon=True).start()
+    threading.Thread(
+        target=lambda: analyze_view(view, on_completed=on_completed), daemon=True
+    ).start()
 
 
 def analyze_classpath(window):
@@ -622,17 +643,28 @@ def analyze_classpath(window):
     if classpath := project_classpath(window):
         print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-        analysis_config = "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
+        analysis_config = (
+            "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
+        )
 
-        analysis_subprocess_args = [clj_kondo_path(), 
-                                    "--config", analysis_config,
-                                    "--parallel", 
-                                    "--lint", classpath]
+        analysis_subprocess_args = [
+            clj_kondo_path(),
+            "--config",
+            analysis_config,
+            "--parallel",
+            "--lint",
+            classpath,
+        ]
 
         if is_debug:
             print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
-        analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path(window), text=True, capture_output=True)
+        analysis_completed_process = subprocess.run(
+            analysis_subprocess_args,
+            cwd=project_path(window),
+            text=True,
+            capture_output=True,
+        )
 
         output = None
 
@@ -653,7 +685,6 @@ def analyze_classpath(window):
 
             nindex[name] = namespace_definition
 
-
         var_definitions = analysis.get("var-definitions", [])
 
         var_usages = analysis.get("var-usages", [])
@@ -667,7 +698,6 @@ def analyze_classpath(window):
 
             vindex[(ns, name)] = var_definition
 
-
         # Var usages indexed by name - var name to a set of var usages.
         vindex_usages = {}
 
@@ -678,13 +708,13 @@ def analyze_classpath(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        analysis = {"nindex": nindex,
-                    "vindex": vindex,
-                    "vindex_usages": vindex_usages}
+        analysis = {"nindex": nindex, "vindex": vindex, "vindex_usages": vindex_usages}
 
         set_project_analysis(project_path(window), analysis)
 
-        print(f"(Pep) Classpath analysis is completed (Project: {project_path(window)})")
+        print(
+            f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
+        )
 
 
 def analyze_classpath_async(window):
@@ -694,22 +724,33 @@ def analyze_classpath_async(window):
 def analyze_paths(window):
     is_debug = settings().get("debug", False)
 
-    if (paths := project_data_paths(window)):
+    if paths := project_data_paths(window):
         classpath = ":".join(paths)
 
-        print(f"(Pep) Analyzing paths... (Project {project_path(window)}, Paths {paths})")
+        print(
+            f"(Pep) Analyzing paths... (Project {project_path(window)}, Paths {paths})"
+        )
 
         analysis_config = "{:output {:analysis {:arglists true :keywords true} :format :json :canonical-paths true}}"
 
-        analysis_subprocess_args = [clj_kondo_path(), 
-                                    "--config", analysis_config,
-                                    "--parallel", 
-                                    "--lint", classpath]
+        analysis_subprocess_args = [
+            clj_kondo_path(),
+            "--config",
+            analysis_config,
+            "--parallel",
+            "--lint",
+            classpath,
+        ]
 
         if is_debug:
             print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
-        analysis_completed_process = subprocess.run(analysis_subprocess_args, cwd=project_path(window), text=True, capture_output=True)
+        analysis_completed_process = subprocess.run(
+            analysis_subprocess_args,
+            cwd=project_path(window),
+            text=True,
+            capture_output=True,
+        )
 
         output = None
 
@@ -761,7 +802,6 @@ def analyze_paths(window):
 
             vindex[(ns, name)] = var_definition
 
-
         # Var usages indexed by name - var name to a set of var usages.
         vindex_usages = {}
 
@@ -772,19 +812,24 @@ def analyze_paths(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        analysis = {"nindex": nindex,
-                    "nindex_usages": nindex_usages,
-                    "vindex": vindex,
-                    "vindex_usages": vindex_usages,
-                    "kindex": kindex}
+        analysis = {
+            "nindex": nindex,
+            "nindex_usages": nindex_usages,
+            "vindex": vindex,
+            "vindex_usages": vindex_usages,
+            "kindex": kindex,
+        }
 
         set_paths_analysis(project_path(window), analysis)
 
-        print(f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})")
+        print(
+            f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})"
+        )
 
 
 def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
+
 
 ## ---
 
@@ -898,6 +943,7 @@ def namespace_usage_region(view, namespace_usage):
 
     return namespace_region(view, namespace_usage)
 
+
 def namespace_usage_alias_region(view, namespace_usage):
     """
     Returns a Region of a namespace usage.
@@ -970,7 +1016,7 @@ def var_definition_region(view, var_definition):
 def var_usage_region(view, var_usage):
     """
     Returns the Region of a Var usage.
-    """    
+    """
 
     name_row_start = var_usage["name-row"]
     name_col_start = var_usage["name-col"]
@@ -1003,7 +1049,11 @@ def var_usage_namespace_region(view, var_usage):
         # If a var doesn't have an alias, its name is the region.
         # But if a var has an alias, alias is the region.
         name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-        name_end_point = name_start_point + len(alias) if alias else view.text_point(name_row_end - 1, name_col_end - 1)
+        name_end_point = (
+            name_start_point + len(alias)
+            if alias
+            else view.text_point(name_row_end - 1, name_col_end - 1)
+        )
 
         return sublime.Region(name_start_point, name_end_point)
     except:
@@ -1069,7 +1119,7 @@ def local_usage_in_region(view, lrn_usages, region):
 
     usages = lrn_usages.get(region_begin_row + 1, [])
 
-    for usage in usages:        
+    for usage in usages:
         _region = local_usage_region(view, usage)
 
         if _region.contains(region):
@@ -1095,6 +1145,7 @@ def var_usage_in_region(view, vrn_usages, region):
         if _region.contains(region):
             return (_region, var_usage)
 
+
 def var_definition_in_region(view, vrn, region):
     region_begin_row, _ = view.rowcol(region.begin())
 
@@ -1104,8 +1155,9 @@ def var_definition_in_region(view, vrn, region):
         if _region.contains(region):
             return (_region, var_definition)
 
+
 def thingy_kind(thingy):
-    thingy_type, _, thingy_data  = thingy
+    thingy_type, _, thingy_data = thingy
 
     if thingy_type == "keyword":
         return sublime.KIND_KEYWORD
@@ -1155,49 +1207,65 @@ def thingy_in_region(view, analysis, region):
     """
 
     # 1. Try keywords.
-    thingy_region, thingy_data = keyword_in_region(view, analysis.get("krn", {}), region) or (None, None)
+    thingy_region, thingy_data = keyword_in_region(
+        view, analysis.get("krn", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("keyword", thingy_region, thingy_data)
 
     # 2. Try local usages.
-    thingy_region, thingy_data = local_usage_in_region(view, analysis.get("lrn_usages", {}), region) or (None, None)
+    thingy_region, thingy_data = local_usage_in_region(
+        view, analysis.get("lrn_usages", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("local_usage", thingy_region, thingy_data)
 
-    # 3. Try Var usages. 
-    thingy_region, thingy_data = var_usage_in_region(view, analysis.get("vrn_usages", {}), region) or (None, None)
+    # 3. Try Var usages.
+    thingy_region, thingy_data = var_usage_in_region(
+        view, analysis.get("vrn_usages", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("var_usage", thingy_region, thingy_data)
 
-    # 4. Try local bindings. 
-    thingy_region, thingy_data = local_binding_in_region(view, analysis.get("lrn", {}), region) or (None, None)
+    # 4. Try local bindings.
+    thingy_region, thingy_data = local_binding_in_region(
+        view, analysis.get("lrn", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("local_binding", thingy_region, thingy_data)
 
-    # 5. Try Var definitions. 
-    thingy_region, thingy_data = var_definition_in_region(view, analysis.get("vrn", {}), region) or (None, None)
+    # 5. Try Var definitions.
+    thingy_region, thingy_data = var_definition_in_region(
+        view, analysis.get("vrn", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("var_definition", thingy_region, thingy_data)
 
-    # 6. Try namespace usages. 
-    thingy_region, thingy_data = namespace_usage_in_region(view, analysis.get("nrn_usages", {}), region) or (None, None)
+    # 6. Try namespace usages.
+    thingy_region, thingy_data = namespace_usage_in_region(
+        view, analysis.get("nrn_usages", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("namespace_usage", thingy_region, thingy_data)
 
-    # 7. Try namespace usages alias. 
-    thingy_region, thingy_data = namespace_usage_alias_in_region(view, analysis.get("nrn_usages", {}), region) or (None, None)
+    # 7. Try namespace usages alias.
+    thingy_region, thingy_data = namespace_usage_alias_in_region(
+        view, analysis.get("nrn_usages", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("namespace_usage_alias", thingy_region, thingy_data)
 
-    # 8. Try namespace definitions. 
-    thingy_region, thingy_data = namespace_definition_in_region(view, analysis.get("nrn", {}), region) or (None, None)
+    # 8. Try namespace definitions.
+    thingy_region, thingy_data = namespace_definition_in_region(
+        view, analysis.get("nrn", {}), region
+    ) or (None, None)
 
     if thingy_data:
         return ("namespace_definition", thingy_region, thingy_data)
@@ -1241,7 +1309,8 @@ def find_var_usages_with_usage(analysis, var_usage):
 def find_namespace_definition(analysis, namespace_usage):
     name = namespace_usage.get("to")
 
-    return namespace_definition(analysis, name);
+    return namespace_definition(analysis, name)
+
 
 def find_namespace_usages(analysis, namespace_definition):
     """
@@ -1252,6 +1321,7 @@ def find_namespace_usages(analysis, namespace_definition):
 
     return analysis_nindex_usages(analysis).get(name, [])
 
+
 def find_namespace_usages_with_usage(analysis, namespace_usage):
     """
     Returns usages of namespace_usage.
@@ -1260,6 +1330,7 @@ def find_namespace_usages_with_usage(analysis, namespace_usage):
     name = namespace_usage.get("to")
 
     return analysis_nindex_usages(analysis).get(name, [])
+
 
 def find_namespace_vars_usages(analysis, namespace_usage):
     """
@@ -1278,15 +1349,22 @@ def find_namespace_vars_usages(analysis, namespace_usage):
 
     return usages
 
+
 # ---
+
 
 def highlight_regions(view, selection, regions):
     if regions:
-        view.add_regions("pg_pep_highligths", regions, scope="region.cyanish", flags=sublime.DRAW_NO_FILL)
+        view.add_regions(
+            "pg_pep_highligths",
+            regions,
+            scope="region.cyanish",
+            flags=sublime.DRAW_NO_FILL,
+        )
 
 
 def find_thingy_regions(view, analysis, thingy):
-    thingy_type, _, thingy_data  = thingy
+    thingy_type, _, thingy_data = thingy
 
     regions = []
 
@@ -1299,7 +1377,10 @@ def find_thingy_regions(view, analysis, thingy):
             region = keyword_region(view, thingy_data)
 
             # We should find a local binding for the keyword because of destructuring.
-            thingy_region, thingy_data = local_binding_in_region(view, lrn, region) or (None, None)
+            thingy_region, thingy_data = local_binding_in_region(view, lrn, region) or (
+                None,
+                None,
+            )
 
             thingy = ("local_binding", thingy_region, thingy_data)
 
@@ -1312,7 +1393,7 @@ def find_thingy_regions(view, analysis, thingy):
             keywords = find_keywords(analysis, thingy_data)
 
             for keyword in keywords:
-                regions.append(keyword_region(view, keyword))    
+                regions.append(keyword_region(view, keyword))
 
     elif thingy_type == "local_binding":
         regions.append(local_binding_region(view, thingy_data))
@@ -1378,24 +1459,21 @@ def find_thingy_regions(view, analysis, thingy):
 
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         erase_analysis_regions(self.view)
 
 
 class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
-
     def run(self):
         analyze_classpath_async(self.window)
 
 
 class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
-
     def run(self):
         analyze_paths_async(self.window)
 
-class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
+class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
     def on_analyze_completed(self, analysis):
         summary = analysis.get("summary")
 
@@ -1410,7 +1488,6 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         is_debug = debug()
 
@@ -1426,7 +1503,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, _, thingy_data  = thingy
+        thingy_type, _, thingy_data = thingy
 
         var_key = None
 
@@ -1435,7 +1512,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         elif thingy_type == "var_usage":
             var_key = (thingy_data.get("to"), thingy_data.get("name"))
-            
+
         project_path_ = project_path(self.view.window())
 
         paths_analysis_ = paths_analysis(project_path_)
@@ -1444,9 +1521,11 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         # Try to find Var definition in view first,
         # only if not found try paths and project analysis.
-        definition = (analysis_vindex(view_analysis_).get(var_key) or 
-                        analysis_vindex(paths_analysis_).get(var_key) or 
-                        analysis_vindex(project_analysis_).get(var_key))
+        definition = (
+            analysis_vindex(view_analysis_).get(var_key)
+            or analysis_vindex(paths_analysis_).get(var_key)
+            or analysis_vindex(project_analysis_).get(var_key)
+        )
 
         if definition:
             if is_debug:
@@ -1484,7 +1563,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
                 arglists_minihtml += """</p>"""
 
-
             # Doc
             # ---
 
@@ -1512,15 +1590,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             location = parse_location(definition)
 
             self.view.show_popup(
-                content, 
-                location=-1, 
+                content,
+                location=-1,
                 max_width=500,
-                on_navigate=lambda href: goto(self.view.window(), location)
+                on_navigate=lambda href: goto(self.view.window(), location),
             )
 
 
 class PgPepNavigateCommand(sublime_plugin.TextCommand):
-
     def initialize_thingy_navigation(self, navigation, thingy_id, thingy_findings):
         navigation["thingy_id"] = thingy_id
         navigation["thingy_findings"] = thingy_findings
@@ -1557,7 +1634,6 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             self.view.sel().add(region)
             self.view.show(region)
 
-
     def run(self, edit, direction):
         is_debug = debug()
 
@@ -1573,7 +1649,7 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, thingy_region, thingy_data  = thingy
+        thingy_type, thingy_region, thingy_data = thingy
 
         # Navigation is a dictionary with keys:
         # - thingy_id
@@ -1593,7 +1669,9 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
                 region = keyword_region(self.view, thingy_data)
 
                 # We should find a local binding for the keyword because of destructuring.
-                thingy_region, thingy_data = local_binding_in_region(self.view, lrn, region) or (None, None)
+                thingy_region, thingy_data = local_binding_in_region(
+                    self.view, lrn, region
+                ) or (None, None)
 
                 thingy = ("local_binding", thingy_region, thingy_data)
 
@@ -1610,9 +1688,10 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                 thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
 
-            
             if thingy_id != navigation.get("thingy_id"):
-                self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+                self.initialize_thingy_navigation(
+                    navigation, thingy_id, thingy_findings
+                )
 
                 set_view_navigation(state, navigation)
 
@@ -1632,7 +1711,9 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             if thingy_id:
                 if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+                    self.initialize_thingy_navigation(
+                        navigation, thingy_id, thingy_findings
+                    )
 
                     set_view_navigation(state, navigation)
 
@@ -1659,7 +1740,9 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             if thingy_id:
                 if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+                    self.initialize_thingy_navigation(
+                        navigation, thingy_id, thingy_findings
+                    )
 
                     set_view_navigation(state, navigation)
 
@@ -1679,7 +1762,9 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             if thingy_id:
                 if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+                    self.initialize_thingy_navigation(
+                        navigation, thingy_id, thingy_findings
+                    )
 
                     set_view_navigation(state, navigation)
 
@@ -1701,7 +1786,9 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
             if thingy_id:
                 if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(navigation, thingy_id, thingy_findings)
+                    self.initialize_thingy_navigation(
+                        navigation, thingy_id, thingy_findings
+                    )
 
                     set_view_navigation(state, navigation)
 
@@ -1712,7 +1799,6 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
 
 class PgPepShowThingy(sublime_plugin.TextCommand):
-
     def run(self, edit):
         region = self.view.sel()[0]
 
@@ -1723,11 +1809,11 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, _, thingy_data  = thingy
+        thingy_type, _, thingy_data = thingy
 
         items_html = ""
 
-        for k,v in thingy_data.items():
+        for k, v in thingy_data.items():
             items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
 
         html = f"""
@@ -1749,14 +1835,12 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         </body>
         """
 
-        flags = ( sublime.COOPERATE_WITH_AUTO_COMPLETE | 
-                  sublime.HIDE_ON_MOUSE_MOVE_AWAY )
+        flags = sublime.COOPERATE_WITH_AUTO_COMPLETE | sublime.HIDE_ON_MOUSE_MOVE_AWAY
 
         self.view.show_popup(html, flags, -1, 500)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
-
     def run(self, edit, side_by_side=False):
         global GOTO_SIDE_BY_SIDE_FLAGS
         global GOTO_DEFAULT_FLAGS
@@ -1775,12 +1859,14 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, _, thingy_data  = thingy
+        thingy_type, _, thingy_data = thingy
 
         if thingy_type == "local_usage":
-            if (definition := find_local_binding(analysis, thingy_data)):
-                if (goto_region := local_binding_region(self.view, definition)):
-                    goto_region = sublime.Region(goto_region.begin(), goto_region.begin())
+            if definition := find_local_binding(analysis, thingy_data):
+                if goto_region := local_binding_region(self.view, definition):
+                    goto_region = sublime.Region(
+                        goto_region.begin(), goto_region.begin()
+                    )
 
                     self.view.sel().clear()
                     self.view.sel().add(goto_region)
@@ -1793,9 +1879,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             project_analysis_ = project_analysis(project_path_)
 
-            definition = (find_namespace_definition(analysis, thingy_data) or 
-                            find_namespace_definition(paths_analysis_, thingy_data) or 
-                            find_namespace_definition(project_analysis_, thingy_data))
+            definition = (
+                find_namespace_definition(analysis, thingy_data)
+                or find_namespace_definition(paths_analysis_, thingy_data)
+                or find_namespace_definition(project_analysis_, thingy_data)
+            )
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
@@ -1809,9 +1897,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             project_analysis_ = project_analysis(project_path_)
 
-            definition = (find_var_definition(analysis, thingy_data) or 
-                            find_var_definition(paths_analysis_, thingy_data) or 
-                            find_var_definition(project_analysis_, thingy_data))
+            definition = (
+                find_var_definition(analysis, thingy_data)
+                or find_var_definition(paths_analysis_, thingy_data)
+                or find_var_definition(project_analysis_, thingy_data)
+            )
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
@@ -1820,7 +1910,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         is_debug = debug()
 
@@ -1836,7 +1925,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, thingy_region, thingy_data  = thingy
+        thingy_type, thingy_region, thingy_data = thingy
 
         thingy_usages = None
 
@@ -1867,14 +1956,13 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_usages = find_namespace_vars_usages(analysis, thingy_data)
 
-
         if thingy_usages:
 
             if len(thingy_usages) == 1:
                 location = parse_location(thingy_usages[0])
 
                 goto(self.view.window(), location)
-                
+
             else:
                 quick_panel_items = []
 
@@ -1883,8 +1971,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
-                    quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, thingy_kind(thingy)))
-
+                    quick_panel_items.append(
+                        sublime.QuickPanelItem(
+                            trigger, details, annotation, thingy_kind(thingy)
+                        )
+                    )
 
                 def on_done(index, _):
                     if index == -1:
@@ -1897,24 +1988,37 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 def on_highlighted(index):
                     location = parse_location(thingy_usages[index])
 
-                    goto(self.view.window(), location, flags=sublime.ENCODED_POSITION | sublime.TRANSIENT)
+                    goto(
+                        self.view.window(),
+                        location,
+                        flags=sublime.ENCODED_POSITION | sublime.TRANSIENT,
+                    )
 
                 placeholder = None
 
-                if thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-                    placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                if (
+                    thingy_type == "namespace_usage"
+                    or thingy_type == "namespace_usage_alias"
+                ):
+                    placeholder = (
+                        f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                    )
                 else:
-                    placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+                    placeholder = (
+                        f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+                    )
 
-                self.view.window().show_quick_panel(quick_panel_items, 
-                                                    on_done, 
-                                                    sublime.WANT_EVENT, 
-                                                    0, 
-                                                    on_highlighted, 
-                                                    placeholder)
+                self.view.window().show_quick_panel(
+                    quick_panel_items,
+                    on_done,
+                    sublime.WANT_EVENT,
+                    0,
+                    on_highlighted,
+                    placeholder,
+                )
+
 
 class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         is_debug = debug()
 
@@ -1930,7 +2034,7 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
         if thingy is None:
             return
 
-        thingy_type, thingy_region, thingy_data  = thingy
+        thingy_type, thingy_region, thingy_data = thingy
 
         project_path_ = project_path(self.view.window())
 
@@ -1955,8 +2059,9 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
             thingy_usages = find_namespace_usages(paths_analysis_, thingy_data)
 
         elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-            thingy_usages = find_namespace_usages_with_usage(paths_analysis_, thingy_data)
-
+            thingy_usages = find_namespace_usages_with_usage(
+                paths_analysis_, thingy_data
+            )
 
         if thingy_usages:
 
@@ -1964,7 +2069,7 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                 location = parse_location(thingy_usages[0])
 
                 goto(self.view.window(), location)
-                
+
             else:
                 quick_panel_items = []
 
@@ -1973,8 +2078,11 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
-                    quick_panel_items.append(sublime.QuickPanelItem(trigger, details, annotation, thingy_kind(thingy)))
-
+                    quick_panel_items.append(
+                        sublime.QuickPanelItem(
+                            trigger, details, annotation, thingy_kind(thingy)
+                        )
+                    )
 
                 def on_done(index, _):
                     if index == -1:
@@ -1987,25 +2095,37 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                 def on_highlighted(index):
                     location = parse_location(thingy_usages[index])
 
-                    goto(self.view.window(), location, flags=sublime.ENCODED_POSITION | sublime.TRANSIENT)
+                    goto(
+                        self.view.window(),
+                        location,
+                        flags=sublime.ENCODED_POSITION | sublime.TRANSIENT,
+                    )
 
                 placeholder = None
 
-                if thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
-                    placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                if (
+                    thingy_type == "namespace_usage"
+                    or thingy_type == "namespace_usage_alias"
+                ):
+                    placeholder = (
+                        f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                    )
                 else:
-                    placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+                    placeholder = (
+                        f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+                    )
 
-                self.view.window().show_quick_panel(quick_panel_items, 
-                                                    on_done, 
-                                                    sublime.WANT_EVENT, 
-                                                    0, 
-                                                    on_highlighted, 
-                                                    placeholder)
-        
+                self.view.window().show_quick_panel(
+                    quick_panel_items,
+                    on_done,
+                    sublime.WANT_EVENT,
+                    0,
+                    on_highlighted,
+                    placeholder,
+                )
+
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         is_debug = debug()
 
@@ -2026,7 +2146,6 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
-
     def run(self, edit, select=False):
         analysis = view_analysis(self.view.id())
 
@@ -2046,7 +2165,6 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         try:
 
@@ -2091,8 +2209,8 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
             # Erase regions from previous analysis.
             erase_analysis_regions(self.view)
 
-            redish = self.view.style_for_scope('region.redish')['foreground']
-            orangish = self.view.style_for_scope('region.orangish')['foreground']
+            redish = self.view.style_for_scope("region.redish")["foreground"]
+            orangish = self.view.style_for_scope("region.orangish")["foreground"]
 
             self.view.add_regions(
                 "pg_pep_analysis_error",
@@ -2100,9 +2218,12 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 scope="region.redish",
                 annotations=error_minihtml_set,
                 annotation_color=redish,
-                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
-                       sublime.DRAW_NO_FILL |
-                       sublime.DRAW_NO_OUTLINE))
+                flags=(
+                    sublime.DRAW_SQUIGGLY_UNDERLINE
+                    | sublime.DRAW_NO_FILL
+                    | sublime.DRAW_NO_OUTLINE
+                ),
+            )
 
             self.view.add_regions(
                 "pg_pep_analysis_warning",
@@ -2110,11 +2231,14 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 scope="region.orangish",
                 annotations=warning_minihtml_set,
                 annotation_color=orangish,
-                flags=(sublime.DRAW_SQUIGGLY_UNDERLINE |
-                       sublime.DRAW_NO_FILL |
-                       sublime.DRAW_NO_OUTLINE))
+                flags=(
+                    sublime.DRAW_SQUIGGLY_UNDERLINE
+                    | sublime.DRAW_NO_FILL
+                    | sublime.DRAW_NO_OUTLINE
+                ),
+            )
 
-            summary_errors =  analysis_summary(analysis).get("error", 0)
+            summary_errors = analysis_summary(analysis).get("error", 0)
             summary_warnings = analysis_summary(analysis).get("warning", 0)
 
             status_messages = []
@@ -2128,15 +2252,14 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
 
 class PgPepReportCommand(sublime_plugin.TextCommand):
-
     def run(self, edit):
         try:
+
             def finding_str(finding):
                 message = clj_kondo_finding_message(finding)
 
                 return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
 
-            
             analysis = view_analysis(self.view.id())
 
             findings = analysis_findings(analysis)
@@ -2155,12 +2278,18 @@ class PgPepReportCommand(sublime_plugin.TextCommand):
 
             try:
                 with os.fdopen(descriptor, "w") as file:
-                    s = f"File: {self.view.file_name()}\n\n" if self.view.file_name() is not None else ""
+                    s = (
+                        f"File: {self.view.file_name()}\n\n"
+                        if self.view.file_name() is not None
+                        else ""
+                    )
                     s += "\n\n".join(error_str_set + warning_str_set)
 
                     file.write(s)
 
-                v = self.view.window().open_file(path, flags=sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT)
+                v = self.view.window().open_file(
+                    path, flags=sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT
+                )
                 v.set_scratch(True)
                 v.set_read_only(True)
                 v.settings().set("word_wrap", "auto")
@@ -2192,11 +2321,13 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     @classmethod
     def is_applicable(_, settings):
-        return settings.get('syntax') in {"Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
-                                          "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
-                                          "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
-                                          "Packages/Clojure/Clojure.sublime-syntax",
-                                          "Packages/Clojure/ClojureScript.sublime-syntax"}
+        return settings.get("syntax") in {
+            "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
+            "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
+            "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
+            "Packages/Clojure/Clojure.sublime-syntax",
+            "Packages/Clojure/ClojureScript.sublime-syntax",
+        }
 
     def highlight_regions(self):
         if automatically_highlight():
@@ -2218,8 +2349,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self):
         if "on_post_save_async" in self.analyze_view():
-            # Highlight regions post save so the user doesn't need to change selection. 
-            analyze_view_async(self.view, on_completed=lambda _: self.highlight_regions())
+            # Highlight regions post save so the user doesn't need to change selection.
+            analyze_view_async(
+                self.view, on_completed=lambda _: self.highlight_regions()
+            )
 
         if "on_post_save_async" in self.analyze_paths():
             analyze_paths_async(self.view.window())
@@ -2235,7 +2368,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
 
 class PgPepEventListener(sublime_plugin.EventListener):
-
     def on_load_project_async(self, window):
 
         if "on_load_project_async" in set(settings().get("analyze_paths", {})):
