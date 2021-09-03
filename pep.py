@@ -1487,7 +1487,7 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
         analyze_view_async(self.view, on_completed=self.on_analyze_completed)
 
 
-class PgPepSearchCommand(sublime_plugin.WindowCommand):
+class PgPepAproposCommand(sublime_plugin.WindowCommand):
     def run(self):
 
         project_path_ = project_path(self.window)
