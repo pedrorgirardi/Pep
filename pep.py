@@ -1511,7 +1511,12 @@ class PgPepSearchCommand(sublime_plugin.WindowCommand):
             annotation = " ".join(var_args)
 
             quick_panel_items.append(
-                sublime.QuickPanelItem(trigger, details, annotation)
+                sublime.QuickPanelItem(
+                    trigger,
+                    details,
+                    annotation,
+                    sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
+                )
             )
 
         def on_done(index):
