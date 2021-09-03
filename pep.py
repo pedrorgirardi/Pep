@@ -1479,17 +1479,55 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
         analyze_view_async(self.view, on_completed=self.on_analyze_completed)
 
 
-class PgPepAproposCommand(sublime_plugin.WindowCommand):
+class PgPepAproposPathsCommand(sublime_plugin.WindowCommand):
     def run(self):
 
         project_path_ = project_path(self.window)
 
         paths_analysis_ = paths_analysis(project_path_)
 
+        vindex = analysis_vindex(paths_analysis_)
+
+        var_definitions = vindex.values()
+
+        quick_panel_items = []
+
+        for var_definition in var_definitions:
+            var_namespace = var_definition.get("ns", "")
+            var_name = var_definition.get("name", "")
+            var_doc = var_definition.get("doc", "")
+            var_args = var_definition.get("arglist-strs", [])
+
+            trigger = f"{var_namespace}/{var_name}"
+            details = f"<body>{htmlify(var_doc)}</body>"
+            annotation = " ".join(var_args)
+
+            quick_panel_items.append(
+                sublime.QuickPanelItem(
+                    trigger,
+                    details,
+                    annotation,
+                    sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
+                )
+            )
+
+        def on_done(index):
+            if index != -1:
+
+                location = parse_location(list(var_definitions)[index])
+
+                goto(self.window, location)
+
+        self.window.show_quick_panel(quick_panel_items, on_done)
+
+class PgPepAproposClasspathCommand(sublime_plugin.WindowCommand):
+    def run(self):
+
+        project_path_ = project_path(self.window)
+
         classpath_analysis_ = project_analysis(project_path_)
 
-        # Fallback to paths analysis if there isn't a classpath analysis.
-        vindex = analysis_vindex(classpath_analysis_ or paths_analysis_)
+        vindex = analysis_vindex(classpath_analysis_)
 
         var_definitions = vindex.values()
 
