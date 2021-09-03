@@ -1507,7 +1507,7 @@ class PgPepSearchCommand(sublime_plugin.WindowCommand):
             var_args = var_definition.get("arglist-strs", [])
 
             trigger = f"{var_namespace}/{var_name}"
-            details = var_doc
+            details = f"<body>{htmlify(var_doc)}</body>"
             annotation = " ".join(var_args)
 
             quick_panel_items.append(
