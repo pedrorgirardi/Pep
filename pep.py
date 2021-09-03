@@ -126,17 +126,9 @@ def analysis_krn(analysis):
 
 def analysis_vindex(analysis):
     """
-    Returns a dictionary of locals by ID.
+    Returns a dictionary of vars by (namespace, name).
 
-    This index can be used to find a local in constant time if you know its ID.
-
-    When finding usages from a usage itself, the first step is to find the usage,
-    once you have found it, you can use its ID to find the local.
-
-    Locals and usages have the same ID,
-    so it's possible to corretale a usage with a local.
-
-    'lindex' stands for 'local index'.
+    'vindex' stands for 'var index'.
     """
     return analysis.get("vindex", {})
 
@@ -1492,9 +1484,12 @@ class PgPepAproposCommand(sublime_plugin.WindowCommand):
 
         project_path_ = project_path(self.window)
 
+        paths_analysis_ = paths_analysis(project_path_)
+
         classpath_analysis_ = project_analysis(project_path_)
 
-        vindex = classpath_analysis_.get("vindex", {})
+        # Fallback to paths analysis if there isn't a classpath analysis.
+        vindex = analysis_vindex(classpath_analysis_ or paths_analysis_)
 
         var_definitions = vindex.values()
 
