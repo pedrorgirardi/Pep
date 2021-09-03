@@ -1487,6 +1487,43 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
         analyze_view_async(self.view, on_completed=self.on_analyze_completed)
 
 
+class PgPepSearchCommand(sublime_plugin.WindowCommand):
+    def run(self):
+
+        project_path_ = project_path(self.window)
+
+        classpath_analysis_ = project_analysis(project_path_)
+
+        vindex = classpath_analysis_.get("vindex", {})
+
+        var_definitions = vindex.values()
+
+        quick_panel_items = []
+
+        for var_definition in var_definitions:
+            var_namespace = var_definition.get("ns", "")
+            var_name = var_definition.get("name", "")
+            var_doc = var_definition.get("doc", "")
+            var_args = var_definition.get("arglist-strs", [])
+
+            trigger = f"{var_namespace}/{var_name}"
+            details = var_doc
+            annotation = " ".join(var_args)
+
+            quick_panel_items.append(
+                sublime.QuickPanelItem(trigger, details, annotation)
+            )
+
+        def on_done(index):
+            if index != -1:
+
+                location = parse_location(list(var_definitions)[index])
+
+                goto(self.window, location)
+
+        self.window.show_quick_panel(quick_panel_items, on_done)
+
+
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         is_debug = debug()
