@@ -106,8 +106,6 @@ def analysis_kindex(analysis):
     """
     Returns a dictionary of keywords by (namespace, name).
 
-    This index can be used to find a local in constant time if you know its ID.
-
     'kindex' stands for 'keyword index'.
     """
     return analysis.get("kindex", {})
@@ -1342,6 +1340,19 @@ def find_namespace_vars_usages(analysis, namespace_usage):
     return usages
 
 
+def find_keyword_definition(analysis, keyword):
+    """
+    Returns a keyword which has "definition semantics":
+    - Clojure Spec
+    - re-frame
+    """
+    k = (keyword.get("ns"), keyword.get("name"))
+
+    for keyword_indexed in analysis_kindex(analysis).get(k, []):
+        if keyword_indexed.get("reg", None):
+            return keyword_indexed
+
+
 # ---
 
 
@@ -1948,6 +1959,30 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 or find_var_definition(paths_analysis_, thingy_data)
                 or find_var_definition(project_analysis_, thingy_data)
             )
+
+            if definition:
+                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+
+                goto(self.view.window(), parse_location(definition), flags=flags)
+
+        elif thingy_type == "keyword":
+            keyword_namespace = thingy_data.get("ns", None)
+            keyword_name = thingy_data.get("name", None)
+
+            print(
+                "(Pep) Goto keyword definition:",
+                f"{keyword_namespace}/{keyword_name}"
+                if keyword_namespace
+                else keyword_name,
+            )
+
+            project_path_ = project_path(self.view.window())
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            definition = find_keyword_definition(
+                analysis, thingy_data
+            ) or find_keyword_definition(paths_analysis_, thingy_data)
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
