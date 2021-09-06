@@ -1537,7 +1537,7 @@ def show_goto_thingy_quick_panel(window, analysis):
                 name_ = keyword_.get("name", "")
                 reg_ = keyword_.get("reg", "")
 
-                trigger = f":{namespace_}/{name_}"
+                trigger = f":{namespace_}/{name_}" if namespace_ else name_
                 details = ""
                 annotation = reg_
 
