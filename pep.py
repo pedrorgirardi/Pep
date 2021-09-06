@@ -1564,14 +1564,14 @@ def show_goto_thingy_quick_panel(window, analysis):
     window.show_quick_panel(quick_panel_items, on_done)
 
 
-class PgPepGotoWithViewCommand(sublime_plugin.TextCommand):
+class PgPepGotoThingyInViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
         show_goto_thingy_quick_panel(self.view.window(), view_analysis_)
 
 
-class PgPepGotoWithPathsCommand(sublime_plugin.WindowCommand):
+class PgPepGotoThingyInPathsCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
@@ -1580,7 +1580,7 @@ class PgPepGotoWithPathsCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, paths_analysis_)
 
 
-class PgPepGotoWithClasspathCommand(sublime_plugin.WindowCommand):
+class PgPepGotoThingyInClasspathCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
