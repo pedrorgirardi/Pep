@@ -1952,6 +1952,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_definition(self.view.window(), definition, side_by_side)
 
         elif thingy_type == "var_usage":
+            namespace_ = thingy_data.get("to", None)
+            name_ = thingy_data.get("name", None)
+
+            print("(Pep) Goto var definition:", f"{namespace_}/{name_}")
+
             project_path_ = project_path(self.view.window())
 
             paths_analysis_ = paths_analysis(project_path_)
