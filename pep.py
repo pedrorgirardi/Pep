@@ -1502,12 +1502,12 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
         analyze_view_async(self.view, on_completed=self.on_analyze_completed)
 
 
-def apropos(window, analysis):
+def show_goto_thingy_quick_panel(window, analysis):
+    quick_panel_items = []
+
     vindex = analysis_vindex(analysis)
 
     var_definitions = vindex.values()
-
-    quick_panel_items = []
 
     for var_definition in var_definitions:
         var_namespace = var_definition.get("ns", "")
@@ -1528,32 +1528,65 @@ def apropos(window, analysis):
             )
         )
 
+    keyword_definitions = []
+
+    for keywords_ in analysis_kindex(analysis).values():
+        for keyword_ in keywords_:
+            if keyword_.get("reg", None):
+                namespace_ = keyword_.get("ns", "")
+                name_ = keyword_.get("name", "")
+                reg_ = keyword_.get("reg", "")
+
+                trigger = f":{namespace_}/{name_}"
+                details = ""
+                annotation = reg_
+
+                keyword_definitions.append(keyword_)
+
+                quick_panel_items.append(
+                    sublime.QuickPanelItem(
+                        trigger,
+                        details,
+                        annotation,
+                        sublime.KIND_KEYWORD,
+                    )
+                )
+
     def on_done(index):
         if index != -1:
 
-            location = parse_location(list(var_definitions)[index])
+            definition = [*var_definitions, *keyword_definitions][index]
+
+            location = parse_location(definition)
 
             goto(window, location)
 
     window.show_quick_panel(quick_panel_items, on_done)
 
 
-class PgPepAproposPathsCommand(sublime_plugin.WindowCommand):
+class PgPepGotoWithViewCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        show_goto_thingy_quick_panel(self.view.window(), view_analysis_)
+
+
+class PgPepGotoWithPathsCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
         paths_analysis_ = paths_analysis(project_path_)
 
-        apropos(self.window, paths_analysis_)
+        show_goto_thingy_quick_panel(self.window, paths_analysis_)
 
 
-class PgPepAproposClasspathCommand(sublime_plugin.WindowCommand):
+class PgPepGotoWithClasspathCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
         classpath_analysis_ = project_analysis(project_path_)
 
-        apropos(self.window, classpath_analysis_)
+        show_goto_thingy_quick_panel(self.window, classpath_analysis_)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
