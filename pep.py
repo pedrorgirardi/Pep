@@ -371,6 +371,12 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             return window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
 
 
+def goto_definition(window, definition, side_by_side=False):
+    flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+
+    goto(window, parse_location(definition), flags=flags)
+
+
 ## ---
 
 
@@ -1943,9 +1949,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             )
 
             if definition:
-                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
-
-                goto(self.view.window(), parse_location(definition), flags=flags)
+                goto_definition(self.view.window(), definition, side_by_side)
 
         elif thingy_type == "var_usage":
             project_path_ = project_path(self.view.window())
@@ -1961,9 +1965,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             )
 
             if definition:
-                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
-
-                goto(self.view.window(), parse_location(definition), flags=flags)
+                goto_definition(self.view.window(), definition, side_by_side)
 
         elif thingy_type == "keyword":
             keyword_namespace = thingy_data.get("ns", None)
@@ -1985,9 +1987,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             ) or find_keyword_definition(paths_analysis_, thingy_data)
 
             if definition:
-                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
-
-                goto(self.view.window(), parse_location(definition), flags=flags)
+                goto_definition(self.view.window(), definition, side_by_side)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
