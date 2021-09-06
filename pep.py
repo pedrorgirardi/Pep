@@ -1276,6 +1276,12 @@ def find_keywords(analysis, keyword):
     return analysis.get("kindex", {}).get(keyword_qualified_name, [])
 
 
+def find_keyword_usages(analysis, keyword):
+    keywords = find_keywords(analysis, keyword)
+
+    return [keyword for keyword in keywords if not keyword.get("reg")]
+
+
 def find_local_binding(analysis, local_usage):
     return analysis_lindex(analysis).get(local_usage.get("id"))
 
@@ -2020,7 +2026,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             # If the keyword is a destructuring key,
             # should it show its local usages?
 
-            thingy_usages = find_keywords(analysis, thingy_data)
+            thingy_usages = find_keyword_usages(analysis, thingy_data)
 
         elif thingy_type == "local_binding":
             thingy_usages = find_local_usages(analysis, thingy_data)
@@ -2133,7 +2139,7 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
             # If the keyword is a destructuring key,
             # should it show its local usages?
 
-            thingy_usages = find_keywords(paths_analysis_, thingy_data)
+            thingy_usages = find_keyword_usages(paths_analysis_, thingy_data)
 
         elif thingy_type == "var_definition":
             thingy_usages = find_var_usages(paths_analysis_, thingy_data)
