@@ -377,6 +377,68 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
+def show_goto_thingy_quick_panel(window, analysis):
+    quick_panel_items = []
+
+    vindex = analysis_vindex(analysis)
+
+    var_definitions = vindex.values()
+
+    for var_definition in var_definitions:
+        var_namespace = var_definition.get("ns", "")
+        var_name = var_definition.get("name", "")
+        var_doc = var_definition.get("doc", "")
+        var_args = var_definition.get("arglist-strs", [])
+
+        trigger = f"{var_namespace}/{var_name}"
+        details = f"<body>{htmlify(var_doc)}</body>"
+        annotation = " ".join(var_args)
+
+        quick_panel_items.append(
+            sublime.QuickPanelItem(
+                trigger,
+                details,
+                annotation,
+                sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
+            )
+        )
+
+    keyword_definitions = []
+
+    for keywords_ in analysis_kindex(analysis).values():
+        for keyword_ in keywords_:
+            if keyword_.get("reg", None):
+                namespace_ = keyword_.get("ns", "")
+                name_ = keyword_.get("name", "")
+                reg_ = keyword_.get("reg", "")
+
+                trigger = f":{namespace_}/{name_}" if namespace_ else name_
+                details = ""
+                annotation = reg_
+
+                keyword_definitions.append(keyword_)
+
+                quick_panel_items.append(
+                    sublime.QuickPanelItem(
+                        trigger,
+                        details,
+                        annotation,
+                        sublime.KIND_KEYWORD,
+                    )
+                )
+
+    def on_done(index):
+        if index != -1:
+
+            definition = [*var_definitions, *keyword_definitions][index]
+
+            location = parse_location(definition)
+
+            goto(window, location)
+
+    window.show_quick_panel(quick_panel_items, on_done)
+
+
 ## ---
 
 
@@ -1500,68 +1562,6 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         analyze_view_async(self.view, on_completed=self.on_analyze_completed)
-
-
-def show_goto_thingy_quick_panel(window, analysis):
-    quick_panel_items = []
-
-    vindex = analysis_vindex(analysis)
-
-    var_definitions = vindex.values()
-
-    for var_definition in var_definitions:
-        var_namespace = var_definition.get("ns", "")
-        var_name = var_definition.get("name", "")
-        var_doc = var_definition.get("doc", "")
-        var_args = var_definition.get("arglist-strs", [])
-
-        trigger = f"{var_namespace}/{var_name}"
-        details = f"<body>{htmlify(var_doc)}</body>"
-        annotation = " ".join(var_args)
-
-        quick_panel_items.append(
-            sublime.QuickPanelItem(
-                trigger,
-                details,
-                annotation,
-                sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
-            )
-        )
-
-    keyword_definitions = []
-
-    for keywords_ in analysis_kindex(analysis).values():
-        for keyword_ in keywords_:
-            if keyword_.get("reg", None):
-                namespace_ = keyword_.get("ns", "")
-                name_ = keyword_.get("name", "")
-                reg_ = keyword_.get("reg", "")
-
-                trigger = f":{namespace_}/{name_}" if namespace_ else name_
-                details = ""
-                annotation = reg_
-
-                keyword_definitions.append(keyword_)
-
-                quick_panel_items.append(
-                    sublime.QuickPanelItem(
-                        trigger,
-                        details,
-                        annotation,
-                        sublime.KIND_KEYWORD,
-                    )
-                )
-
-    def on_done(index):
-        if index != -1:
-
-            definition = [*var_definitions, *keyword_definitions][index]
-
-            location = parse_location(definition)
-
-            goto(window, location)
-
-    window.show_quick_panel(quick_panel_items, on_done)
 
 
 class PgPepGotoThingyInViewCommand(sublime_plugin.TextCommand):
