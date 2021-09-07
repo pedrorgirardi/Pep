@@ -427,16 +427,51 @@ def show_goto_thingy_quick_panel(window, analysis):
                     )
                 )
 
+    panel_name_ = "goto_thingy"
+
+    def on_highlighted(index):
+        if index != -1:
+            definition = [*var_definitions, *keyword_definitions][index]
+
+            output_view_ = window.find_output_panel(panel_name_) or window.create_output_panel(panel_name_)
+            output_view_.set_read_only(False)
+            output_view_.run_command("select_all")
+            output_view_.run_command("right_delete")
+
+            ns_ = definition.get("ns", None)
+            name_ = definition.get("name", None)
+
+            # Thingy name.
+            output_view_.run_command("append", {"characters": (f"{ns_}/{name_}" if ns_ else name_) + "\n\n"})
+
+            # Thingy args (optional).
+            if args := definition.get("arglist-strs", None):
+                output_view_.run_command("append", {"characters": " ".join(args) + "\n\n"})
+
+            # Thingy doc (optional).
+            output_view_.run_command("append", {"characters": definition.get("doc", "")})
+
+            output_view_.set_read_only(True)
+
+            output_view_.settings().set("line_numbers", False)
+            output_view_.settings().set("gutter", False)
+            output_view_.settings().set("is_widget", True)
+
+            window.run_command("show_panel", {"panel": f"output.{panel_name_}"})
+
     def on_done(index):
         if index != -1:
-
             definition = [*var_definitions, *keyword_definitions][index]
 
             location = parse_location(definition)
 
             goto(window, location)
 
-    window.show_quick_panel(quick_panel_items, on_done)
+        window.run_command("hide_panel", {"panel": f"output.{panel_name_}"})
+
+    window.show_quick_panel(
+        quick_panel_items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted
+    )
 
 
 ## ---
