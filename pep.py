@@ -397,9 +397,7 @@ def show_goto_thingy_quick_panel(window, analysis):
         quick_panel_items.append(
             sublime.QuickPanelItem(
                 trigger,
-                details,
-                annotation,
-                sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
+                kind=sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
             )
         )
 
@@ -421,9 +419,7 @@ def show_goto_thingy_quick_panel(window, analysis):
                 quick_panel_items.append(
                     sublime.QuickPanelItem(
                         trigger,
-                        details,
-                        annotation,
-                        sublime.KIND_KEYWORD,
+                        kind=sublime.KIND_KEYWORD,
                     )
                 )
 
