@@ -428,6 +428,27 @@ def show_goto_thingy_quick_panel(window, analysis):
                     }
                 )
 
+    def thingy_output_text(thingy_type, thingy_data):
+        ns_ = thingy_data.get("ns", None)
+        name_ = thingy_data.get("name", None)
+
+        text_ = None
+
+        if thingy_type == FT_KEYWORD:
+            text_ = f"{ns_}/{name_}" if ns_ else name_
+            text_ = text_ + "\n\n" + thingy_data.get("reg", "")
+
+        elif thingy_type == FT_VAR_DEFINITION:
+            text_ = f"{ns_}/{name_}" if ns_ else name_
+            text_ = text_ + "\n\n" + " ".join(thingy_data.get("arglist-strs", []))
+            text_ = text_ + "\n\n" + re.sub(r"\n+\s+", "\n", thingy_data.get("doc", ""))
+
+        else:
+            text_ = f"{ns_}/{name_}" if ns_ else name_
+
+        return text_
+
+
     panel_name_ = "goto_thingy"
 
     def on_highlighted(index):
@@ -440,27 +461,13 @@ def show_goto_thingy_quick_panel(window, analysis):
             output_view_ = window.find_output_panel(
                 panel_name_
             ) or window.create_output_panel(panel_name_)
+
             output_view_.set_read_only(False)
+
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
-
-            ns_ = thingy_data_.get("ns", None)
-            name_ = thingy_data_.get("name", None)
-
-            # Thingy name.
             output_view_.run_command(
-                "append", {"characters": (f"{ns_}/{name_}" if ns_ else name_) + "\n\n"}
-            )
-
-            # Thingy args (optional).
-            if args := thingy_data_.get("arglist-strs", None):
-                output_view_.run_command(
-                    "append", {"characters": " ".join(args) + "\n\n"}
-                )
-
-            # Thingy doc (optional).
-            output_view_.run_command(
-                "append", {"characters": thingy_data_.get("doc", "")}
+                "append", {"characters": thingy_output_text(thingy_type_, thingy_data_)}
             )
 
             output_view_.set_read_only(True)
