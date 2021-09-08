@@ -387,12 +387,9 @@ def show_goto_thingy_quick_panel(window, analysis):
     for var_definition in var_definitions:
         var_namespace = var_definition.get("ns", "")
         var_name = var_definition.get("name", "")
-        var_doc = var_definition.get("doc", "")
-        var_args = var_definition.get("arglist-strs", [])
+        var_args = var_definition.get("arglist-strs", None)
 
         trigger = f"{var_namespace}/{var_name}"
-        details = f"<body>{htmlify(var_doc)}</body>"
-        annotation = " ".join(var_args)
 
         quick_panel_items.append(
             sublime.QuickPanelItem(
@@ -406,13 +403,10 @@ def show_goto_thingy_quick_panel(window, analysis):
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
             if keyword_.get("reg", None):
-                namespace_ = keyword_.get("ns", "")
+                ns_ = keyword_.get("ns", "")
                 name_ = keyword_.get("name", "")
-                reg_ = keyword_.get("reg", "")
 
-                trigger = f":{namespace_}/{name_}" if namespace_ else name_
-                details = ""
-                annotation = reg_
+                trigger = f":{ns_}/{name_}" if ns_ else name_
 
                 keyword_definitions.append(keyword_)
 
