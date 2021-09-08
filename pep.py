@@ -440,7 +440,10 @@ def show_goto_thingy_quick_panel(window, analysis):
 
         elif thingy_type == FT_VAR_DEFINITION:
             text_ = f"{ns_}/{name_}" if ns_ else name_
-            text_ = text_ + "\n\n" + " ".join(thingy_data.get("arglist-strs", []))
+
+            if args_ := thingy_data.get("arglist-strs", None):
+                text_ = text_ + "\n\n" + " ".join(args_)
+
             text_ = text_ + "\n\n" + re.sub(r"\n+\s+", "\n", thingy_data.get("doc", ""))
 
         else:
