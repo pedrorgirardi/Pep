@@ -2531,14 +2531,14 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def __init__(self, view):
         self.view = view
+        self.stop_analysis = threading.Event()
 
         def analyze_view_():
-            while True:
+            while not self.stop_analysis.is_set():
                 sublime.set_timeout(lambda: analyze_view(self.view), 0)
 
                 time.sleep(0.3)
 
-        # TODO: Stop on_close
         threading.Thread(target=lambda: analyze_view_(), daemon=True).start()
 
     
@@ -2566,6 +2566,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         It's important to delete a view's state on close.
         """
         set_view_analysis(self.view.id(), {})
+
+        self.stop_analysis.set()
 
 
 class PgPepEventListener(sublime_plugin.EventListener):
