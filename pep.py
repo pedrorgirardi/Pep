@@ -1629,14 +1629,14 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
         analyze_view_async(self.view, on_completed=self.on_analyze_completed)
 
 
-class PgPepGotoThingyInViewCommand(sublime_plugin.TextCommand):
+class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
         show_goto_thingy_quick_panel(self.view.window(), view_analysis_)
 
 
-class PgPepGotoThingyInPathsCommand(sublime_plugin.WindowCommand):
+class PgPepGotoInPathsCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
@@ -1645,7 +1645,7 @@ class PgPepGotoThingyInPathsCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, paths_analysis_)
 
 
-class PgPepGotoThingyInClasspathCommand(sublime_plugin.WindowCommand):
+class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
