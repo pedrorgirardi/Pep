@@ -98,11 +98,8 @@ def view_analysis(view_id):
 # ---
 
 
-def analysis_view_modified(view):
-    """
-    Returns True if view was modified since last analysis.
-    """
-    return view.change_count() != view_analysis(view.id()).get("view_change_count")
+def analysis_view_change_count(view):
+    return view_analysis(view.id()).get("view_change_count")
 
 
 def analysis_findings(analysis):
@@ -262,6 +259,13 @@ def remove_empty_rows(thingies):
     This function is suitable for any thingy data - not only Var usages.
     """
     return [thingy_data for thingy_data in thingies if thingy_data["row"] != None]
+
+
+def staled_analysis(view):
+    """
+    Returns True if view was modified since last analysis.
+    """
+    return view.change_count() != analysis_view_change_count(view)
 
 
 def view_navigation(view_state):
@@ -451,7 +455,6 @@ def show_goto_thingy_quick_panel(window, analysis):
 
         return text_
 
-
     panel_name_ = "goto_thingy"
 
     def on_highlighted(index):
@@ -571,22 +574,17 @@ def analyze_view(view, on_completed=None):
 
     view_file_name = view.file_name()
 
-    # We get a wrong analysis if we analyze a dirty file view.
-    # (It's fine if there isn't a file.)
-    if view_file_name and view.is_dirty():
-        return False
-
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
     view_change_count = view.change_count()
 
     # Skip analysis if view hasn't changed since last analysis.
-    if view_analysis(view.id()).get("view_change_count") == view_change_count:
+    if not staled_analysis(view):
         return False
 
     project_file_name = window.project_file_name() if window else None
 
-    # Setting the working directory is important because of the clj-kondo cache.
+    # Setting the working directory is important because of clj-kondo's cache.
     cwd = None
 
     if project_file_name:
@@ -597,11 +595,19 @@ def analyze_view(view, on_completed=None):
     analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true} :format :json :canonical-paths true} \
                         :lint-as {reagent.core/with-let clojure.core/let}}"
 
+    # --lint <file>: a file can either be a normal file, directory or classpath.
+    # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
+    # Use - as filename for reading from stdin.
+
+    # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
+
     analysis_subprocess_args = [
         clj_kondo_path(),
         "--config",
         analysis_config,
         "--lint",
+        "-",
+        "--filename",
         view_file_name or "-",
     ]
 
@@ -613,7 +619,7 @@ def analyze_view(view, on_completed=None):
         cwd=cwd,
         text=True,
         capture_output=True,
-        input=None if view_file_name else view_text(view),
+        input=view_text(view),
     )
 
     output = None
@@ -2350,7 +2356,7 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
         # We can't highlight if view was modified,
         # because regions might be different.
-        if thingy and not analysis_view_modified(self.view):
+        if thingy and not staled_analysis(self.view):
             regions = find_thingy_regions(self.view, analysis, thingy)
 
             if regions:
