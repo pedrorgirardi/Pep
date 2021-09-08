@@ -2542,7 +2542,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
                 time.sleep(0.3)
 
-        threading.Thread(target=lambda: analyze_view_(), daemon=True).start()
+        threading.Thread(target=lambda: analyze_view_()).start()
 
     def highlight_regions(self):
         if automatically_highlight():
