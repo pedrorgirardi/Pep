@@ -389,31 +389,26 @@ def goto_definition(window, definition, side_by_side=False):
 
 
 def show_goto_thingy_quick_panel(window, analysis):
-    quick_panel_items = []
 
     items_ = []
 
-    vindex = analysis_vindex(analysis)
+    for var_definition in analysis_vindex(analysis).values():
+        ns_ = var_definition.get("ns", "")
+        name_ = var_definition.get("name", "")
+        args_ = var_definition.get("arglist-strs", None)
 
-    var_definitions = vindex.values()
+        trigger = f"{ns_}/{name_}"
 
-    for var_definition in var_definitions:
-        var_namespace = var_definition.get("ns", "")
-        var_name = var_definition.get("name", "")
-        var_args = var_definition.get("arglist-strs", None)
-
-        trigger = f"{var_namespace}/{var_name}"
-
-        items_.append({"thingy_type": "var_definition"})
-
-        quick_panel_items.append(
-            sublime.QuickPanelItem(
-                trigger,
-                kind=sublime.KIND_FUNCTION if var_args else sublime.KIND_VARIABLE,
-            )
+        items_.append(
+            {
+                "thingy_type": FT_VAR_DEFINITION,
+                "thingy_data": var_definition,
+                "quick_panel_item": sublime.QuickPanelItem(
+                    trigger,
+                    kind=sublime.KIND_FUNCTION if args_ else sublime.KIND_VARIABLE,
+                ),
+            }
         )
-
-    keyword_definitions = []
 
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
@@ -421,40 +416,52 @@ def show_goto_thingy_quick_panel(window, analysis):
                 ns_ = keyword_.get("ns", "")
                 name_ = keyword_.get("name", "")
 
-                trigger = f":{ns_}/{name_}" if ns_ else name_
+                trigger = ":" + (f"{ns_}/{name_}" if ns_ else name_)
 
-                keyword_definitions.append(keyword_)
-
-                quick_panel_items.append(
-                    sublime.QuickPanelItem(
-                        trigger,
-                        kind=sublime.KIND_KEYWORD,
-                    )
+                items_.append(
+                    {
+                        "thingy_type": FT_KEYWORD,
+                        "thingy_data": keyword_,
+                        "quick_panel_item": sublime.QuickPanelItem(
+                            trigger, kind=sublime.KIND_KEYWORD
+                        ),
+                    }
                 )
 
     panel_name_ = "goto_thingy"
 
     def on_highlighted(index):
         if index != -1:
-            definition = [*var_definitions, *keyword_definitions][index]
+            item_ = items_[index]
 
-            output_view_ = window.find_output_panel(panel_name_) or window.create_output_panel(panel_name_)
+            thingy_type_ = item_["thingy_type"]
+            thingy_data_ = item_["thingy_data"]
+
+            output_view_ = window.find_output_panel(
+                panel_name_
+            ) or window.create_output_panel(panel_name_)
             output_view_.set_read_only(False)
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
 
-            ns_ = definition.get("ns", None)
-            name_ = definition.get("name", None)
+            ns_ = thingy_data_.get("ns", None)
+            name_ = thingy_data_.get("name", None)
 
             # Thingy name.
-            output_view_.run_command("append", {"characters": (f"{ns_}/{name_}" if ns_ else name_) + "\n\n"})
+            output_view_.run_command(
+                "append", {"characters": (f"{ns_}/{name_}" if ns_ else name_) + "\n\n"}
+            )
 
             # Thingy args (optional).
-            if args := definition.get("arglist-strs", None):
-                output_view_.run_command("append", {"characters": " ".join(args) + "\n\n"})
+            if args := thingy_data_.get("arglist-strs", None):
+                output_view_.run_command(
+                    "append", {"characters": " ".join(args) + "\n\n"}
+                )
 
             # Thingy doc (optional).
-            output_view_.run_command("append", {"characters": definition.get("doc", "")})
+            output_view_.run_command(
+                "append", {"characters": thingy_data_.get("doc", "")}
+            )
 
             output_view_.set_read_only(True)
 
@@ -466,16 +473,18 @@ def show_goto_thingy_quick_panel(window, analysis):
 
     def on_done(index):
         if index != -1:
-            definition = [*var_definitions, *keyword_definitions][index]
+            thingy_data_ = items_[index]["thingy_data"]
 
-            location = parse_location(definition)
+            location = parse_location(thingy_data_)
 
             goto(window, location)
 
         window.run_command("hide_panel", {"panel": f"output.{panel_name_}"})
 
+    quick_panel_items_ = [item_["quick_panel_item"] for item_ in items_]
+
     window.show_quick_panel(
-        quick_panel_items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted
+        quick_panel_items_, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted
     )
 
 
