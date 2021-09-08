@@ -9,6 +9,7 @@ import traceback
 import itertools
 import pprint
 import threading
+import time
 
 from urllib.parse import urlparse
 from zipfile import ZipFile
@@ -2528,36 +2529,37 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             "Packages/Clojure/ClojureScript.sublime-syntax",
         }
 
+    def __init__(self, view):
+        self.view = view
+
+        def analyze_view_():
+            while True:
+                sublime.set_timeout(lambda: analyze_view(self.view), 0)
+
+                time.sleep(0.3)
+
+        # TODO: Stop on_close
+        threading.Thread(target=lambda: analyze_view_(), daemon=True).start()
+
+    
     def highlight_regions(self):
         if automatically_highlight():
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
-    def analyze_view(self):
-        return set(settings().get("analyze_view", {}))
-
+    
     def analyze_paths(self):
         return set(settings().get("analyze_paths", {}))
 
-    def on_load_async(self):
-        if "on_load_async" in self.analyze_view():
-            analyze_view_async(self.view)
-
-    def on_activated_async(self):
-        if "on_activated_async" in self.analyze_view():
-            analyze_view_async(self.view)
 
     def on_post_save_async(self):
-        if "on_post_save_async" in self.analyze_view():
-            # Highlight regions post save so the user doesn't need to change selection.
-            analyze_view_async(
-                self.view, on_completed=lambda _: self.highlight_regions()
-            )
 
         if "on_post_save_async" in self.analyze_paths():
             analyze_paths_async(self.view.window())
 
+    
     def on_selection_modified(self):
         self.highlight_regions()
+
 
     def on_close(self):
         """
