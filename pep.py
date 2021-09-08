@@ -29,6 +29,17 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 )
 
 
+# Thingy types
+
+FT_KEYWORD = "keyword"
+FT_LOCAL_BINDING = "local_binding"
+FT_LOCAL_USAGE = "local_usage"
+FT_VAR_DEFINITION = "var_definition"
+FT_VAR_USAGE = "var_usage"
+FT_NAMESPACE_USAGE = "namespace_usage"
+FT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
+
+
 _view_analysis_ = {}
 
 _paths_analysis_ = {}
@@ -380,6 +391,8 @@ def goto_definition(window, definition, side_by_side=False):
 def show_goto_thingy_quick_panel(window, analysis):
     quick_panel_items = []
 
+    items_ = []
+
     vindex = analysis_vindex(analysis)
 
     var_definitions = vindex.values()
@@ -390,6 +403,8 @@ def show_goto_thingy_quick_panel(window, analysis):
         var_args = var_definition.get("arglist-strs", None)
 
         trigger = f"{var_namespace}/{var_name}"
+
+        items_.append({"thingy_type": "var_definition"})
 
         quick_panel_items.append(
             sublime.QuickPanelItem(
@@ -1240,24 +1255,33 @@ def var_definition_in_region(view, vrn, region):
 
 
 def thingy_kind(thingy):
+    """
+    Mapping of thingy type to kind.
+
+    Kind is one of:
+        - sublime.KIND_KEYWORD
+        - sublime.KIND_VARIABLE
+        - sublime.KIND_AMBIGUOUS
+    """
+
     thingy_type, _, thingy_data = thingy
 
-    if thingy_type == "keyword":
+    if thingy_type == FT_KEYWORD:
         return sublime.KIND_KEYWORD
 
-    elif thingy_type == "local_binding":
+    elif thingy_type == FT_LOCAL_BINDING:
         return sublime.KIND_VARIABLE
 
-    elif thingy_type == "local_usage":
+    elif thingy_type == FT_LOCAL_USAGE:
         return sublime.KIND_VARIABLE
 
-    elif thingy_type == "var_definition":
+    elif thingy_type == FT_VAR_DEFINITION:
         return sublime.KIND_VARIABLE
 
-    elif thingy_type == "var_usage":
+    elif thingy_type == FT_VAR_USAGE:
         return sublime.KIND_VARIABLE
 
-    elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+    elif thingy_type == FT_NAMESPACE_USAGE or thingy_type == FT_NAMESPACE_USAGE_ALIAS:
         return sublime.KIND_VARIABLE
 
     else:
