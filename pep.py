@@ -2544,25 +2544,20 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         threading.Thread(target=lambda: analyze_view_(), daemon=True).start()
 
-    
     def highlight_regions(self):
         if automatically_highlight():
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
-    
     def analyze_paths(self):
         return set(settings().get("analyze_paths", {}))
-
 
     def on_post_save_async(self):
 
         if "on_post_save_async" in self.analyze_paths():
             analyze_paths_async(self.view.window())
 
-    
     def on_selection_modified(self):
         self.highlight_regions()
-
 
     def on_close(self):
         """
