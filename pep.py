@@ -2535,7 +2535,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         def analyze_view_():
             while not self.stop_analysis.is_set():
-                sublime.set_timeout(lambda: analyze_view(self.view), 0)
+                # Analyze active views only.
+                if window := self.view.window():
+                    if window.active_view() == self.view:
+                        sublime.set_timeout(lambda: analyze_view(self.view), 0)
 
                 time.sleep(0.3)
 
