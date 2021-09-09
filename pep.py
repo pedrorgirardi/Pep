@@ -2543,7 +2543,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
         if self.modified_time:
-            if (time.time() - self.modified_time) > 1.5 and staled_analysis(self.view):
+            if staled_analysis(self.view) and (time.time() - self.modified_time) > 1:
                 analyze_view_async(self.view)
 
     def on_close(self):
