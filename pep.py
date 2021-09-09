@@ -2532,28 +2532,28 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def __init__(self, view):
         self.view = view
         self.stop_analysis = threading.Event()
+        self.last_analysis = 0
 
         def analyze_view_():
             while not self.stop_analysis.is_set():
                 # Analyze active views only.
                 if window := self.view.window():
                     if window.active_view() == self.view:
-                        sublime.set_timeout(lambda: analyze_view(self.view), 0)
-
-                time.sleep(0.3)
+                        if (time.time() - self.last_analysis) > 2 and staled_analysis(self.view):
+                            print("analyze_view")
+                            sublime.set_timeout(lambda: analyze_view(self.view), 0)
 
         threading.Thread(target=lambda: analyze_view_()).start()
+
+    def on_modified(self):
+        self.last_analysis = time.time()
 
     def highlight_regions(self):
         if automatically_highlight():
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
-    def analyze_paths(self):
-        return set(settings().get("analyze_paths", {}))
-
     def on_post_save_async(self):
-
-        if "on_post_save_async" in self.analyze_paths():
+        if "on_post_save_async" in set(settings().get("analyze_paths", {})):
             analyze_paths_async(self.view.window())
 
     def on_selection_modified(self):
