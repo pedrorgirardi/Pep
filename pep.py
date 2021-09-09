@@ -579,10 +579,6 @@ def analyze_view(view, on_completed=None):
     # This will be stored in the analysis.
     view_change_count = view.change_count()
 
-    # Skip analysis if view hasn't changed since last analysis.
-    if not staled_analysis(view):
-        return False
-
     project_file_name = window.project_file_name() if window else None
 
     # Setting the working directory is important because of clj-kondo's cache.
