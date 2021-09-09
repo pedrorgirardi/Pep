@@ -2534,16 +2534,16 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.stop_analysis = threading.Event()
         self.last_analysis = 0
 
-        def analyze_view_():
-            while not self.stop_analysis.is_set():
-                # Analyze active views only.
-                if window := self.view.window():
-                    if window.active_view() == self.view:
-                        if (time.time() - self.last_analysis) > 2 and staled_analysis(self.view):
-                            print("analyze_view")
-                            sublime.set_timeout(lambda: analyze_view(self.view), 0)
+        # def analyze_view_():
+        #     while not self.stop_analysis.is_set():
+        #         # Analyze active views only.
+        #         if window := self.view.window():
+        #             if window.active_view() == self.view:
+        #                 if (time.time() - self.last_analysis) > 2 and staled_analysis(self.view):
+        #                     print("analyze_view")
+        #                     sublime.set_timeout(lambda: analyze_view(self.view), 0)
 
-        threading.Thread(target=lambda: analyze_view_()).start()
+        # threading.Thread(target=lambda: analyze_view_()).start()
 
     def on_modified(self):
         self.last_analysis = time.time()
