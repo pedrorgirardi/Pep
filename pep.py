@@ -2531,41 +2531,30 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def __init__(self, view):
         self.view = view
-        self.stop_analysis = threading.Event()
-        self.last_analysis = 0
+        self.modified_time = None
 
-        # def analyze_view_():
-        #     while not self.stop_analysis.is_set():
-        #         # Analyze active views only.
-        #         if window := self.view.window():
-        #             if window.active_view() == self.view:
-        #                 if (time.time() - self.last_analysis) > 2 and staled_analysis(self.view):
-        #                     print("analyze_view")
-        #                     sublime.set_timeout(lambda: analyze_view(self.view), 0)
+    def on_activated_async(self):
+        analyze_view_async(self.view)
 
-        # threading.Thread(target=lambda: analyze_view_()).start()
+    def on_modified_async(self):
+        self.modified_time = time.time()
 
-    def on_modified(self):
-        self.last_analysis = time.time()
+    def on_post_save_async(self):
+        analyze_paths_async(self.view.window())
 
-    def highlight_regions(self):
+    def on_selection_modified_async(self):
         if automatically_highlight():
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
-    def on_post_save_async(self):
-        if "on_post_save_async" in set(settings().get("analyze_paths", {})):
-            analyze_paths_async(self.view.window())
-
-    def on_selection_modified(self):
-        self.highlight_regions()
+        if self.modified_time:
+            if (time.time() - self.modified_time) > 1.5 and staled_analysis(self.view):
+                analyze_view_async(self.view)
 
     def on_close(self):
         """
         It's important to delete a view's state on close.
         """
         set_view_analysis(self.view.id(), {})
-
-        self.stop_analysis.set()
 
 
 class PgPepEventListener(sublime_plugin.EventListener):
