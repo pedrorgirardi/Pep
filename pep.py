@@ -2537,7 +2537,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_modified_async(self):
         """
-        The time of modification is recorded so it's possible 
+        The time of modification is recorded so it's possible
         to check how long ago the last change happened.
 
         It's very import for the view analysis. See `on_selection_modified_async`.
