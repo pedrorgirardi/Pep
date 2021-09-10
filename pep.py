@@ -373,7 +373,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                     file.write(source_file.decode())
 
                 view = window.open_file(f"{path}:{line}:{column}", flags=flags)
-                view.assign_syntax("Clojure (Tutkain).sublime-syntax")
+                view.assign_syntax("Clojure.sublime-syntax")
                 view.set_scratch(True)
                 view.set_read_only(True)
 
