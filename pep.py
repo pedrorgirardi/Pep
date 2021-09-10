@@ -1682,6 +1682,10 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
+    """
+    Goto thingy in view.
+    """
+
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
@@ -1694,6 +1698,10 @@ class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoInPathsCommand(sublime_plugin.WindowCommand):
+    """
+    Goto thingy in paths.
+    """
+
     def run(self):
         project_path_ = project_path(self.window)
 
@@ -1709,6 +1717,10 @@ class PgPepGotoInPathsCommand(sublime_plugin.WindowCommand):
 
 
 class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
+    """
+    Goto thingy in classpath.
+    """
+
     def run(self):
         project_path_ = project_path(self.window)
 
@@ -1723,6 +1735,10 @@ class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
 
 
 class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
+    """
+    Goto namespace in paths.
+    """
+
     def run(self):
         project_path_ = project_path(self.window)
 
@@ -1734,6 +1750,10 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
+    """
+    Goto var in paths.
+    """
+
     def run(self):
         project_path_ = project_path(self.window)
 
@@ -1745,6 +1765,10 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
 
 
 class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
+    """
+    Goto keyword in paths.
+    """
+
     def run(self):
         project_path_ = project_path(self.window)
 
