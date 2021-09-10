@@ -1,6 +1,8 @@
 {
     "debug": false,
 
+    "annotate_view_analysis": false,
+
     "analyze_paths_on_plugin_loaded": true,
     "analyze_paths_on_load_project": true,
     "analyze_paths_on_post_save": true,

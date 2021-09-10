@@ -2532,8 +2532,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.view = view
         self.modified_time = None
 
+    def annotate(self, analysis):
+        if settings().get("annotate_view_analysis", False):
+            self.view.run_command("pg_pep_annotate")
+
     def on_activated_async(self):
-        analyze_view_async(self.view)
+        analyze_view_async(self.view, on_completed=self.annotate)
 
     def on_modified_async(self):
         """
@@ -2546,7 +2550,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self):
         if settings().get("analyze_paths_on_post_save", False):
-            analyze_paths_async(self.view.window())
+            analyze_paths_async(self.view.window(), on_completed=self.annotate)
 
     def on_selection_modified_async(self):
         """
