@@ -1828,6 +1828,16 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         show_goto_thingy_quick_panel2(self.window, items_)
 
+class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        items_ = keyword_goto_items(paths_analysis_)
+
+        show_goto_thingy_quick_panel2(self.window, items_)
+
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
     def run(self, edit):
