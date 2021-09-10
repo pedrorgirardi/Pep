@@ -1778,6 +1778,7 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
 
         show_goto_thingy_quick_panel(self.window, items_)
 
+
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
     """
     Goto keyword defined by Clojure Spec in paths.
@@ -1789,7 +1790,11 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         paths_analysis_ = paths_analysis(project_path_)
 
         items_ = keyword_goto_items(paths_analysis_)
-        items_ = [item_ for item_ in items_ if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"]
+        items_ = [
+            item_
+            for item_ in items_
+            if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
+        ]
 
         show_goto_thingy_quick_panel(self.window, items_)
 
