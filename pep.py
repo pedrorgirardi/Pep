@@ -36,6 +36,7 @@ FT_LOCAL_BINDING = "local_binding"
 FT_LOCAL_USAGE = "local_usage"
 FT_VAR_DEFINITION = "var_definition"
 FT_VAR_USAGE = "var_usage"
+FT_NAMESPACE_DEFINITION = "namespace_definition"
 FT_NAMESPACE_USAGE = "namespace_usage"
 FT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
@@ -392,6 +393,74 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
+def var_goto_items(analysis):
+    items_ = []
+
+    for var_definition in analysis_vindex(analysis).values():
+        ns_ = var_definition.get("ns", "")
+        name_ = var_definition.get("name", "")
+        args_ = var_definition.get("arglist-strs", None)
+
+        trigger = f"{ns_}/{name_}"
+
+        items_.append(
+            {
+                "thingy_type": FT_VAR_DEFINITION,
+                "thingy_data": var_definition,
+                "quick_panel_item": sublime.QuickPanelItem(
+                    trigger,
+                    kind=sublime.KIND_FUNCTION if args_ else sublime.KIND_VARIABLE,
+                ),
+            }
+        )
+
+    return items_
+
+
+def keyword_goto_items(analysis):
+    items_ = []
+
+    for keywords_ in analysis_kindex(analysis).values():
+        for keyword_ in keywords_:
+            if keyword_.get("reg", None):
+                ns_ = keyword_.get("ns", "")
+                name_ = keyword_.get("name", "")
+
+                trigger = ":" + (f"{ns_}/{name_}" if ns_ else name_)
+
+                items_.append(
+                    {
+                        "thingy_type": FT_KEYWORD,
+                        "thingy_data": keyword_,
+                        "quick_panel_item": sublime.QuickPanelItem(
+                            trigger, kind=sublime.KIND_KEYWORD
+                        ),
+                    }
+                )
+
+    return items_
+
+
+def namespace_goto_items(analysis):
+    items_ = []
+
+    for namespace_definition in analysis_nindex(analysis).values():
+        trigger = namespace_definition.get("name", "")
+
+        items_.append(
+            {
+                "thingy_type": FT_NAMESPACE_DEFINITION,
+                "thingy_data": namespace_definition,
+                "quick_panel_item": sublime.QuickPanelItem(
+                    trigger,
+                    kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
+                ),
+            }
+        )
+
+    return items_
+
+
 def show_goto_thingy_quick_panel(window, analysis):
 
     items_ = []
@@ -498,6 +567,86 @@ def show_goto_thingy_quick_panel(window, analysis):
         window.run_command("hide_panel", {"panel": f"output.{panel_name_}"})
 
     quick_panel_items_ = [item_["quick_panel_item"] for item_ in items_]
+
+    window.show_quick_panel(
+        quick_panel_items_, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted
+    )
+
+
+def show_goto_thingy_quick_panel2(window, items):
+    def thingy_output_text(thingy_type, thingy_data):
+        ns_ = thingy_data.get("ns", None)
+        name_ = thingy_data.get("name", None)
+
+        text_ = None
+
+        if thingy_type == FT_KEYWORD:
+            text_ = f"{ns_}/{name_}" if ns_ else name_
+            text_ = text_ + "\n\n" + thingy_data.get("reg", "")
+
+        elif thingy_type == FT_VAR_DEFINITION:
+            text_ = f"{ns_}/{name_}" if ns_ else name_
+
+            # Args (optional)
+            if args_ := thingy_data.get("arglist-strs", None):
+                text_ = text_ + "\n\n" + " ".join(args_)
+
+            # Doc (optional)
+            if doc_ := thingy_data.get("doc"):
+                text_ = text_ + "\n\n" + re.sub(r"^ +", "", doc_, flags=re.M)
+
+        elif thingy_type == FT_NAMESPACE_DEFINITION:
+            text_ = name_
+
+            # Doc (optional)
+            if doc_ := thingy_data.get("doc"):
+                text_ = text_ + "\n\n" + re.sub(r"^ +", "", doc_, flags=re.M)
+
+        else:
+            text_ = f"{ns_}/{name_}" if ns_ else name_
+
+        return text_
+
+    panel_name_ = "goto_thingy"
+
+    def on_highlighted(index):
+        if index != -1:
+            item_ = items[index]
+
+            thingy_type_ = item_["thingy_type"]
+            thingy_data_ = item_["thingy_data"]
+
+            output_view_ = window.find_output_panel(
+                panel_name_
+            ) or window.create_output_panel(panel_name_)
+
+            output_view_.set_read_only(False)
+
+            output_view_.run_command("select_all")
+            output_view_.run_command("right_delete")
+            output_view_.run_command(
+                "append", {"characters": thingy_output_text(thingy_type_, thingy_data_)}
+            )
+
+            output_view_.set_read_only(True)
+
+            output_view_.settings().set("line_numbers", False)
+            output_view_.settings().set("gutter", False)
+            output_view_.settings().set("is_widget", True)
+
+            window.run_command("show_panel", {"panel": f"output.{panel_name_}"})
+
+    def on_done(index):
+        if index != -1:
+            thingy_data_ = items[index]["thingy_data"]
+
+            location = parse_location(thingy_data_)
+
+            goto(window, location)
+
+        window.run_command("hide_panel", {"panel": f"output.{panel_name_}"})
+
+    quick_panel_items_ = [item_["quick_panel_item"] for item_ in items]
 
     window.show_quick_panel(
         quick_panel_items_, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted
@@ -1309,8 +1458,11 @@ def thingy_kind(thingy):
     elif thingy_type == FT_VAR_USAGE:
         return sublime.KIND_VARIABLE
 
+    elif thingy_type == FT_NAMESPACE_DEFINITION:
+        return sublime.KIND_NAMESPACE
+
     elif thingy_type == FT_NAMESPACE_USAGE or thingy_type == FT_NAMESPACE_USAGE_ALIAS:
-        return sublime.KIND_VARIABLE
+        return sublime.KIND_NAMESPACE
 
     else:
         return sublime.KIND_AMBIGUOUS
@@ -1664,6 +1816,17 @@ class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
         classpath_analysis_ = classpath_analysis(project_path_)
 
         show_goto_thingy_quick_panel(self.window, classpath_analysis_)
+
+
+class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        items_ = namespace_goto_items(paths_analysis_)
+
+        show_goto_thingy_quick_panel2(self.window, items_)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
