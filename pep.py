@@ -2382,7 +2382,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 return f"""
                 <body>
                 <div">
-                    <span>{clj_kondo_finding_message(finding)}</span></div>
+                    <span>{htmlify(clj_kondo_finding_message(finding))}</span></div>
                 </div>
                 </body>
                 """
