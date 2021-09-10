@@ -45,7 +45,7 @@ _view_analysis_ = {}
 
 _paths_analysis_ = {}
 
-_project_analysis_ = {}
+_classpath_analysis_ = {}
 
 
 def set_paths_analysis(project_path, analysis):
@@ -64,20 +64,20 @@ def paths_analysis(project_path):
     return _paths_analysis_.get(project_path, {})
 
 
-def set_project_analysis(project_path, analysis):
+def set_classpath_analysis(project_path, analysis):
     """
     Updates analysis for project.
     """
-    global _project_analysis_
-    _project_analysis_[project_path] = analysis
+    global _classpath_analysis_
+    _classpath_analysis_[project_path] = analysis
 
 
-def project_analysis(project_path):
+def classpath_analysis(project_path):
     """
     Returns analysis for project.
     """
-    global _project_analysis_
-    return _project_analysis_.get(project_path, {})
+    global _classpath_analysis_
+    return _classpath_analysis_.get(project_path, {})
 
 
 def set_view_analysis(view_id, analysis):
@@ -837,7 +837,7 @@ def analyze_classpath(window):
 
         analysis = {"nindex": nindex, "vindex": vindex, "vindex_usages": vindex_usages}
 
-        set_project_analysis(project_path(window), analysis)
+        set_classpath_analysis(project_path(window), analysis)
 
         print(
             f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
@@ -1662,7 +1662,7 @@ class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
 
-        classpath_analysis_ = project_analysis(project_path_)
+        classpath_analysis_ = classpath_analysis(project_path_)
 
         show_goto_thingy_quick_panel(self.window, classpath_analysis_)
 
@@ -1697,14 +1697,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         paths_analysis_ = paths_analysis(project_path_)
 
-        project_analysis_ = project_analysis(project_path_)
+        classpath_analysis_ = classpath_analysis(project_path_)
 
         # Try to find Var definition in view first,
         # only if not found try paths and project analysis.
         definition = (
             analysis_vindex(view_analysis_).get(var_key)
             or analysis_vindex(paths_analysis_).get(var_key)
-            or analysis_vindex(project_analysis_).get(var_key)
+            or analysis_vindex(classpath_analysis_).get(var_key)
         )
 
         if definition:
@@ -2057,12 +2057,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             paths_analysis_ = paths_analysis(project_path_)
 
-            project_analysis_ = project_analysis(project_path_)
+            classpath_analysis_ = classpath_analysis(project_path_)
 
             definition = (
                 find_namespace_definition(analysis, thingy_data)
                 or find_namespace_definition(paths_analysis_, thingy_data)
-                or find_namespace_definition(project_analysis_, thingy_data)
+                or find_namespace_definition(classpath_analysis_, thingy_data)
             )
 
             if definition:
@@ -2078,12 +2078,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             paths_analysis_ = paths_analysis(project_path_)
 
-            project_analysis_ = project_analysis(project_path_)
+            classpath_analysis_ = classpath_analysis(project_path_)
 
             definition = (
                 find_var_definition(analysis, thingy_data)
                 or find_var_definition(paths_analysis_, thingy_data)
-                or find_var_definition(project_analysis_, thingy_data)
+                or find_var_definition(classpath_analysis_, thingy_data)
             )
 
             if definition:
@@ -2599,7 +2599,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
         print(f"(Pep) Clear project cache (Project: {project_path_})")
 
         set_paths_analysis(project_path_, {})
-        set_project_analysis(project_path_, {})
+        set_classpath_analysis(project_path_, {})
 
 
 # ---
