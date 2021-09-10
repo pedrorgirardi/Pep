@@ -6,7 +6,6 @@ import re
 import tempfile
 import json
 import traceback
-import itertools
 import pprint
 import threading
 import time
