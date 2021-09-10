@@ -2572,8 +2572,13 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
 
 class PgPepEventListener(sublime_plugin.EventListener):
-    def on_load_project_async(self, window):
+    """
+    Paths and classpath are analyzed when a project is loaded.
 
+    Analysis are cleared when a project is closed.
+    """
+
+    def on_load_project_async(self, window):
         if settings().get("analyze_paths_on_load_project", False):
             analyze_paths_async(window)
 
@@ -2581,11 +2586,12 @@ class PgPepEventListener(sublime_plugin.EventListener):
             analyze_classpath_async(window)
 
     def on_pre_close_project(self, window):
-        project_path = window.extract_variables().get("project_path")
+        project_path_ = project_path(window)
 
-        print("(Pep) Clear project cache:", project_path)
+        print("(Pep) Clear project cache:", project_path_)
 
-        set_project_analysis(project_path, {})
+        set_paths_analysis(project_path_, {})
+        set_project_analysis(project_path_, {})
 
 
 # ---
