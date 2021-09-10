@@ -520,6 +520,10 @@ def automatically_highlight():
     return settings().get("automatically_highlight", False)
 
 
+def annotate_view_analysis():
+    return settings().get("annotate_view_analysis", False)
+
+
 def set_view_name(view, name):
     if view:
         if view.is_loading():
@@ -2532,12 +2536,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.view = view
         self.modified_time = None
 
-    def annotate(self, analysis):
-        if settings().get("annotate_view_analysis", False):
+    def view_analysis_completed(self, analysis):
+        if annotate_view_analysis():
             self.view.run_command("pg_pep_annotate")
 
     def on_activated_async(self):
-        analyze_view_async(self.view, on_completed=self.annotate)
+        analyze_view_async(self.view, on_completed=self.view_analysis_completed)
 
     def on_modified_async(self):
         """
@@ -2566,7 +2570,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         if self.modified_time:
             if staled_analysis(self.view) and (time.time() - self.modified_time) > 1:
-                analyze_view_async(self.view, on_completed=self.annotate)
+                analyze_view_async(self.view, on_completed=self.view_analysis_completed)
 
     def on_close(self):
         """
