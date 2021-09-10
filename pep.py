@@ -2536,6 +2536,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         analyze_view_async(self.view)
 
     def on_modified_async(self):
+        """
+        The time of modification is recorded so it's possible 
+        to check how long ago the last change happened.
+
+        It's very import for the view analysis. See `on_selection_modified_async`.
+        """
         self.modified_time = time.time()
 
     def on_post_save_async(self):
@@ -2543,6 +2549,14 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             analyze_paths_async(self.view.window())
 
     def on_selection_modified_async(self):
+        """
+        When the selection is modified, two actions might be triggered:
+        - A region is highlighted;
+        - Active view is analyzed.
+
+        The view is analyzed (async) when its analysis data is staled
+        and it passes a threshold (in seconds) of the last time the view was modified.
+        """
         if automatically_highlight():
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
