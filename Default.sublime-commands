@@ -10,5 +10,21 @@
     {
         "caption": "Pep: Analyze Paths",
         "command": "pg_pep_analyze_paths"
+    },
+    {
+        "caption": "Pep: Goto Namespace...",
+        "command": "pg_pep_goto_namespace"
+    },
+    {
+        "caption": "Pep: Goto Var...",
+        "command": "pg_pep_goto_var"
+    },
+    {
+        "caption": "Pep: Goto Keyword...",
+        "command": "pg_pep_goto_keyword"
+    },
+    {
+        "caption": "Pep: Goto Spec...",
+        "command": "pg_pep_goto_spec"
     }
 ]
