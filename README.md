@@ -50,11 +50,12 @@ Default settings:
 {
     "debug": false,
 
-    "analyze_view": ["on_activated_async", "on_post_save_async"],
+    "analyze_paths_on_plugin_loaded": true,
+    "analyze_paths_on_load_project": true,
+    "analyze_paths_on_post_save": true,
 
-    "analyze_paths": ["plugin_loaded", "on_load_project_async", "on_post_save_async"],
-
-    "analyze_classpath": ["plugin_loaded", "on_load_project_async"],
+    "analyze_classpath_on_plugin_loaded": true,
+    "analyze_classpath_on_load_project": true,
 
     "automatically_highlight": false
 }

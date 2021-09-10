@@ -2539,7 +2539,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.modified_time = time.time()
 
     def on_post_save_async(self):
-        analyze_paths_async(self.view.window())
+        if settings().get("analyze_paths_on_post_save", False):
+            analyze_paths_async(self.view.window())
 
     def on_selection_modified_async(self):
         if automatically_highlight():
@@ -2559,11 +2560,11 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 class PgPepEventListener(sublime_plugin.EventListener):
     def on_load_project_async(self, window):
 
-        if "on_load_project_async" in set(settings().get("analyze_paths", {})):
-            window.run_command("pg_pep_analyze_paths")
+        if settings().get("analyze_paths_on_load_project", False):
+            analyze_paths_async(window)
 
-        if "on_load_project_async" in set(settings().get("analyze_classpath", {})):
-            window.run_command("pg_pep_analyze_classpath")
+        if settings().get("analyze_classpath_on_load_project", False):
+            analyze_classpath_async(window)
 
     def on_pre_close_project(self, window):
         project_path = window.extract_variables().get("project_path")
@@ -2580,9 +2581,8 @@ def plugin_loaded():
     print("(Pep) Plugin loaded")
 
     if window := sublime.active_window():
-
-        if "plugin_loaded" in set(settings().get("analyze_paths", {})):
+        if settings().get("analyze_paths_on_plugin_loaded", False):
             analyze_paths_async(window)
 
-        if "plugin_loaded" in set(settings().get("analyze_classpath", {})):
+        if settings().get("analyze_classpath_on_plugin_loaded", False):
             analyze_classpath_async(window)
