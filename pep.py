@@ -1733,6 +1733,17 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, items_)
 
 
+class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        items_ = var_goto_items(paths_analysis_)
+
+        show_goto_thingy_quick_panel(self.window, items_)
+
+
 class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
     def run(self):
         project_path_ = project_path(self.window)
