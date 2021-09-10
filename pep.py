@@ -2588,7 +2588,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
     def on_pre_close_project(self, window):
         project_path_ = project_path(window)
 
-        print("(Pep) Clear project cache:", project_path_)
+        print(f"(Pep) Clear project cache (Project: {project_path_})")
 
         set_paths_analysis(project_path_, {})
         set_project_analysis(project_path_, {})
