@@ -32,14 +32,14 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 
 # Thingy types
 
-FT_KEYWORD = "keyword"
-FT_LOCAL_BINDING = "local_binding"
-FT_LOCAL_USAGE = "local_usage"
-FT_VAR_DEFINITION = "var_definition"
-FT_VAR_USAGE = "var_usage"
-FT_NAMESPACE_DEFINITION = "namespace_definition"
-FT_NAMESPACE_USAGE = "namespace_usage"
-FT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
+TT_KEYWORD = "keyword"
+TT_LOCAL_BINDING = "local_binding"
+TT_LOCAL_USAGE = "local_usage"
+TT_VAR_DEFINITION = "var_definition"
+TT_VAR_USAGE = "var_usage"
+TT_NAMESPACE_DEFINITION = "namespace_definition"
+TT_NAMESPACE_USAGE = "namespace_usage"
+TT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
 PEP_PANEL_NAME = "pep_panel"
 
@@ -463,7 +463,7 @@ def var_goto_items(analysis):
 
         items_.append(
             {
-                "thingy_type": FT_VAR_DEFINITION,
+                "thingy_type": TT_VAR_DEFINITION,
                 "thingy_data": var_definition,
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
@@ -488,7 +488,7 @@ def keyword_goto_items(analysis):
 
                 items_.append(
                     {
-                        "thingy_type": FT_KEYWORD,
+                        "thingy_type": TT_KEYWORD,
                         "thingy_data": keyword_,
                         "quick_panel_item": sublime.QuickPanelItem(
                             trigger, kind=sublime.KIND_KEYWORD
@@ -507,7 +507,7 @@ def namespace_goto_items(analysis):
 
         items_.append(
             {
-                "thingy_type": FT_NAMESPACE_DEFINITION,
+                "thingy_type": TT_NAMESPACE_DEFINITION,
                 "thingy_data": namespace_definition,
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
@@ -526,11 +526,11 @@ def show_goto_thingy_quick_panel(window, items):
 
         text_ = None
 
-        if thingy_type == FT_KEYWORD:
+        if thingy_type == TT_KEYWORD:
             text_ = f"{ns_}/{name_}" if ns_ else name_
             text_ = text_ + "\n\n" + thingy_data.get("reg", "")
 
-        elif thingy_type == FT_VAR_DEFINITION:
+        elif thingy_type == TT_VAR_DEFINITION:
             text_ = f"{ns_}/{name_}" if ns_ else name_
 
             # Args (optional)
@@ -541,7 +541,7 @@ def show_goto_thingy_quick_panel(window, items):
             if doc_ := thingy_data.get("doc"):
                 text_ = text_ + "\n\n" + re.sub(r"^ +", "", doc_, flags=re.M)
 
-        elif thingy_type == FT_NAMESPACE_DEFINITION:
+        elif thingy_type == TT_NAMESPACE_DEFINITION:
             text_ = name_
 
             # Doc (optional)
@@ -1377,23 +1377,23 @@ def thingy_kind(thingy_type, thingy_data):
     Mapping of thingy type to kind.
     """
 
-    if thingy_type == FT_KEYWORD:
+    if thingy_type == TT_KEYWORD:
         return sublime.KIND_KEYWORD
 
-    elif thingy_type == FT_LOCAL_BINDING:
+    elif thingy_type == TT_LOCAL_BINDING:
         return (sublime.KIND_ID_VARIABLE, "v", "Local binding")
 
-    elif thingy_type == FT_LOCAL_USAGE:
+    elif thingy_type == TT_LOCAL_USAGE:
         return (sublime.KIND_ID_VARIABLE, "v", "Local usage")
 
-    elif thingy_type == FT_VAR_DEFINITION:
+    elif thingy_type == TT_VAR_DEFINITION:
         return (
             sublime.KIND_FUNCTION
             if thingy_data.get("arglist-strs")
             else sublime.KIND_VARIABLE
         )
 
-    elif thingy_type == FT_VAR_USAGE:
+    elif thingy_type == TT_VAR_USAGE:
         return (
             sublime.KIND_FUNCTION
             if thingy_data.get("arglist-strs")
@@ -1401,9 +1401,9 @@ def thingy_kind(thingy_type, thingy_data):
         )
 
     elif (
-        thingy_type == FT_NAMESPACE_DEFINITION
-        or thingy_type == FT_NAMESPACE_USAGE
-        or thingy_type == FT_NAMESPACE_USAGE_ALIAS
+        thingy_type == TT_NAMESPACE_DEFINITION
+        or thingy_type == TT_NAMESPACE_USAGE
+        or thingy_type == TT_NAMESPACE_USAGE_ALIAS
     ):
         return (sublime.KIND_ID_NAMESPACE, "n", "Namespace")
 
@@ -2429,23 +2429,23 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
 
         thingy_usages = None
 
-        if thingy_type == FT_KEYWORD:
+        if thingy_type == TT_KEYWORD:
             # To be considered:
             # If the keyword is a destructuring key,
             # should it show its local usages?
 
             thingy_usages = find_keyword_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == FT_VAR_DEFINITION:
+        elif thingy_type == TT_VAR_DEFINITION:
             thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == FT_VAR_USAGE:
+        elif thingy_type == TT_VAR_USAGE:
             thingy_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
-        elif thingy_type == FT_NAMESPACE_DEFINITION:
+        elif thingy_type == TT_NAMESPACE_DEFINITION:
             thingy_usages = find_namespace_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == FT_NAMESPACE_USAGE or thingy_type == FT_NAMESPACE_USAGE_ALIAS:
+        elif thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS:
             thingy_usages = find_namespace_usages_with_usage(
                 paths_analysis_, thingy_data
             )
