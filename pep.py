@@ -458,7 +458,7 @@ def var_goto_items(analysis):
     for var_definition in analysis_vindex(analysis).values():
         ns_ = var_definition.get("ns", "")
         name_ = var_definition.get("name", "")
-        args_ = var_definition.get("arglist-strs", None)
+        args_ = var_definition.get("arglist-strs")
 
         trigger = f"{ns_}/{name_}"
 
@@ -469,6 +469,7 @@ def var_goto_items(analysis):
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
                     kind=sublime.KIND_FUNCTION if args_ else sublime.KIND_VARIABLE,
+                    annotation="".join(args_ or []),
                 ),
             }
         )
@@ -481,7 +482,7 @@ def keyword_goto_items(analysis):
 
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
-            if keyword_.get("reg", None):
+            if reg := keyword_.get("reg", None):
                 ns_ = keyword_.get("ns", "")
                 name_ = keyword_.get("name", "")
 
@@ -492,7 +493,9 @@ def keyword_goto_items(analysis):
                         "thingy_type": TT_KEYWORD,
                         "thingy_data": keyword_,
                         "quick_panel_item": sublime.QuickPanelItem(
-                            trigger, kind=sublime.KIND_KEYWORD
+                            trigger,
+                            kind=sublime.KIND_KEYWORD,
+                            annotation=reg,
                         ),
                     }
                 )
