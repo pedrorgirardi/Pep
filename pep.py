@@ -567,14 +567,6 @@ def show_goto_thingy_quick_panel(window, items):
             thingy_type_ = item_["thingy_type"]
             thingy_data_ = item_["thingy_data"]
 
-            lines_ = []
-
-            lineno_start = thingy_data_.get("row", thingy_data_.get("name-row"))
-            lineno_end = thingy_data_.get("end-row", thingy_data_.get("name-end-row"))
-
-            for lineno in range(lineno_start, lineno_end + 1):
-                lines_.append(linecache.getline(thingy_data_["filename"], lineno))
-
             output_view_ = window.find_output_panel(
                 panel_name_
             ) or window.create_output_panel(panel_name_)
@@ -584,7 +576,9 @@ def show_goto_thingy_quick_panel(window, items):
             output_view_.assign_syntax("Clojure.sublime-syntax")
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
-            output_view_.run_command("append", {"characters": "".join(lines_)})
+            output_view_.run_command(
+                "append", {"characters": thingy_output_text(thingy_type_, thingy_data_)}
+            )
 
             output_view_.set_read_only(True)
 
@@ -2819,9 +2813,9 @@ class PgPepEventListener(sublime_plugin.EventListener):
 def plugin_loaded():
     print("(Pep) Plugin loaded")
 
-    # if window := sublime.active_window():
-    #     if settings().get("analyze_paths_on_plugin_loaded", False):
-    #         analyze_paths_async(window)
+    if window := sublime.active_window():
+        if settings().get("analyze_paths_on_plugin_loaded", False):
+            analyze_paths_async(window)
 
-    #     if settings().get("analyze_classpath_on_plugin_loaded", False):
-    #         analyze_classpath_async(window)
+        if settings().get("analyze_classpath_on_plugin_loaded", False):
+            analyze_classpath_async(window)
