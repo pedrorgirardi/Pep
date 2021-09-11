@@ -451,75 +451,6 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
-def peek_definition(view, thingy_type, thingy_data):
-    thingy_definition_source = None
-
-    view_analysis_ = view_analysis(view.id())
-
-    project_path_ = project_path(view.window())
-
-    paths_analysis_ = paths_analysis(project_path_)
-
-    classpath_analysis_ = classpath_analysis(project_path_)
-
-    if thingy_type == FT_VAR_USAGE:
-        thingy_definition_data = (
-            find_var_definition(view_analysis_, thingy_data)
-            or find_var_definition(paths_analysis_, thingy_data)
-            or find_var_definition(classpath_analysis_, thingy_data)
-        )
-
-        if thingy_definition_data:
-
-            lineno_begin = thingy_definition_data.get(
-                "row", thingy_data.get("name-row")
-            )
-
-            lineno_end = thingy_definition_data.get(
-                "end-row", thingy_data.get("name-end-row")
-            )
-
-            thingy_definition_filename = thingy_definition_data["filename"]
-
-            if ".jar:" in thingy_definition_filename:
-
-                def read_jar_source(filename, file):
-                    nonlocal thingy_definition_source
-                    thingy_definition_source = "".join(
-                        getlines(filename, lineno_begin, lineno_end)
-                    )
-
-                with_jar(thingy_definition_filename, read_jar_source)
-
-            else:
-                thingy_definition_source = "".join(
-                    getlines(thingy_definition_filename, lineno_begin, lineno_end)
-                )
-
-    elif thingy_type == FT_LOCAL_BINDING:
-        sublime.status_message("Pep can't peek local binding")
-
-    elif thingy_type == FT_LOCAL_USAGE:
-        sublime.status_message("Pep can't peek local usage")
-
-    if thingy_definition_source:
-        output_view_ = output_panel(view.window())
-
-        # Same syntax as thingy.
-        output_view_.assign_syntax(view.syntax())
-
-        output_view_.set_read_only(False)
-        output_view_.run_command("select_all")
-        output_view_.run_command("right_delete")
-        output_view_.run_command("append", {"characters": thingy_definition_source})
-        output_view_.set_read_only(True)
-        output_view_.settings().set("line_numbers", False)
-        output_view_.settings().set("gutter", False)
-        output_view_.settings().set("is_widget", True)
-
-        show_output_panel(view.window())
-
-
 def var_goto_items(analysis):
     items_ = []
 
@@ -622,8 +553,6 @@ def show_goto_thingy_quick_panel(window, items):
 
         return text_
 
-    panel_name_ = "goto_thingy"
-
     def on_highlighted(index):
         if index != -1:
             item_ = items[index]
@@ -631,12 +560,8 @@ def show_goto_thingy_quick_panel(window, items):
             thingy_type_ = item_["thingy_type"]
             thingy_data_ = item_["thingy_data"]
 
-            output_view_ = window.find_output_panel(
-                panel_name_
-            ) or window.create_output_panel(panel_name_)
-
+            output_view_ = output_panel(window)
             output_view_.set_read_only(False)
-
             output_view_.assign_syntax("Clojure.sublime-syntax")
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
@@ -650,7 +575,7 @@ def show_goto_thingy_quick_panel(window, items):
             output_view_.settings().set("gutter", False)
             output_view_.settings().set("is_widget", True)
 
-            window.run_command("show_panel", {"panel": f"output.{panel_name_}"})
+            show_output_panel(window)
 
     def on_done(index):
         if index != -1:
@@ -660,7 +585,7 @@ def show_goto_thingy_quick_panel(window, items):
 
             goto(window, location)
 
-        window.run_command("hide_panel", {"panel": f"output.{panel_name_}"})
+        hide_output_panel(window)
 
     quick_panel_items_ = [item_["quick_panel_item"] for item_ in items]
 
@@ -2369,18 +2294,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_definition(self.view.window(), definition, side_by_side)
 
 
-class PgPepPeekDefinitionCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        view_analysis_ = view_analysis(self.view.id())
-
-        region = self.view.sel()[0]
-
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
-            thingy_type, _, thingy_data = thingy
-
-            peek_definition(self.view, thingy_type, thingy_data)
-
-
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         is_debug = debug()
@@ -2840,8 +2753,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if self.modified_time:
             if staled_analysis(self.view) and (time.time() - self.modified_time) > 1:
                 analyze_view_async(self.view, on_completed=self.view_analysis_completed)
-
-        hide_active_output_panel(self.view.window())
 
     def on_close(self):
         """
