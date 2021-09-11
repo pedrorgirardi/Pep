@@ -441,7 +441,7 @@ def peek_definition(view, thingy_type, thingy_data):
 
     classpath_analysis_ = classpath_analysis(project_path_)
 
-    if thingy_type == "var_usage":
+    if thingy_type == FT_VAR_USAGE:
         thingy_definition_data = (
             find_var_definition(view_analysis_, thingy_data)
             or find_var_definition(paths_analysis_, thingy_data)
@@ -474,8 +474,12 @@ def peek_definition(view, thingy_type, thingy_data):
                 thingy_definition_source = "".join(
                     getlines(thingy_definition_filename, lineno_begin, lineno_end)
                 )
-    else:
-        sublime.status_message("Peek is only for var definition")
+
+    elif thingy_type == FT_LOCAL_BINDING:
+        sublime.status_message("Pep can't peek local binding")
+
+    elif thingy_type == FT_LOCAL_USAGE:
+        sublime.status_message("Pep can't peek local usage")
 
     if thingy_definition_source:
         panel_name_ = "pep_peek_panel"
