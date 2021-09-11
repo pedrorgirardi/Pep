@@ -41,7 +41,8 @@ TT_NAMESPACE_DEFINITION = "namespace_definition"
 TT_NAMESPACE_USAGE = "namespace_usage"
 TT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
-PEP_PANEL_NAME = "pep_panel"
+OUTPUT_PANEL_NAME = "pep_panel"
+OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
 
 
 _view_analysis_ = {}
@@ -52,21 +53,21 @@ _classpath_analysis_ = {}
 
 
 def show_output_panel(window):
-    window.run_command("show_panel", {"panel": f"output.{PEP_PANEL_NAME}"})
+    window.run_command("show_panel", {"panel": OUTPUT_PANEL_NAME_PREFIXED})
 
 
 def hide_output_panel(window):
-    window.run_command("hide_panel", {"panel": f"output.{PEP_PANEL_NAME}"})
+    window.run_command("hide_panel", {"panel": OUTPUT_PANEL_NAME_PREFIXED})
 
 
 def hide_active_output_panel(window):
-    if window.active_panel() == f"output.{PEP_PANEL_NAME}":
+    if window.active_panel() == OUTPUT_PANEL_NAME_PREFIXED:
         hide_output_panel(window)
 
 
 def output_panel(window):
-    return window.find_output_panel(PEP_PANEL_NAME) or window.create_output_panel(
-        PEP_PANEL_NAME
+    return window.find_output_panel(OUTPUT_PANEL_NAME) or window.create_output_panel(
+        OUTPUT_PANEL_NAME
     )
 
 
