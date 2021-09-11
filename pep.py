@@ -535,15 +535,31 @@ def show_goto_thingy_quick_panel(window, items):
             text_ = text_ + "\n\n" + thingy_data.get("reg", "")
 
         elif thingy_type == TT_VAR_DEFINITION:
-            text_ = f"{ns_}/{name_}" if ns_ else name_
 
-            # Args (optional)
-            if args_ := thingy_data.get("arglist-strs", None):
-                text_ = text_ + "\n\n" + " ".join(args_)
+            lineno_begin = thingy_data.get(
+                "row", thingy_data.get("name-row")
+            )
 
-            # Doc (optional)
-            if doc_ := thingy_data.get("doc"):
-                text_ = text_ + "\n\n" + re.sub(r"^ +", "", doc_, flags=re.M)
+            lineno_end = thingy_data.get(
+                "end-row", thingy_data.get("name-end-row")
+            )
+
+            thingy_filename = thingy_data["filename"]
+
+            if ".jar:" in thingy_filename:
+
+                def read_jar_source(filename, file):
+                    nonlocal text_
+                    text_ = "".join(
+                        getlines(filename, lineno_begin, lineno_end)
+                    )
+
+                with_jar(thingy_filename, read_jar_source)
+
+            else:
+                text_ = "".join(
+                    getlines(thingy_filename, lineno_begin, lineno_end)
+                )
 
         elif thingy_type == TT_NAMESPACE_DEFINITION:
             text_ = name_
