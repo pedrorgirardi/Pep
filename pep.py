@@ -353,7 +353,7 @@ def parse_location(thingy_data):
         }
 
 
-def open_jar(filename, f):
+def with_jar(filename, f):
     """
     Open JAR `filename` and call `f` with filename and a file-like object (ZipExtFile).
 
@@ -473,7 +473,7 @@ def peek_definition(view, thingy_type, thingy_data):
                         getlines(filename, lineno_begin, lineno_end)
                     )
 
-                open_jar(thingy_definition_filename, read_jar_source)
+                with_jar(thingy_definition_filename, read_jar_source)
 
             else:
                 thingy_definition_source = "".join(
