@@ -41,12 +41,24 @@ FT_NAMESPACE_DEFINITION = "namespace_definition"
 FT_NAMESPACE_USAGE = "namespace_usage"
 FT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
+PEP_PANEL_NAME = "pep_panel"
+
 
 _view_analysis_ = {}
 
 _paths_analysis_ = {}
 
 _classpath_analysis_ = {}
+
+
+def show_output_panel(window):
+    window.run_command("show_panel", {"panel": f"output.{PEP_PANEL_NAME}"})
+
+
+def output_panel(window):
+    return window.find_output_panel(PEP_PANEL_NAME) or window.create_output_panel(
+        PEP_PANEL_NAME
+    )
 
 
 def set_paths_analysis(project_path, analysis):
@@ -484,9 +496,7 @@ def peek_definition(view, thingy_type, thingy_data):
     if thingy_definition_source:
         panel_name_ = "pep_peek_panel"
 
-        output_view_ = view.window().find_output_panel(
-            panel_name_
-        ) or view.window().create_output_panel(panel_name_)
+        output_view_ = output_panel(view.window())
 
         # Same syntax as thingy.
         output_view_.assign_syntax(view.syntax())
@@ -500,7 +510,7 @@ def peek_definition(view, thingy_type, thingy_data):
         output_view_.settings().set("gutter", False)
         output_view_.settings().set("is_widget", True)
 
-        view.window().run_command("show_panel", {"panel": f"output.{panel_name_}"})
+        show_output_panel(view.window())
 
 
 def var_goto_items(analysis):
