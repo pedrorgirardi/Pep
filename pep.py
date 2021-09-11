@@ -1372,17 +1372,10 @@ def var_definition_in_region(view, vrn, region):
             return (_region, var_definition)
 
 
-def thingy_kind(thingy):
+def thingy_kind(thingy_type, thingy_data):
     """
     Mapping of thingy type to kind.
-
-    Kind is one of:
-        - sublime.KIND_KEYWORD
-        - sublime.KIND_VARIABLE
-        - sublime.KIND_AMBIGUOUS
     """
-
-    thingy_type, _, thingy_data = thingy
 
     if thingy_type == FT_KEYWORD:
         return sublime.KIND_KEYWORD
@@ -2367,7 +2360,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     quick_panel_items.append(
                         sublime.QuickPanelItem(
-                            trigger, details, annotation, thingy_kind(thingy)
+                            trigger, details, annotation, thingy_kind(thingy_type, thingy_data)
                         )
                     )
 
@@ -2436,23 +2429,23 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
 
         thingy_usages = None
 
-        if thingy_type == "keyword":
+        if thingy_type == FT_KEYWORD:
             # To be considered:
             # If the keyword is a destructuring key,
             # should it show its local usages?
 
             thingy_usages = find_keyword_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == "var_definition":
+        elif thingy_type == FT_VAR_DEFINITION:
             thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == "var_usage":
+        elif thingy_type == FT_VAR_USAGE:
             thingy_usages = find_var_usages_with_usage(paths_analysis_, thingy_data)
 
-        elif thingy_type == "namespace_definition":
+        elif thingy_type == FT_NAMESPACE_DEFINITION:
             thingy_usages = find_namespace_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+        elif thingy_type == FT_NAMESPACE_USAGE or thingy_type == FT_NAMESPACE_USAGE_ALIAS:
             thingy_usages = find_namespace_usages_with_usage(
                 paths_analysis_, thingy_data
             )
@@ -2474,7 +2467,7 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
 
                     quick_panel_items.append(
                         sublime.QuickPanelItem(
-                            trigger, details, annotation, thingy_kind(thingy)
+                            trigger, details, annotation, thingy_kind(thingy_type, thingy_data)
                         )
                     )
 
