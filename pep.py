@@ -41,7 +41,7 @@ FT_NAMESPACE_DEFINITION = "namespace_definition"
 FT_NAMESPACE_USAGE = "namespace_usage"
 FT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
-PEP_PANEL_NAME = "output.pep_panel"
+PEP_PANEL_NAME = "pep_panel"
 
 
 _view_analysis_ = {}
@@ -52,15 +52,15 @@ _classpath_analysis_ = {}
 
 
 def show_output_panel(window):
-    window.run_command("show_panel", {"panel": PEP_PANEL_NAME})
+    window.run_command("show_panel", {"panel": f"output.{PEP_PANEL_NAME}"})
 
 
 def hide_output_panel(window):
-    window.run_command("hide_panel", {"panel": PEP_PANEL_NAME})
+    window.run_command("hide_panel", {"panel": f"output.{PEP_PANEL_NAME}"})
 
 
 def hide_active_output_panel(window):
-    if window.active_panel() == PEP_PANEL_NAME:
+    if window.active_panel() == f"output.{PEP_PANEL_NAME}":
         hide_output_panel(window)
 
 
@@ -503,8 +503,6 @@ def peek_definition(view, thingy_type, thingy_data):
         sublime.status_message("Pep can't peek local usage")
 
     if thingy_definition_source:
-        panel_name_ = "pep_peek_panel"
-
         output_view_ = output_panel(view.window())
 
         # Same syntax as thingy.
