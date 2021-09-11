@@ -354,6 +354,12 @@ def parse_location(thingy_data):
 
 
 def open_jar(filename, f):
+    """
+    Open JAR `filename` and call `f` with filename and a file-like object (ZipExtFile).
+
+    Filename passed to `f` is a temporary file and it will be removed afterwards.
+    """
+
     filename_split = filename.split(":")
     filename_jar = filename_split[0]
     filename_file = filename_split[1]
@@ -374,6 +380,12 @@ def open_jar(filename, f):
 
 
 def getlines(filename, begin, end):
+    """
+    Returns a list of lines read from filename.
+
+    `end` is inclusive.
+    """
+
     return [linecache.getline(filename, lineno) for lineno in range(begin, end + 1)]
 
 
