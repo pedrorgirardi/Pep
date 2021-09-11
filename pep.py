@@ -2226,7 +2226,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         thingy_type, _, thingy_data = thingy
 
-        if thingy_type == "local_usage":
+        if thingy_type == TT_LOCAL_USAGE:
             if definition := find_local_binding(analysis, thingy_data):
                 if goto_region := local_binding_region(self.view, definition):
                     goto_region = sublime.Region(
@@ -2237,7 +2237,9 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     self.view.sel().add(goto_region)
                     self.view.show(goto_region)
 
-        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+        elif (
+            thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+        ):
             project_path_ = project_path(self.view.window())
 
             paths_analysis_ = paths_analysis(project_path_)
@@ -2253,7 +2255,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             if definition:
                 goto_definition(self.view.window(), definition, side_by_side)
 
-        elif thingy_type == "var_usage":
+        elif thingy_type == TT_VAR_USAGE:
             namespace_ = thingy_data.get("to", None)
             name_ = thingy_data.get("name", None)
 
@@ -2274,7 +2276,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             if definition:
                 goto_definition(self.view.window(), definition, side_by_side)
 
-        elif thingy_type == "keyword":
+        elif thingy_type == TT_KEYWORD:
             keyword_namespace = thingy_data.get("ns", None)
             keyword_name = thingy_data.get("name", None)
 
@@ -2317,26 +2319,28 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         thingy_usages = None
 
-        if thingy_type == "keyword":
+        if thingy_type == TT_KEYWORD:
             # To be considered:
             # If the keyword is a destructuring key,
             # should it show its local usages?
 
             thingy_usages = find_keyword_usages(analysis, thingy_data)
 
-        elif thingy_type == "local_binding":
+        elif thingy_type == TT_LOCAL_BINDING:
             thingy_usages = find_local_usages(analysis, thingy_data)
 
-        elif thingy_type == "local_usage":
+        elif thingy_type == TT_LOCAL_USAGE:
             thingy_usages = find_local_usages(analysis, thingy_data)
 
-        elif thingy_type == "var_definition":
+        elif thingy_type == TT_VAR_DEFINITION:
             thingy_usages = find_var_usages(analysis, thingy_data)
 
-        elif thingy_type == "var_usage":
+        elif thingy_type == TT_VAR_USAGE:
             thingy_usages = find_var_usages_with_usage(analysis, thingy_data)
 
-        elif thingy_type == "namespace_usage" or thingy_type == "namespace_usage_alias":
+        elif (
+            thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+        ):
             # Usages of a namespace, in the scope of a single view, works a little different;
             # It shows usages of Vars instead of namespace.
             # Although a bit different, I think it's safe to assume that this behavior
@@ -2361,7 +2365,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     quick_panel_items.append(
                         sublime.QuickPanelItem(
-                            trigger, details, annotation, thingy_kind(thingy_type, thingy_data)
+                            trigger,
+                            details,
+                            annotation,
+                            thingy_kind(thingy_type, thingy_data),
                         )
                     )
 
@@ -2385,8 +2392,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 placeholder = None
 
                 if (
-                    thingy_type == "namespace_usage"
-                    or thingy_type == "namespace_usage_alias"
+                    thingy_type == TT_NAMESPACE_USAGE
+                    or thingy_type == TT_NAMESPACE_USAGE_ALIAS
                 ):
                     placeholder = (
                         f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
@@ -2446,7 +2453,9 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
         elif thingy_type == TT_NAMESPACE_DEFINITION:
             thingy_usages = find_namespace_usages(paths_analysis_, thingy_data)
 
-        elif thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS:
+        elif (
+            thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+        ):
             thingy_usages = find_namespace_usages_with_usage(
                 paths_analysis_, thingy_data
             )
@@ -2468,7 +2477,10 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
 
                     quick_panel_items.append(
                         sublime.QuickPanelItem(
-                            trigger, details, annotation, thingy_kind(thingy_type, thingy_data)
+                            trigger,
+                            details,
+                            annotation,
+                            thingy_kind(thingy_type, thingy_data),
                         )
                     )
 
@@ -2492,8 +2504,8 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                 placeholder = None
 
                 if (
-                    thingy_type == "namespace_usage"
-                    or thingy_type == "namespace_usage_alias"
+                    thingy_type == TT_NAMESPACE_USAGE
+                    or thingy_type == TT_NAMESPACE_USAGE_ALIAS
                 ):
                     placeholder = (
                         f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
