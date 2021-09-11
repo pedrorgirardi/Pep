@@ -353,6 +353,30 @@ def parse_location(thingy_data):
         }
 
 
+def open_jar(filename, f):
+    filename_split = filename.split(":")
+    filename_jar = filename_split[0]
+    filename_file = filename_split[1]
+
+    with ZipFile(filename_jar) as jar:
+        with jar.open(filename_file) as jar_file:
+
+            descriptor, tempath = tempfile.mkstemp()
+
+            try:
+                with os.fdopen(descriptor, "w") as file:
+                    file.write(jar_file.read().decode())
+
+                f(tempath, jar_file)
+
+            finally:
+                os.remove(tempath)
+
+
+def getlines(filename, begin, end):
+    return [linecache.getline(filename, lineno) for lineno in range(begin, end + 1)]
+
+
 def goto(window, location, flags=sublime.ENCODED_POSITION):
     if location:
         resource = location["resource"]
@@ -392,30 +416,6 @@ def goto_definition(window, definition, side_by_side=False):
     flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
 
     goto(window, parse_location(definition), flags=flags)
-
-
-def open_jar(filename, f):
-    filename_split = filename.split(":")
-    filename_jar = filename_split[0]
-    filename_file = filename_split[1]
-
-    with ZipFile(filename_jar) as jar:
-        with jar.open(filename_file) as jar_file:
-
-            descriptor, tempath = tempfile.mkstemp()
-
-            try:
-                with os.fdopen(descriptor, "w") as file:
-                    file.write(jar_file.read().decode())
-
-                f(tempath, jar_file)
-
-            finally:
-                os.remove(tempath)
-
-
-def getlines(filename, begin, end):
-    return [linecache.getline(filename, lineno) for lineno in range(begin, end + 1)]
 
 
 def peek_definition(view, thingy_type, thingy_data):
