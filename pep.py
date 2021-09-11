@@ -394,6 +394,30 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
+def open_jar(filename, f):
+    filename_split = filename.split(":")
+    filename_jar = filename_split[0]
+    filename_file = filename_split[1]
+
+    with ZipFile(filename_jar) as jar:
+        with jar.open(filename_file) as jar_file:
+
+            descriptor, tempath = tempfile.mkstemp()
+
+            try:
+                with os.fdopen(descriptor, "w") as file:
+                    file.write(jar_file.read().decode())
+
+                f(tempath, jar_file)
+
+            finally:
+                os.remove(tempath)
+
+
+def getlines(filename, begin, end):
+    return [linecache.getline(filename, lineno) for lineno in range(begin, end + 1)]
+
+
 def peek_definition(view, thingy_type, thingy_data):
     thingy_definition_source = None
 
@@ -418,7 +442,6 @@ def peek_definition(view, thingy_type, thingy_data):
         )
 
         if thingy_definition_data:
-            thingy_definition_lines = []
 
             lineno_begin = thingy_definition_data.get(
                 "row", thingy_data.get("name-row")
@@ -431,33 +454,19 @@ def peek_definition(view, thingy_type, thingy_data):
             thingy_definition_filename = thingy_definition_data["filename"]
 
             if ".jar:" in thingy_definition_filename:
-                thingy_definition_filename_split = thingy_definition_filename.split(":")
-                thingy_definition_filename_jar = thingy_definition_filename_split[0]
-                thingy_definition_filename_file = thingy_definition_filename_split[1]
 
-                with ZipFile(thingy_definition_filename_jar) as jar:
-                    with jar.open(thingy_definition_filename_file) as jar_file:
-
-                        descriptor, tempath = tempfile.mkstemp()
-
-                        try:
-                            with os.fdopen(descriptor, "w") as file:
-                                file.write(jar_file.read().decode())
-
-                            for lineno in range(lineno_begin, lineno_end + 1):
-                                thingy_definition_lines.append(
-                                    linecache.getline(tempath, lineno)
-                                )
-
-                        finally:
-                            os.remove(tempath)
-            else:
-                for lineno in range(lineno_begin, lineno_end + 1):
-                    thingy_definition_lines.append(
-                        linecache.getline(thingy_definition_filename, lineno)
+                def read_jar_source(filename, file):
+                    nonlocal thingy_definition_source
+                    thingy_definition_source = "".join(
+                        getlines(filename, lineno_begin, lineno_end)
                     )
 
-            thingy_definition_source = "".join(thingy_definition_lines)
+                open_jar(thingy_definition_filename, read_jar_source)
+
+            else:
+                thingy_definition_source = "".join(
+                    getlines(thingy_definition_filename, lineno_begin, lineno_end)
+                )
 
     if thingy_definition_source:
         panel_name_ = "pep_peek_panel"
