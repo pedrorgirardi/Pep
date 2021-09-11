@@ -394,6 +394,68 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
+def peek_definition(view, thingy_type, thingy_data):
+    thingy_definition_source = None
+
+    view_analysis_ = view_analysis(view.id())
+
+    project_path_ = project_path(view.window())
+
+    paths_analysis_ = paths_analysis(project_path_)
+
+    classpath_analysis_ = classpath_analysis(project_path_)
+
+    if thingy_type == "local_usage":
+        if definition_ := find_local_binding(view_analysis_, thingy_data):
+            if region_ := local_binding_region(view, definition_):
+                thingy_definition_source = view.substr(region_)
+
+    elif thingy_type == "var_usage":
+        thingy_definition_data = (
+            find_var_definition(view_analysis_, thingy_data)
+            or find_var_definition(paths_analysis_, thingy_data)
+            or find_var_definition(classpath_analysis_, thingy_data)
+        )
+
+        if thingy_definition_data:
+            thingy_definition_lines = []
+
+            lineno_begin = thingy_definition_data.get(
+                "row", thingy_data.get("name-row")
+            )
+            lineno_end = thingy_definition_data.get(
+                "end-row", thingy_data.get("name-end-row")
+            )
+
+            for lineno in range(lineno_begin, lineno_end + 1):
+                thingy_definition_lines.append(
+                    linecache.getline(thingy_data["filename"], lineno)
+                )
+
+            thingy_definition_source = "".join(thingy_definition_lines)
+
+    if thingy_definition_source:
+        panel_name_ = "pep_peek_panel"
+
+        output_view_ = view.window().find_output_panel(
+            panel_name_
+        ) or view.window().create_output_panel(panel_name_)
+
+        # Same syntax as thingy.
+        output_view_.assign_syntax(view.syntax())
+
+        output_view_.set_read_only(False)
+        output_view_.run_command("select_all")
+        output_view_.run_command("right_delete")
+        output_view_.run_command("append", {"characters": thingy_definition_source})
+        output_view_.set_read_only(True)
+        output_view_.settings().set("line_numbers", False)
+        output_view_.settings().set("gutter", False)
+        output_view_.settings().set("is_widget", True)
+
+        view.window().run_command("show_panel", {"panel": f"output.{panel_name_}"})
+
+
 def var_goto_items(analysis):
     items_ = []
 
@@ -522,9 +584,7 @@ def show_goto_thingy_quick_panel(window, items):
             output_view_.assign_syntax("Clojure.sublime-syntax")
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
-            output_view_.run_command(
-                "append", {"characters": "".join(lines_)}
-            )
+            output_view_.run_command("append", {"characters": "".join(lines_)})
 
             output_view_.set_read_only(True)
 
@@ -2164,9 +2224,6 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
     def run(self, edit, side_by_side=False):
-        global GOTO_SIDE_BY_SIDE_FLAGS
-        global GOTO_DEFAULT_FLAGS
-
         is_debug = debug()
 
         analysis = view_analysis(self.view.id())
@@ -2252,6 +2309,18 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             if definition:
                 goto_definition(self.view.window(), definition, side_by_side)
+
+
+class PgPepPeekDefinitionCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
+            thingy_type, _, thingy_data = thingy
+
+            peek_definition(self.view, thingy_type, thingy_data)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
@@ -2750,9 +2819,9 @@ class PgPepEventListener(sublime_plugin.EventListener):
 def plugin_loaded():
     print("(Pep) Plugin loaded")
 
-    if window := sublime.active_window():
-        if settings().get("analyze_paths_on_plugin_loaded", False):
-            analyze_paths_async(window)
+    # if window := sublime.active_window():
+    #     if settings().get("analyze_paths_on_plugin_loaded", False):
+    #         analyze_paths_async(window)
 
-        if settings().get("analyze_classpath_on_plugin_loaded", False):
-            analyze_classpath_async(window)
+    #     if settings().get("analyze_classpath_on_plugin_loaded", False):
+    #         analyze_classpath_async(window)
