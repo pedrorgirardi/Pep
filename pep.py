@@ -41,7 +41,7 @@ FT_NAMESPACE_DEFINITION = "namespace_definition"
 FT_NAMESPACE_USAGE = "namespace_usage"
 FT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
-PEP_PANEL_NAME = "pep_panel"
+PEP_PANEL_NAME = "output.pep_panel"
 
 
 _view_analysis_ = {}
@@ -52,7 +52,16 @@ _classpath_analysis_ = {}
 
 
 def show_output_panel(window):
-    window.run_command("show_panel", {"panel": f"output.{PEP_PANEL_NAME}"})
+    window.run_command("show_panel", {"panel": PEP_PANEL_NAME})
+
+
+def hide_output_panel(window):
+    window.run_command("hide_panel", {"panel": PEP_PANEL_NAME})
+
+
+def hide_active_output_panel(window):
+    if window.active_panel() == PEP_PANEL_NAME:
+        hide_output_panel(window)
 
 
 def output_panel(window):
@@ -2833,6 +2842,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if self.modified_time:
             if staled_analysis(self.view) and (time.time() - self.modified_time) > 1:
                 analyze_view_async(self.view, on_completed=self.view_analysis_completed)
+
+        hide_active_output_panel(self.view.window())
 
     def on_close(self):
         """
