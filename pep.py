@@ -1388,22 +1388,31 @@ def thingy_kind(thingy):
         return sublime.KIND_KEYWORD
 
     elif thingy_type == FT_LOCAL_BINDING:
-        return sublime.KIND_VARIABLE
+        return (sublime.KIND_ID_VARIABLE, "v", "Local binding")
 
     elif thingy_type == FT_LOCAL_USAGE:
-        return sublime.KIND_VARIABLE
+        return (sublime.KIND_ID_VARIABLE, "v", "Local usage")
 
     elif thingy_type == FT_VAR_DEFINITION:
-        return sublime.KIND_VARIABLE
+        return (
+            sublime.KIND_FUNCTION
+            if thingy_data.get("arglist-strs")
+            else sublime.KIND_VARIABLE
+        )
 
     elif thingy_type == FT_VAR_USAGE:
-        return sublime.KIND_VARIABLE
+        return (
+            sublime.KIND_FUNCTION
+            if thingy_data.get("arglist-strs")
+            else sublime.KIND_VARIABLE
+        )
 
-    elif thingy_type == FT_NAMESPACE_DEFINITION:
-        return sublime.KIND_NAMESPACE
-
-    elif thingy_type == FT_NAMESPACE_USAGE or thingy_type == FT_NAMESPACE_USAGE_ALIAS:
-        return sublime.KIND_NAMESPACE
+    elif (
+        thingy_type == FT_NAMESPACE_DEFINITION
+        or thingy_type == FT_NAMESPACE_USAGE
+        or thingy_type == FT_NAMESPACE_USAGE_ALIAS
+    ):
+        return (sublime.KIND_ID_NAMESPACE, "n", "Namespace")
 
     else:
         return sublime.KIND_AMBIGUOUS
