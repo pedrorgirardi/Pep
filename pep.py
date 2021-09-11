@@ -423,14 +423,39 @@ def peek_definition(view, thingy_type, thingy_data):
             lineno_begin = thingy_definition_data.get(
                 "row", thingy_data.get("name-row")
             )
+
             lineno_end = thingy_definition_data.get(
                 "end-row", thingy_data.get("name-end-row")
             )
 
-            for lineno in range(lineno_begin, lineno_end + 1):
-                thingy_definition_lines.append(
-                    linecache.getline(thingy_data["filename"], lineno)
-                )
+            thingy_definition_filename = thingy_definition_data["filename"]
+
+            if ".jar:" in thingy_definition_filename:
+                thingy_definition_filename_split = thingy_definition_filename.split(":")
+                thingy_definition_filename_jar = thingy_definition_filename_split[0]
+                thingy_definition_filename_file = thingy_definition_filename_split[1]
+
+                with ZipFile(thingy_definition_filename_jar) as jar:
+                    with jar.open(thingy_definition_filename_file) as jar_file:
+
+                        descriptor, tempath = tempfile.mkstemp()
+
+                        try:
+                            with os.fdopen(descriptor, "w") as file:
+                                file.write(jar_file.read().decode())
+
+                            for lineno in range(lineno_begin, lineno_end + 1):
+                                thingy_definition_lines.append(
+                                    linecache.getline(tempath, lineno)
+                                )
+
+                        finally:
+                            os.remove(tempath)
+            else:
+                for lineno in range(lineno_begin, lineno_end + 1):
+                    thingy_definition_lines.append(
+                        linecache.getline(thingy_definition_filename, lineno)
+                    )
 
             thingy_definition_source = "".join(thingy_definition_lines)
 
