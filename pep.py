@@ -532,6 +532,7 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
         name_ = thingy_data.get("name", None)
 
         text_ = None
+        syntax_ = None
 
         if thingy_type == TT_KEYWORD:
             text_ = f"{ns_}/{name_}" if ns_ else name_
@@ -544,6 +545,9 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
             lineno_end = thingy_data.get("end-row", thingy_data.get("name-end-row"))
 
             thingy_filename = thingy_data["filename"]
+
+            # TODO: Try to use the same syntax as the "origin".
+            syntax_ = "Clojure.sublime-syntax"
 
             if ".jar:" in thingy_filename:
 
@@ -566,7 +570,10 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
         else:
             text_ = f"{ns_}/{name_}" if ns_ else name_
 
-        return text_
+        return {
+            "characters": text_,
+            "syntax": syntax_ or "Packages/Text/Plain text.tmLanguage",
+        }
 
     def on_highlighted(index):
         if index != -1:
@@ -575,23 +582,25 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
             thingy_type_ = item_["thingy_type"]
             thingy_data_ = item_["thingy_data"]
 
+            out = thingy_output_text(thingy_type_, thingy_data_)
+            out_characters = out["characters"]
+            out_syntax = out["syntax"]
+
             output_view_ = output_panel(window)
             output_view_.set_read_only(False)
-            output_view_.assign_syntax("Clojure.sublime-syntax")
+            output_view_.assign_syntax(out_syntax)
+            output_view_.settings().set("line_numbers", False)
+            output_view_.settings().set("gutter", False)
+            output_view_.settings().set("is_widget", True)
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
             output_view_.run_command(
                 "append",
                 {
-                    "characters": thingy_output_text(thingy_type_, thingy_data_),
+                    "characters": out_characters,
                 },
             )
-
             output_view_.set_read_only(True)
-
-            output_view_.settings().set("line_numbers", False)
-            output_view_.settings().set("gutter", False)
-            output_view_.settings().set("is_widget", True)
 
             show_output_panel(window)
 
