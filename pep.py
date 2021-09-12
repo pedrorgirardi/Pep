@@ -458,7 +458,9 @@ def var_goto_items(analysis):
     for var_definition in analysis_vindex(analysis).values():
         ns_ = var_definition.get("ns", "")
         name_ = var_definition.get("name", "")
-        args_ = var_definition.get("arglist-strs")
+        args_ = var_definition.get("arglist-strs", [])
+        doc_ = var_definition.get("doc", "")
+        doc_ = re.sub(r"^ +", " ", doc_, flags=re.M)
 
         trigger = f"{ns_}/{name_}"
 
@@ -469,7 +471,8 @@ def var_goto_items(analysis):
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
                     kind=sublime.KIND_FUNCTION if args_ else sublime.KIND_VARIABLE,
-                    annotation="".join(args_ or []),
+                    annotation="".join(args_),
+                    details=doc_,
                 ),
             }
         )
@@ -536,13 +539,9 @@ def show_goto_thingy_quick_panel(window, items):
 
         elif thingy_type == TT_VAR_DEFINITION:
 
-            lineno_begin = thingy_data.get(
-                "row", thingy_data.get("name-row")
-            )
+            lineno_begin = thingy_data.get("row", thingy_data.get("name-row"))
 
-            lineno_end = thingy_data.get(
-                "end-row", thingy_data.get("name-end-row")
-            )
+            lineno_end = thingy_data.get("end-row", thingy_data.get("name-end-row"))
 
             thingy_filename = thingy_data["filename"]
 
@@ -550,16 +549,12 @@ def show_goto_thingy_quick_panel(window, items):
 
                 def read_jar_source(filename, file):
                     nonlocal text_
-                    text_ = "".join(
-                        getlines(filename, lineno_begin, lineno_end)
-                    )
+                    text_ = "".join(getlines(filename, lineno_begin, lineno_end))
 
                 with_jar(thingy_filename, read_jar_source)
 
             else:
-                text_ = "".join(
-                    getlines(thingy_filename, lineno_begin, lineno_end)
-                )
+                text_ = "".join(getlines(thingy_filename, lineno_begin, lineno_end))
 
         elif thingy_type == TT_NAMESPACE_DEFINITION:
             text_ = name_
@@ -586,7 +581,10 @@ def show_goto_thingy_quick_panel(window, items):
             output_view_.run_command("select_all")
             output_view_.run_command("right_delete")
             output_view_.run_command(
-                "append", {"characters": thingy_output_text(thingy_type_, thingy_data_)}
+                "append",
+                {
+                    "characters": thingy_output_text(thingy_type_, thingy_data_),
+                },
             )
 
             output_view_.set_read_only(True)
@@ -610,7 +608,10 @@ def show_goto_thingy_quick_panel(window, items):
     quick_panel_items_ = [item_["quick_panel_item"] for item_ in items]
 
     window.show_quick_panel(
-        quick_panel_items_, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST, 0, on_highlighted
+        quick_panel_items_,
+        on_done,
+        flags=sublime.KEEP_OPEN_ON_FOCUS_LOST,
+        on_highlight=on_highlighted,
     )
 
 
