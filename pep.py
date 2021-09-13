@@ -599,7 +599,6 @@ def peek(window, thingy_type, thingy_data):
 
 
 def show_goto_thingy_quick_panel(window, items, preview=True):
-    
     def on_highlighted(index):
         if index != -1:
             item_ = items[index]
@@ -2401,7 +2400,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for thingy_usage in thingy_usages:
-                    trigger = thingy_usage.get("from")
+                    trigger = thingy_usage.get("from") or os.path.basename(
+                        thingy_usage.get("filename")
+                    )
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
@@ -2513,7 +2514,9 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for thingy_usage in thingy_usages:
-                    trigger = thingy_usage.get("from")
+                    trigger = thingy_usage.get("from") or os.path.basename(
+                        thingy_usage.get("filename")
+                    )
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
