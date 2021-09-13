@@ -41,7 +41,7 @@ TT_NAMESPACE_DEFINITION = "namespace_definition"
 TT_NAMESPACE_USAGE = "namespace_usage"
 TT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 
-OUTPUT_PANEL_NAME = "pep_panel"
+OUTPUT_PANEL_NAME = "pep"
 OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
 
 
