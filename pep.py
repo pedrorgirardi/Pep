@@ -471,7 +471,7 @@ def var_goto_items(analysis):
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
                     kind=sublime.KIND_FUNCTION if args_ else sublime.KIND_VARIABLE,
-                    annotation="".join(args_),
+                    annotation=" ".join(args_),
                     details=doc_,
                 ),
             }
