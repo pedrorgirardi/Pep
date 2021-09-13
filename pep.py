@@ -526,7 +526,7 @@ def namespace_goto_items(analysis):
     return items_
 
 
-def peek(window, thingy_type, thingy_data):
+def quick_view(window, thingy_type, thingy_data):
     def peek_params(thingy_type, thingy_data):
         ns_ = thingy_data.get("ns", None)
         name_ = thingy_data.get("name", None)
@@ -598,12 +598,12 @@ def peek(window, thingy_type, thingy_data):
     show_output_panel(window)
 
 
-def show_goto_thingy_quick_panel(window, items, preview=True):
+def show_goto_thingy_quick_panel(window, items, quick_view=True):
     def on_highlighted(index):
         if index != -1:
             item_ = items[index]
 
-            peek(
+            quick_view(
                 window,
                 item_["thingy_type"],
                 item_["thingy_data"],
@@ -621,7 +621,7 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
 
     quick_panel_items_ = [item_["quick_panel_item"] for item_ in items]
 
-    if preview:
+    if quick_view:
         window.show_quick_panel(
             quick_panel_items_,
             on_done,
@@ -1843,7 +1843,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         items_ = namespace_goto_items(paths_analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_, preview=False)
+        show_goto_thingy_quick_panel(self.window, items_, quick_view=False)
 
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
@@ -1873,7 +1873,7 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
 
         items_ = keyword_goto_items(paths_analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_, preview=False)
+        show_goto_thingy_quick_panel(self.window, items_, quick_view=False)
 
 
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
@@ -1893,7 +1893,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
             if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
         ]
 
-        show_goto_thingy_quick_panel(self.window, items_, preview=False)
+        show_goto_thingy_quick_panel(self.window, items_, quick_view=False)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
