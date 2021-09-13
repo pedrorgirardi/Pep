@@ -526,8 +526,8 @@ def namespace_goto_items(analysis):
     return items_
 
 
-def show_goto_thingy_quick_panel(window, items, preview=True):
-    def thingy_output_text(thingy_type, thingy_data):
+def peek(window, thingy_type, thingy_data):
+    def peek_params(thingy_type, thingy_data):
         ns_ = thingy_data.get("ns", None)
         name_ = thingy_data.get("name", None)
 
@@ -575,34 +575,40 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
             "syntax": syntax_ or "Packages/Text/Plain text.tmLanguage",
         }
 
+    params = peek_params(thingy_type, thingy_data)
+    peek_characters = params["characters"]
+    peek_syntax = params["syntax"]
+
+    output_view_ = output_panel(window)
+    output_view_.set_read_only(False)
+    output_view_.assign_syntax(peek_syntax)
+    output_view_.settings().set("line_numbers", False)
+    output_view_.settings().set("gutter", False)
+    output_view_.settings().set("is_widget", True)
+    output_view_.run_command("select_all")
+    output_view_.run_command("right_delete")
+    output_view_.run_command(
+        "append",
+        {
+            "characters": peek_characters,
+        },
+    )
+    output_view_.set_read_only(True)
+
+    show_output_panel(window)
+
+
+def show_goto_thingy_quick_panel(window, items, preview=True):
+    
     def on_highlighted(index):
         if index != -1:
             item_ = items[index]
 
-            thingy_type_ = item_["thingy_type"]
-            thingy_data_ = item_["thingy_data"]
-
-            out = thingy_output_text(thingy_type_, thingy_data_)
-            out_characters = out["characters"]
-            out_syntax = out["syntax"]
-
-            output_view_ = output_panel(window)
-            output_view_.set_read_only(False)
-            output_view_.assign_syntax(out_syntax)
-            output_view_.settings().set("line_numbers", False)
-            output_view_.settings().set("gutter", False)
-            output_view_.settings().set("is_widget", True)
-            output_view_.run_command("select_all")
-            output_view_.run_command("right_delete")
-            output_view_.run_command(
-                "append",
-                {
-                    "characters": out_characters,
-                },
+            peek(
+                window,
+                item_["thingy_type"],
+                item_["thingy_data"],
             )
-            output_view_.set_read_only(True)
-
-            show_output_panel(window)
 
     def on_done(index):
         if index != -1:
