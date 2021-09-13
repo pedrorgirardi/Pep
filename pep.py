@@ -2401,7 +2401,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for thingy_usage in thingy_usages:
-                    trigger = os.path.basename(thingy_usage.get("filename"))
+                    trigger = thingy_usage.get("from")
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
@@ -2513,7 +2513,7 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for thingy_usage in thingy_usages:
-                    trigger = os.path.basename(thingy_usage.get("filename"))
+                    trigger = thingy_usage.get("from")
                     details = thingy_usage.get("filename", "")
                     annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
 
