@@ -499,15 +499,17 @@ def namespace_goto_items(analysis):
     items_ = []
 
     for namespace_definition in analysis_nindex(analysis).values():
-        trigger = namespace_definition.get("name", "")
+        namespace_name = namespace_definition.get("name", "")
+        namespace_filename = namespace_definition.get("filename", "")
 
         items_.append(
             {
                 "thingy_type": TT_NAMESPACE_DEFINITION,
                 "thingy_data": namespace_definition,
                 "quick_panel_item": sublime.QuickPanelItem(
-                    trigger,
+                    namespace_name,
                     kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
+                    annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
                 ),
             }
         )
@@ -595,8 +597,6 @@ def show_goto_thingy_quick_panel(window, items):
             location = parse_location(thingy_data_)
 
             goto(window, location)
-
-        hide_output_panel(window)
 
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
