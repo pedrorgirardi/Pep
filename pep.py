@@ -458,7 +458,9 @@ def var_goto_items(analysis):
                 "thingy_data": var_definition,
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
-                    kind=sublime.KIND_FUNCTION if var_arglist else sublime.KIND_VARIABLE,
+                    kind=sublime.KIND_FUNCTION
+                    if var_arglist
+                    else sublime.KIND_VARIABLE,
                     details=" ".join(var_arglist),
                     annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
                 ),
@@ -474,10 +476,15 @@ def keyword_goto_items(analysis):
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
             if reg := keyword_.get("reg", None):
-                ns_ = keyword_.get("ns", "")
-                name_ = keyword_.get("name", "")
+                keyword_namespace = keyword_.get("ns", "")
+                keyword_name = keyword_.get("name", "")
+                keyword_filename = keyword_.get("filename", "")
 
-                trigger = ":" + (f"{ns_}/{name_}" if ns_ else name_)
+                trigger = ":" + (
+                    f"{keyword_namespace}/{keyword_name}"
+                    if keyword_namespace
+                    else keyword_name
+                )
 
                 items_.append(
                     {
@@ -486,7 +493,10 @@ def keyword_goto_items(analysis):
                         "quick_panel_item": sublime.QuickPanelItem(
                             trigger,
                             kind=sublime.KIND_KEYWORD,
-                            annotation=reg,
+                            details=reg,
+                            annotation=pathlib.Path(keyword_filename).suffix.replace(
+                                ".", ""
+                            ),
                         ),
                     }
                 )
