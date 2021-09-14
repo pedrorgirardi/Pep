@@ -10,6 +10,7 @@ import pprint
 import threading
 import time
 import linecache
+import pathlib
 
 from urllib.parse import urlparse
 from zipfile import ZipFile
@@ -389,7 +390,9 @@ def with_jar(filename, f):
     with ZipFile(filename_jar) as jar:
         with jar.open(filename_file) as jar_file:
 
-            descriptor, tempath = tempfile.mkstemp()
+            file_extension = pathlib.Path(filename_file).suffix
+
+            descriptor, tempath = tempfile.mkstemp(file_extension)
 
             try:
                 with os.fdopen(descriptor, "w") as file:
@@ -418,29 +421,15 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
         column = location["column"]
 
         if ".jar:" in resource.path:
-            parts = resource.path.split(":")
-            jar_url = urlparse(parts[0])
-            # If the path after the : starts with a forward slash, strip it. ZipFile can't
-            # find the file inside the archive otherwise.
-            path = parts[1][1:] if parts[1].startswith("/") else parts[1]
-            archive = ZipFile(jar_url.path, "r")
-            source_file = archive.read(path)
-            descriptor, path = tempfile.mkstemp()
 
-            try:
-                with os.fdopen(descriptor, "w") as file:
-                    file.write(source_file.decode())
-
-                view = window.open_file(f"{path}:{line}:{column}", flags=flags)
-                view.assign_syntax("Clojure.sublime-syntax")
+            def open_file(filename, file):
+                view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(True)
                 view.set_read_only(True)
 
                 set_view_name(view, resource.path)
 
-                return view
-            finally:
-                os.remove(path)
+            with_jar(resource.path, open_file)
 
         else:
             return window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
