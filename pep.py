@@ -587,17 +587,7 @@ def preview_thingy(window, thingy_type, thingy_data):
     show_output_panel(window)
 
 
-def show_goto_thingy_quick_panel(window, items, preview=True):
-    def on_highlighted(index):
-        if index != -1:
-            item_ = items[index]
-
-            preview_thingy(
-                window,
-                item_["thingy_type"],
-                item_["thingy_data"],
-            )
-
+def show_goto_thingy_quick_panel(window, items):
     def on_done(index):
         if index != -1:
             thingy_data_ = items[index]["thingy_data"]
@@ -608,21 +598,12 @@ def show_goto_thingy_quick_panel(window, items, preview=True):
 
         hide_output_panel(window)
 
-    quick_panel_items_ = [item_["quick_panel_item"] for item_ in items]
+    quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
-    if preview:
-        window.show_quick_panel(
-            quick_panel_items_,
-            on_done,
-            flags=sublime.KEEP_OPEN_ON_FOCUS_LOST,
-            on_highlight=on_highlighted,
-        )
-    else:
-        window.show_quick_panel(
-            quick_panel_items_,
-            on_done,
-            flags=sublime.KEEP_OPEN_ON_FOCUS_LOST,
-        )
+    window.show_quick_panel(
+        quick_panel_items,
+        on_done,
+    )
 
 
 ## ---
@@ -1832,7 +1813,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         items_ = namespace_goto_items(paths_analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_, preview=False)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
@@ -1862,7 +1843,7 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
 
         items_ = keyword_goto_items(paths_analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_, preview=False)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
@@ -1882,7 +1863,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
             if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
         ]
 
-        show_goto_thingy_quick_panel(self.window, items_, preview=False)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
