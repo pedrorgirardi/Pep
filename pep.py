@@ -445,13 +445,12 @@ def var_goto_items(analysis):
     items_ = []
 
     for var_definition in analysis_vindex(analysis).values():
-        ns_ = var_definition.get("ns", "")
-        name_ = var_definition.get("name", "")
-        args_ = var_definition.get("arglist-strs", [])
-        doc_ = var_definition.get("doc", "")
-        doc_ = re.sub(r"^ +", " ", doc_, flags=re.M)
+        var_namespace = var_definition.get("ns", "")
+        var_name = var_definition.get("name", "")
+        var_arglist = var_definition.get("arglist-strs", [])
+        var_filename = var_definition.get("filename", "")
 
-        trigger = f"{ns_}/{name_}"
+        trigger = f"{var_namespace}/{var_name}"
 
         items_.append(
             {
@@ -459,9 +458,9 @@ def var_goto_items(analysis):
                 "thingy_data": var_definition,
                 "quick_panel_item": sublime.QuickPanelItem(
                     trigger,
-                    kind=sublime.KIND_FUNCTION if args_ else sublime.KIND_VARIABLE,
-                    annotation=" ".join(args_),
-                    details=doc_,
+                    kind=sublime.KIND_FUNCTION if var_arglist else sublime.KIND_VARIABLE,
+                    details=" ".join(var_arglist),
+                    annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
                 ),
             }
         )
