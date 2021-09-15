@@ -14,6 +14,7 @@ import pathlib
 
 from urllib.parse import urlparse
 from zipfile import ZipFile
+from collections import defaultdict
 
 import sublime_plugin
 import sublime
@@ -274,6 +275,33 @@ def namespace_definition(analysis, name):
     return analysis_nindex(analysis).get(name)
 
 
+def namespace_index(analysis):
+
+    namespace_definitions = analysis.get("namespace-definitions", [])
+
+    # Namespace definitions indexed by name and file extension.
+    nindex = {}
+
+    for namespace_definition in namespace_definitions:
+        name = namespace_definition.get("name")
+        file_extension = thingy_file_extension(namespace_definition)
+
+        nindex[(name, file_extension)] = namespace_definition
+
+    # Namespace usages indexed by name.
+    nindex_usages = {}
+
+    for namespace_usage in analysis.get("namespace-usages", []):
+        name = namespace_usage.get("to")
+
+        nindex_usages.setdefault(name, []).append(namespace_usage)
+
+    return {
+        "nindex": nindex,
+        "nindex_usages": nindex_usages,
+    }
+
+
 # ---
 
 
@@ -508,6 +536,7 @@ def namespace_goto_items(analysis):
     items_ = []
 
     for namespace_definition in analysis_nindex(analysis).values():
+
         namespace_name = namespace_definition.get("name", "")
         namespace_filename = namespace_definition.get("filename", "")
 
@@ -1049,15 +1078,15 @@ def analyze_paths(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
+        namespace_index_ = namespace_index(analysis)
+
         analysis = {
-            "nindex": nindex,
-            "nindex_usages": nindex_usages,
             "vindex": vindex,
             "vindex_usages": vindex_usages,
             "kindex": kindex,
         }
 
-        set_paths_analysis(project_path(window), analysis)
+        set_paths_analysis(project_path(window), {**analysis, **namespace_index_})
 
         print(
             f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})"
@@ -1391,6 +1420,10 @@ def var_definition_in_region(view, vrn, region):
 
         if _region.contains(region):
             return (_region, var_definition)
+
+
+def thingy_file_extension(thingy_data):
+    return pathlib.Path(thingy_data["filename"]).suffix
 
 
 def thingy_kind(thingy_type, thingy_data):
@@ -1816,6 +1849,8 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     """
 
     def run(self):
+        print("goto ns")
+
         project_path_ = project_path(self.window)
 
         paths_analysis_ = paths_analysis(project_path_)
