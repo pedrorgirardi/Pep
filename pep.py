@@ -2790,6 +2790,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
         if self.modified_time:
+            # Don't analyze when the programmer is editing the view.
+            # (When last modification timestamp is less then threshold.)
             if staled_analysis(self.view) and (time.time() - self.modified_time) > 0.2:
                 analyze_view_async(self.view, on_completed=self.view_analysis_completed)
 
