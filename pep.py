@@ -1638,7 +1638,12 @@ def find_namespace_usages(analysis, namespace_definition):
 
     name = namespace_definition.get("name")
 
-    return analysis_nindex_usages(analysis).get(name, [])
+    return [
+        usage
+        for usage in analysis_nindex_usages(analysis).get(name, [])
+        if file_extension(usage.get("filename"))
+        in {file_extension(namespace_definition.get("filename")), ".cljc"}
+    ]
 
 
 def find_namespace_usages_with_usage(analysis, namespace_usage):
@@ -1648,7 +1653,12 @@ def find_namespace_usages_with_usage(analysis, namespace_usage):
 
     name = namespace_usage.get("to")
 
-    return analysis_nindex_usages(analysis).get(name, [])
+    return [
+        usage
+        for usage in analysis_nindex_usages(analysis).get(name, [])
+        if file_extension(usage.get("filename"))
+        in {file_extension(namespace_usage.get("filename")), ".cljc"}
+    ]
 
 
 def find_namespace_vars_usages(analysis, namespace_usage):
