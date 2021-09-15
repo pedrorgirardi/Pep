@@ -982,7 +982,8 @@ def analyze_classpath(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        namespace_index_ = namespace_index(analysis)
+        # There's no need to index namespace usages in the classpath.
+        namespace_index_ = namespace_index(analysis, nindex_usages=False)
 
         classpath_analysis_ = {
             "vindex": vindex,
