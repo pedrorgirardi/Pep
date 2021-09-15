@@ -953,16 +953,6 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
-        namespace_definitions = analysis.get("namespace-definitions", [])
-
-        # Namespace definitions indexed by name.
-        nindex = {}
-
-        for namespace_definition in namespace_definitions:
-            name = namespace_definition.get("name")
-
-            nindex[name] = namespace_definition
-
         var_definitions = analysis.get("var-definitions", [])
 
         var_usages = analysis.get("var-usages", [])
@@ -986,9 +976,20 @@ def analyze_classpath(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        analysis = {"nindex": nindex, "vindex": vindex, "vindex_usages": vindex_usages}
+        namespace_index_ = namespace_index(analysis)
 
-        set_classpath_analysis(project_path(window), analysis)
+        classpath_analysis_ = {
+            "vindex": vindex,
+            "vindex_usages": vindex_usages,
+        }
+
+        set_classpath_analysis(
+            project_path(window),
+            {
+                **namespace_index_,
+                **classpath_analysis_,
+            },
+        )
 
         print(
             f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
@@ -1038,24 +1039,6 @@ def analyze_paths(window):
             output = {}
 
         analysis = output.get("analysis", {})
-
-        namespace_definitions = analysis.get("namespace-definitions", [])
-
-        # Namespace definitions indexed by name.
-        nindex = {}
-
-        for namespace_definition in namespace_definitions:
-            name = namespace_definition.get("name")
-
-            nindex[name] = namespace_definition
-
-        # Namespace usages indexed by name.
-        nindex_usages = {}
-
-        for namespace_usage in analysis.get("namespace-usages", []):
-            name = namespace_usage.get("to")
-
-            nindex_usages.setdefault(name, []).append(namespace_usage)
 
         # Keywords indexed by name - tuple of namespace and name.
         kindex = {}
@@ -1857,8 +1840,6 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     """
 
     def run(self):
-        print("goto ns")
-
         project_path_ = project_path(self.window)
 
         paths_analysis_ = paths_analysis(project_path_)
