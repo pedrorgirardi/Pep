@@ -512,6 +512,52 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
+def namespace_quick_panel_item(thingy_data):
+    namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
+    namespace_filename = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        namespace_name,
+        kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
+        annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
+    )
+
+
+def var_quick_panel_item(thingy_data):
+    var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
+    var_name = thingy_data.get("name", "")
+    var_arglist = thingy_data.get("arglist-strs", [])
+    var_filename = thingy_data.get("filename", "")
+
+    trigger = f"{var_namespace}/{var_name}"
+
+    if var_arglist:
+        return sublime.QuickPanelItem(
+            trigger,
+            kind=sublime.KIND_FUNCTION,
+            details=" ".join(var_arglist),
+            annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
+        )
+    else:
+        return sublime.QuickPanelItem(
+            trigger,
+            kind=sublime.KIND_VARIABLE,
+            annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
+        )
+
+
+def thingy_quick_panel_item(thingy_type, thingy_data):
+    if (
+        thingy_type == TT_NAMESPACE_DEFINITION
+        or thingy_type == TT_NAMESPACE_USAGE
+        or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+    ):
+        return namespace_quick_panel_item(thingy_data)
+
+    elif thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
+        return var_quick_panel_item(thingy_data)
+
+
 def var_goto_items(analysis):
     items_ = []
 
@@ -527,14 +573,7 @@ def var_goto_items(analysis):
             {
                 "thingy_type": TT_VAR_DEFINITION,
                 "thingy_data": var_definition,
-                "quick_panel_item": sublime.QuickPanelItem(
-                    trigger,
-                    kind=sublime.KIND_FUNCTION
-                    if var_arglist
-                    else sublime.KIND_VARIABLE,
-                    details=" ".join(var_arglist),
-                    annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
-                ),
+                "quick_panel_item": var_quick_panel_item(var_definition),
             }
         )
 
@@ -573,17 +612,6 @@ def keyword_goto_items(analysis):
                 )
 
     return items_
-
-
-def namespace_quick_panel_item(thingy_data):
-    namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
-    namespace_filename = thingy_data.get("filename", "")
-
-    return sublime.QuickPanelItem(
-        namespace_name,
-        kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-        annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
-    )
 
 
 def namespace_goto_items(analysis):
