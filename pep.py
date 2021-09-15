@@ -267,20 +267,6 @@ def var_usages(analysis, name):
     return remove_empty_rows(usages)
 
 
-def namespace_definition(analysis, name):
-    """
-    Returns namespace definition, or None of there isn't one.
-    """
-
-    nindex = analysis_nindex(analysis)
-
-    return (
-        nindex.get((name, ".clj"))
-        or nindex.get((name, ".cljs"))
-        or nindex.get((name, ".cljc"))
-    )
-
-
 def namespace_index(
     analysis,
     nindex=True,
@@ -356,6 +342,10 @@ def namespace_index(
 
 
 # ---
+
+
+def file_extension(filename):
+    return pathlib.Path(filename).suffix
 
 
 def remove_empty_rows(thingies):
@@ -1632,7 +1622,13 @@ def find_var_usages_with_usage(analysis, var_usage):
 def find_namespace_definition(analysis, namespace_usage):
     name = namespace_usage.get("to")
 
-    return namespace_definition(analysis, name)
+    filename = namespace_usage.get("filename")
+
+    nindex = analysis_nindex(analysis)
+
+    file_extension_ = file_extension(filename)
+
+    return nindex.get((name, file_extension_)) or nindex.get((name, ".cljc"))
 
 
 def find_namespace_usages(analysis, namespace_definition):
