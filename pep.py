@@ -575,6 +575,17 @@ def keyword_goto_items(analysis):
     return items_
 
 
+def namespace_quick_panel_item(thingy_data):
+    namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
+    namespace_filename = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        namespace_name,
+        kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
+        annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
+    )
+
+
 def namespace_goto_items(analysis):
     items_ = []
 
@@ -587,11 +598,7 @@ def namespace_goto_items(analysis):
             {
                 "thingy_type": TT_NAMESPACE_DEFINITION,
                 "thingy_data": namespace_definition,
-                "quick_panel_item": sublime.QuickPanelItem(
-                    namespace_name,
-                    kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-                    annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
-                ),
+                "quick_panel_item": namespace_quick_panel_item(namespace_definition),
             }
         )
 
