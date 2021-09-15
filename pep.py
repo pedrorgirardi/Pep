@@ -279,6 +279,7 @@ def namespace_index(
     analysis,
     nindex=True,
     nindex_usages=True,
+    nrn=True,
 ):
     """
     Index namespace definitions and usages.
@@ -287,7 +288,7 @@ def namespace_index(
 
     Usages are indexed by name.
 
-    Returns dict with keys 'nindex' and 'nindex_usages'.
+    Returns dict with keys 'nindex', 'nindex_usages', 'nrn'.
     """
 
     namespace_definitions = analysis.get("namespace-definitions", [])
@@ -295,15 +296,25 @@ def namespace_index(
     # Namespace definitions indexed by name and file extension.
     nindex_ = {}
 
-    if nindex:
+    # Namespace definitions indexed by row.
+    nrn_ = {}
+
+    if nindex or nrn:
         for namespace_definition in namespace_definitions:
-            name = namespace_definition.get("name")
 
-            filename = namespace_definition.get("filename")
+            if nindex:
+                name = namespace_definition.get("name")
 
-            file_extension = pathlib.Path(filename).suffix
+                filename = namespace_definition.get("filename")
 
-            nindex_[(name, file_extension)] = namespace_definition
+                file_extension = pathlib.Path(filename).suffix
+
+                nindex_[(name, file_extension)] = namespace_definition
+
+            if nrn:
+                name_row = namespace_definition.get("name-row")
+
+                nrn_.setdefault(name_row, []).append(namespace_definition)
 
     # Namespace usages indexed by name.
     nindex_usages_ = {}
@@ -317,6 +328,7 @@ def namespace_index(
     return {
         "nindex": nindex_,
         "nindex_usages": nindex_usages_,
+        "nrn": nrn_,
     }
 
 
@@ -899,15 +911,21 @@ def analyze_view(view, on_completed=None):
         "vindex_usages": vindex_usages,
         "vrn": vrn,
         "vrn_usages": vrn_usages,
-        "nrn": nrn,
-        "nrn_usages": nrn_usages,
         "lindex": lindex,
         "lindex_usages": lindex_usages,
         "lrn": lrn,
         "lrn_usages": lrn_usages,
     }
 
-    set_view_analysis(view.id(), view_analysis_)
+    namespace_index_ = namespace_index(analysis)
+
+    set_view_analysis(
+        view.id(),
+        {
+            **namespace_index_,
+            **view_analysis_,
+        },
+    )
 
     if on_completed:
         on_completed(view_analysis_)
@@ -983,7 +1001,11 @@ def analyze_classpath(window):
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
         # There's no need to index namespace usages in the classpath.
-        namespace_index_ = namespace_index(analysis, nindex_usages=False)
+        namespace_index_ = namespace_index(
+            analysis,
+            nindex_usages=False,
+            nrn=False,
+        )
 
         classpath_analysis_ = {
             "vindex": vindex,
@@ -1080,7 +1102,10 @@ def analyze_paths(window):
 
             vindex_usages.setdefault((ns, name), []).append(var_usage)
 
-        namespace_index_ = namespace_index(analysis)
+        namespace_index_ = namespace_index(
+            analysis,
+            nrn=False,
+        )
 
         analysis = {
             "vindex": vindex,
@@ -1797,6 +1822,7 @@ class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
         view_analysis_ = view_analysis(self.view.id())
 
         items_ = [
+            *namespace_goto_items(view_analysis_),
             *var_goto_items(view_analysis_),
             *keyword_goto_items(view_analysis_),
         ]
