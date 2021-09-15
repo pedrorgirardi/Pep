@@ -272,7 +272,13 @@ def namespace_definition(analysis, name):
     Returns namespace definition, or None of there isn't one.
     """
 
-    return analysis_nindex(analysis).get(name)
+    nindex = analysis_nindex(analysis)
+
+    return (
+        nindex.get((name, ".clj"))
+        or nindex.get((name, ".cljs"))
+        or nindex.get((name, ".cljc"))
+    )
 
 
 def namespace_index(
