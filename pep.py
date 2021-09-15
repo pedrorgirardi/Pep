@@ -280,6 +280,7 @@ def namespace_index(
     nindex=True,
     nindex_usages=True,
     nrn=True,
+    nrn_usages=True,
 ):
     """
     Index namespace definitions and usages.
@@ -288,7 +289,7 @@ def namespace_index(
 
     Usages are indexed by name.
 
-    Returns dict with keys 'nindex', 'nindex_usages', 'nrn'.
+    Returns dict with keys 'nindex', 'nindex_usages', 'nrn', 'nrn_usages'.
     """
 
     namespace_definitions = analysis.get("namespace-definitions", [])
@@ -319,16 +320,32 @@ def namespace_index(
     # Namespace usages indexed by name.
     nindex_usages_ = {}
 
-    if nindex_usages:
-        for namespace_usage in analysis.get("namespace-usages", []):
-            name = namespace_usage.get("to")
+    # Var usages indexed by row.
+    nrn_usages_ = {}
 
-            nindex_usages_.setdefault(name, []).append(namespace_usage)
+    if nindex_usages or nrn_usages:
+        for namespace_usage in analysis.get("namespace-usages", []):
+
+            if nindex_usages:
+                name = namespace_usage.get("to")
+
+                nindex_usages_.setdefault(name, []).append(namespace_usage)
+
+            if nrn_usages:
+                name_row = namespace_usage.get("name-row")
+
+                nrn_usages_.setdefault(name_row, []).append(namespace_usage)
+
+                if namespace_usage.get("alias"):
+                    alias_row = namespace_usage.get("alias-row")
+
+                    nrn_usages_.setdefault(alias_row, []).append(namespace_usage)
 
     return {
         "nindex": nindex_,
         "nindex_usages": nindex_usages_,
         "nrn": nrn_,
+        "nrn_usages": nrn_usages_,
     }
 
 
@@ -807,27 +824,6 @@ def analyze_view(view, on_completed=None):
     if is_debug:
         pprint.pp(analysis)
 
-    # Namespace definitions indexed by row.
-    nrn = {}
-
-    for namespace_definition in analysis.get("namespace-definitions", []):
-        name_row = namespace_definition.get("name-row")
-
-        nrn.setdefault(name_row, []).append(namespace_definition)
-
-    # Namespace usages indexed by row.
-    nrn_usages = {}
-
-    for namespace_usage in analysis.get("namespace-usages", []):
-        name_row = namespace_usage.get("name-row")
-
-        nrn_usages.setdefault(name_row, []).append(namespace_usage)
-
-        if namespace_usage.get("alias"):
-            alias_row = namespace_usage.get("alias-row")
-
-            nrn_usages.setdefault(alias_row, []).append(namespace_usage)
-
     # Keywords indexed by row.
     krn = {}
 
@@ -1005,6 +1001,7 @@ def analyze_classpath(window):
             analysis,
             nindex_usages=False,
             nrn=False,
+            nrn_usages=False,
         )
 
         classpath_analysis_ = {
@@ -1105,15 +1102,22 @@ def analyze_paths(window):
         namespace_index_ = namespace_index(
             analysis,
             nrn=False,
+            nrn_usages=False,
         )
 
-        analysis = {
+        paths_analysis = {
             "vindex": vindex,
             "vindex_usages": vindex_usages,
             "kindex": kindex,
         }
 
-        set_paths_analysis(project_path(window), {**analysis, **namespace_index_})
+        set_paths_analysis(
+            project_path(window),
+            {
+                **paths_analysis,
+                **namespace_index_,
+            },
+        )
 
         print(
             f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})"
