@@ -1846,6 +1846,9 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         items_ = namespace_goto_items(paths_analysis_)
 
+        # Sort by namespace name.
+        items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
+
         show_goto_thingy_quick_panel(self.window, items_)
 
 
