@@ -1631,6 +1631,15 @@ def find_namespace_definition(analysis, namespace_usage):
     return nindex.get((name, file_extension_)) or nindex.get((name, ".cljc"))
 
 
+def thingy_file_extensions(thingy_data):
+    if file_extension_ := file_extension(thingy_data.get("filename")):
+        return (
+            {".clj", ".cljs", ".cljc"}
+            if file_extension_ == ".cljc"
+            else {file_extension_, ".cljc"}
+        )
+
+
 def find_namespace_usages(analysis, namespace_definition):
     """
     Returns usages of namespace_definition.
@@ -1642,7 +1651,7 @@ def find_namespace_usages(analysis, namespace_definition):
         usage
         for usage in analysis_nindex_usages(analysis).get(name, [])
         if file_extension(usage.get("filename"))
-        in {file_extension(namespace_definition.get("filename")), ".cljc"}
+        in thingy_file_extensions(namespace_definition)
     ]
 
 
@@ -1657,7 +1666,7 @@ def find_namespace_usages_with_usage(analysis, namespace_usage):
         usage
         for usage in analysis_nindex_usages(analysis).get(name, [])
         if file_extension(usage.get("filename"))
-        in {file_extension(namespace_usage.get("filename")), ".cljc"}
+        in thingy_file_extensions(namespace_usage)
     ]
 
 
