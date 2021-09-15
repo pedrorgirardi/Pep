@@ -275,7 +275,11 @@ def namespace_definition(analysis, name):
     return analysis_nindex(analysis).get(name)
 
 
-def namespace_index(analysis):
+def namespace_index(
+    analysis,
+    nindex=True,
+    nindex_usages=True,
+):
     """
     Index namespace definitions and usages.
 
@@ -289,28 +293,30 @@ def namespace_index(analysis):
     namespace_definitions = analysis.get("namespace-definitions", [])
 
     # Namespace definitions indexed by name and file extension.
-    nindex = {}
+    nindex_ = {}
 
-    for namespace_definition in namespace_definitions:
-        name = namespace_definition.get("name")
+    if nindex:
+        for namespace_definition in namespace_definitions:
+            name = namespace_definition.get("name")
 
-        filename = namespace_definition.get("filename")
+            filename = namespace_definition.get("filename")
 
-        file_extension = pathlib.Path(filename).suffix
+            file_extension = pathlib.Path(filename).suffix
 
-        nindex[(name, file_extension)] = namespace_definition
+            nindex_[(name, file_extension)] = namespace_definition
 
     # Namespace usages indexed by name.
-    nindex_usages = {}
+    nindex_usages_ = {}
 
-    for namespace_usage in analysis.get("namespace-usages", []):
-        name = namespace_usage.get("to")
+    if nindex_usages:
+        for namespace_usage in analysis.get("namespace-usages", []):
+            name = namespace_usage.get("to")
 
-        nindex_usages.setdefault(name, []).append(namespace_usage)
+            nindex_usages_.setdefault(name, []).append(namespace_usage)
 
     return {
-        "nindex": nindex,
-        "nindex_usages": nindex_usages,
+        "nindex": nindex_,
+        "nindex_usages": nindex_usages_,
     }
 
 
