@@ -276,6 +276,15 @@ def namespace_definition(analysis, name):
 
 
 def namespace_index(analysis):
+    """
+    Index namespace definitions and usages.
+
+    Definitions are indexed by name and file extension.
+
+    Usages are indexed by name.
+
+    Returns dict with keys 'nindex' and 'nindex_usages'.
+    """
 
     namespace_definitions = analysis.get("namespace-definitions", [])
 
@@ -284,7 +293,10 @@ def namespace_index(analysis):
 
     for namespace_definition in namespace_definitions:
         name = namespace_definition.get("name")
-        file_extension = thingy_file_extension(namespace_definition)
+
+        filename = namespace_definition.get("filename")
+
+        file_extension = pathlib.Path(filename).suffix
 
         nindex[(name, file_extension)] = namespace_definition
 
@@ -1420,10 +1432,6 @@ def var_definition_in_region(view, vrn, region):
 
         if _region.contains(region):
             return (_region, var_definition)
-
-
-def thingy_file_extension(thingy_data):
-    return pathlib.Path(thingy_data["filename"]).suffix
 
 
 def thingy_kind(thingy_type, thingy_data):
