@@ -1971,10 +1971,10 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         var_key = None
 
-        if thingy_type == "var_definition":
+        if thingy_type == TT_VAR_DEFINITION:
             var_key = (thingy_data.get("ns"), thingy_data.get("name"))
 
-        elif thingy_type == "var_usage":
+        elif thingy_type == TT_VAR_USAGE:
             var_key = (thingy_data.get("to"), thingy_data.get("name"))
 
         project_path_ = project_path(self.view.window())
