@@ -257,6 +257,34 @@ def analysis_nindex_usages(analysis):
     return analysis.get("nindex_usages", {})
 
 
+def namespace_definitions(analysis):
+    """
+    Returns a list of namespace definitions.
+    """
+
+    l = []
+
+    for namespace_definitions in analysis_nindex(analysis).values():
+        for namespace_definition in namespace_definitions:
+            l.append(namespace_definition)
+
+    return l
+
+
+def var_definitions(analysis):
+    """
+    Returns a list of var definitions.
+    """
+
+    l = []
+
+    for var_definitions in analysis_vindex(analysis).values():
+        for var_definition in var_definitions:
+            l.append(var_definition)
+
+    return l
+
+
 def var_usages(analysis, name):
     """
     Returns Var usages for name.
@@ -613,22 +641,21 @@ def thingy_quick_panel_item(thingy_type, thingy_data):
 def var_goto_items(analysis):
     items_ = []
 
-    for var_definitions in analysis_vindex(analysis).values():
-        for var_definition in var_definitions:
-            var_namespace = var_definition.get("ns", "")
-            var_name = var_definition.get("name", "")
-            var_arglist = var_definition.get("arglist-strs", [])
-            var_filename = var_definition.get("filename", "")
+    for var_definition in var_definitions(analysis):
+        var_namespace = var_definition.get("ns", "")
+        var_name = var_definition.get("name", "")
+        var_arglist = var_definition.get("arglist-strs", [])
+        var_filename = var_definition.get("filename", "")
 
-            trigger = f"{var_namespace}/{var_name}"
+        trigger = f"{var_namespace}/{var_name}"
 
-            items_.append(
-                {
-                    "thingy_type": TT_VAR_DEFINITION,
-                    "thingy_data": var_definition,
-                    "quick_panel_item": var_quick_panel_item(var_definition),
-                }
-            )
+        items_.append(
+            {
+                "thingy_type": TT_VAR_DEFINITION,
+                "thingy_data": var_definition,
+                "quick_panel_item": var_quick_panel_item(var_definition),
+            }
+        )
 
     return items_
 
@@ -670,22 +697,18 @@ def keyword_goto_items(analysis):
 def namespace_goto_items(analysis):
     items_ = []
 
-    for namespace_definitions in analysis_nindex(analysis).values():
+    for namespace_definition in namespace_definitions(analysis):
 
-        for namespace_definition in namespace_definitions:
+        namespace_name = namespace_definition.get("name", "")
+        namespace_filename = namespace_definition.get("filename", "")
 
-            namespace_name = namespace_definition.get("name", "")
-            namespace_filename = namespace_definition.get("filename", "")
-
-            items_.append(
-                {
-                    "thingy_type": TT_NAMESPACE_DEFINITION,
-                    "thingy_data": namespace_definition,
-                    "quick_panel_item": namespace_quick_panel_item(
-                        namespace_definition
-                    ),
-                }
-            )
+        items_.append(
+            {
+                "thingy_type": TT_NAMESPACE_DEFINITION,
+                "thingy_data": namespace_definition,
+                "quick_panel_item": namespace_quick_panel_item(namespace_definition),
+            }
+        )
 
     return items_
 
