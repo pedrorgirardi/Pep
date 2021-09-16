@@ -286,7 +286,7 @@ def namespace_index(
 
     namespace_definitions = analysis.get("namespace-definitions", [])
 
-    # Namespace definitions indexed by name and file extension.
+    # Namespace definitions indexed by name.
     nindex_ = {}
 
     # Namespace definitions indexed by row.
@@ -298,11 +298,7 @@ def namespace_index(
             if nindex:
                 name = namespace_definition.get("name")
 
-                filename = namespace_definition.get("filename")
-
-                file_extension = pathlib.Path(filename).suffix
-
-                nindex_[(name, file_extension)] = namespace_definition
+                nindex_.setdefault(name, []).append(namespace_definition)
 
             if nrn:
                 name_row = namespace_definition.get("name-row")
@@ -674,18 +670,22 @@ def keyword_goto_items(analysis):
 def namespace_goto_items(analysis):
     items_ = []
 
-    for namespace_definition in analysis_nindex(analysis).values():
+    for namespace_definitions in analysis_nindex(analysis).values():
 
-        namespace_name = namespace_definition.get("name", "")
-        namespace_filename = namespace_definition.get("filename", "")
+        for namespace_definition in namespace_definitions:
 
-        items_.append(
-            {
-                "thingy_type": TT_NAMESPACE_DEFINITION,
-                "thingy_data": namespace_definition,
-                "quick_panel_item": namespace_quick_panel_item(namespace_definition),
-            }
-        )
+            namespace_name = namespace_definition.get("name", "")
+            namespace_filename = namespace_definition.get("filename", "")
+
+            items_.append(
+                {
+                    "thingy_type": TT_NAMESPACE_DEFINITION,
+                    "thingy_data": namespace_definition,
+                    "quick_panel_item": namespace_quick_panel_item(
+                        namespace_definition
+                    ),
+                }
+            )
 
     return items_
 
@@ -1734,13 +1734,14 @@ def find_var_usages_with_usage(analysis, var_usage):
 def find_namespace_definition(analysis, namespace_usage):
     name = namespace_usage.get("to")
 
-    filename = namespace_usage.get("filename")
-
     nindex = analysis_nindex(analysis)
 
-    file_extension_ = file_extension(filename)
-
-    return nindex.get((name, file_extension_)) or nindex.get((name, ".cljc"))
+    return [
+        namespace_definition
+        for namespace_definition in nindex.get(name, [])
+        if file_extension(namespace_definition.get("filename", ".clj"))
+        in thingy_file_extensions(namespace_usage)
+    ]
 
 
 def find_namespace_usages(analysis, namespace_definition):
@@ -1750,10 +1751,12 @@ def find_namespace_usages(analysis, namespace_definition):
 
     name = namespace_definition.get("name")
 
+    nindex_usages = analysis_nindex_usages(analysis)
+
     return [
-        usage
-        for usage in analysis_nindex_usages(analysis).get(name, [])
-        if file_extension(usage.get("filename"))
+        namespace_usage
+        for namespace_usage in nindex_usages.get(name, [])
+        if file_extension(namespace_usage.get("filename"))
         in thingy_file_extensions(namespace_definition)
     ]
 
