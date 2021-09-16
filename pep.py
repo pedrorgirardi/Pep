@@ -383,8 +383,8 @@ def var_index(
 
             if vindex:
                 ns = var_definition.get("ns")
+
                 name = var_definition.get("name")
-                filename = var_definition.get("filename")
 
                 vindex_.setdefault((ns, name), []).append(var_definition)
 
@@ -404,19 +404,20 @@ def var_index(
 
             if vindex_usages:
                 ns = var_usage.get("to")
+
                 name = var_usage.get("name")
 
                 vindex_usages_.setdefault((ns, name), []).append(var_usage)
 
-            if vrn_usages_:
+            if vrn_usages:
                 name_row = var_usage.get("name-row")
 
                 vrn_usages_.setdefault(name_row, []).append(var_usage)
 
     return {
         "vindex": vindex_,
-        "vindex_usages": vindex_usages_,
         "vrn": vrn_,
+        "vindex_usages": vindex_usages_,
         "vrn_usages": vrn_usages_,
     }
 
