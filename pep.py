@@ -167,7 +167,7 @@ def analysis_vindex(analysis):
 
 def analysis_vindex_usages(analysis):
     """
-    Returns a dictionary of Var usages by qualified name.
+    Returns a dictionary of Var usages by (namespace, name).
 
     'vindex_usages' stands for 'Var index'.
     """
@@ -338,6 +338,62 @@ def namespace_index(
         "nindex_usages": nindex_usages_,
         "nrn": nrn_,
         "nrn_usages": nrn_usages_,
+    }
+
+
+def var_index(
+    analysis,
+    vindex=True,
+    vindex_usages=True,
+    vrn=True,
+    vrn_usages=True,
+):
+    # Vars indexed by row.
+    vrn_ = {}
+
+    # Vars indexed by namespace and name.
+    vindex_ = {}
+
+    if vindex or vrn:
+        for var_definition in analysis.get("var-definitions", []):
+
+            if vindex:
+                ns = var_definition.get("ns")
+                name = var_definition.get("name")
+                filename = var_definition.get("filename")
+
+                vindex_.setdefault((ns, name), []).append(var_definition)
+
+            if vrn:
+                name_row = var_definition.get("name-row")
+
+                vrn_.setdefault(name_row, []).append(var_definition)
+
+    # Var usages indexed by row.
+    vrn_usages_ = {}
+
+    # Var usages indexed by name - var name to a set of var usages.
+    vindex_usages_ = {}
+
+    if vindex_usages or vrn_usages:
+        for var_usage in analysis.get("var-usages", []):
+
+            if vindex_usages:
+                ns = var_usage.get("to")
+                name = var_usage.get("name")
+
+                vindex_usages_.setdefault((ns, name), []).append(var_usage)
+
+            if vrn_usages_:
+                name_row = var_usage.get("name-row")
+
+                vrn_usages_.setdefault(name_row, []).append(var_usage)
+
+    return {
+        "vindex": vindex_,
+        "vindex_usages": vindex_usages_,
+        "vrn": vrn_,
+        "vrn_usages": vrn_usages_,
     }
 
 
@@ -561,21 +617,22 @@ def thingy_quick_panel_item(thingy_type, thingy_data):
 def var_goto_items(analysis):
     items_ = []
 
-    for var_definition in analysis_vindex(analysis).values():
-        var_namespace = var_definition.get("ns", "")
-        var_name = var_definition.get("name", "")
-        var_arglist = var_definition.get("arglist-strs", [])
-        var_filename = var_definition.get("filename", "")
+    for var_definitions in analysis_vindex(analysis).values():
+        for var_definition in var_definitions:
+            var_namespace = var_definition.get("ns", "")
+            var_name = var_definition.get("name", "")
+            var_arglist = var_definition.get("arglist-strs", [])
+            var_filename = var_definition.get("filename", "")
 
-        trigger = f"{var_namespace}/{var_name}"
+            trigger = f"{var_namespace}/{var_name}"
 
-        items_.append(
-            {
-                "thingy_type": TT_VAR_DEFINITION,
-                "thingy_data": var_definition,
-                "quick_panel_item": var_quick_panel_item(var_definition),
-            }
-        )
+            items_.append(
+                {
+                    "thingy_type": TT_VAR_DEFINITION,
+                    "thingy_data": var_definition,
+                    "quick_panel_item": var_quick_panel_item(var_definition),
+                }
+            )
 
     return items_
 
@@ -934,10 +991,6 @@ def analyze_view(view, on_completed=None):
         "summary": output.get("summary", {}),
         "kindex": kindex,
         "krn": krn,
-        "vindex": vindex,
-        "vindex_usages": vindex_usages,
-        "vrn": vrn,
-        "vrn_usages": vrn_usages,
         "lindex": lindex,
         "lindex_usages": lindex_usages,
         "lrn": lrn,
@@ -946,10 +999,13 @@ def analyze_view(view, on_completed=None):
 
     namespace_index_ = namespace_index(analysis)
 
+    var_index_ = var_index(analysis)
+
     set_view_analysis(
         view.id(),
         {
             **namespace_index_,
+            **var_index_,
             **view_analysis_,
         },
     )
@@ -1484,6 +1540,18 @@ def var_definition_in_region(view, vrn, region):
             return (_region, var_definition)
 
 
+# ---
+
+
+def thingy_file_extensions(thingy_data):
+    if file_extension_ := file_extension(thingy_data.get("filename")):
+        return (
+            {".clj", ".cljs", ".cljc"}
+            if file_extension_ == ".cljc"
+            else {file_extension_, ".cljc"}
+        )
+
+
 def thingy_kind(thingy_type, thingy_data):
     """
     Mapping of thingy type to kind.
@@ -1637,9 +1705,18 @@ def find_local_usages(analysis, local_binding_or_usage):
 
 
 def find_var_definition(analysis, var_usage):
-    var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
+    namespace = var_usage.get("to")
 
-    return analysis_vindex(analysis).get(var_qualified_name)
+    name = var_usage.get("name")
+
+    vindex = analysis_vindex(analysis)
+
+    return [
+        var_definition
+        for var_definition in vindex.get((namespace, name), [])
+        if file_extension(var_definition.get("filename"))
+        in thingy_file_extensions(var_usage)
+    ]
 
 
 def find_var_usages(analysis, var_definition):
@@ -1664,15 +1741,6 @@ def find_namespace_definition(analysis, namespace_usage):
     file_extension_ = file_extension(filename)
 
     return nindex.get((name, file_extension_)) or nindex.get((name, ".cljc"))
-
-
-def thingy_file_extensions(thingy_data):
-    if file_extension_ := file_extension(thingy_data.get("filename")):
-        return (
-            {".clj", ".cljs", ".cljc"}
-            if file_extension_ == ".cljc"
-            else {file_extension_, ".cljc"}
-        )
 
 
 def find_namespace_usages(analysis, namespace_definition):
@@ -1754,7 +1822,7 @@ def find_thingy_regions(view, analysis, thingy):
 
     regions = []
 
-    if thingy_type == "keyword":
+    if thingy_type == TT_KEYWORD:
         # It's a little more involved if it's a 'keys destructuring'.
         # Keys names become locals, so their usages must be highligthed.
         if thingy_data.get("keys-destructuring"):
@@ -1781,7 +1849,7 @@ def find_thingy_regions(view, analysis, thingy):
             for keyword in keywords:
                 regions.append(keyword_region(view, keyword))
 
-    elif thingy_type == "local_binding":
+    elif thingy_type == TT_LOCAL_BINDING:
         regions.append(local_binding_region(view, thingy_data))
 
         local_usages = find_local_usages(analysis, thingy_data)
@@ -1789,7 +1857,7 @@ def find_thingy_regions(view, analysis, thingy):
         for local_usage in local_usages:
             regions.append(local_usage_region(view, local_usage))
 
-    elif thingy_type == "local_usage":
+    elif thingy_type == TT_LOCAL_USAGE:
         # It's possible to have a local usage without a local binding.
         # (It looks like a clj-kondo bug.)
         if local_binding := find_local_binding(analysis, thingy_data):
@@ -1800,7 +1868,7 @@ def find_thingy_regions(view, analysis, thingy):
         for local_usage in local_usages:
             regions.append(local_usage_region(view, local_usage))
 
-    elif thingy_type == "var_definition":
+    elif thingy_type == TT_VAR_DEFINITION:
         regions.append(var_definition_region(view, thingy_data))
 
         var_usages = find_var_usages(analysis, thingy_data)
@@ -1808,7 +1876,7 @@ def find_thingy_regions(view, analysis, thingy):
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
 
-    elif thingy_type == "var_usage":
+    elif thingy_type == TT_VAR_USAGE:
         if var_definition := find_var_definition(analysis, thingy_data):
             regions.append(var_definition_region(view, var_definition))
 
@@ -1817,10 +1885,10 @@ def find_thingy_regions(view, analysis, thingy):
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
 
-    elif thingy_type == "namespace_definition":
+    elif thingy_type == TT_NAMESPACE_DEFINITION:
         regions.append(namespace_definition_region(view, thingy_data))
 
-    elif thingy_type == "namespace_usage":
+    elif thingy_type == TT_NAMESPACE_USAGE:
         regions.append(namespace_usage_region(view, thingy_data))
 
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
@@ -1829,7 +1897,7 @@ def find_thingy_regions(view, analysis, thingy):
             if region := var_usage_namespace_region(view, var_usage):
                 regions.append(region)
 
-    elif thingy_type == "namespace_usage_alias":
+    elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
         regions.append(namespace_usage_alias_region(view, thingy_data))
 
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
