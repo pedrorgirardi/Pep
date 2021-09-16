@@ -951,36 +951,6 @@ def analyze_view(view, on_completed=None):
 
         kindex.setdefault((ns, name), []).append(keyword)
 
-    # Vars indexed by row.
-    vrn = {}
-
-    # Vars indexed by name - tuple of namespace and name.
-    vindex = {}
-
-    for var_definition in analysis.get("var-definitions", []):
-        ns = var_definition.get("ns")
-        name = var_definition.get("name")
-        name_row = var_definition.get("name-row")
-
-        vrn.setdefault(name_row, []).append(var_definition)
-
-        vindex[(ns, name)] = var_definition
-
-    # Var usages indexed by row.
-    vrn_usages = {}
-
-    # Var usages indexed by name - var name to a set of var usages.
-    vindex_usages = {}
-
-    for var_usage in analysis.get("var-usages", []):
-        ns = var_usage.get("to")
-        name = var_usage.get("name")
-        name_row = var_usage.get("name-row")
-
-        vindex_usages.setdefault((ns, name), []).append(var_usage)
-
-        vrn_usages.setdefault(name_row, []).append(var_usage)
-
     # Locals indexed by row.
     lrn = {}
 
@@ -1084,29 +1054,6 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
-        var_definitions = analysis.get("var-definitions", [])
-
-        var_usages = analysis.get("var-usages", [])
-
-        # Var definitions indexed by (namespace, name) tuple.
-        vindex = {}
-
-        for var_definition in var_definitions:
-            ns = var_definition.get("ns")
-            name = var_definition.get("name")
-
-            vindex[(ns, name)] = var_definition
-
-        # Var usages indexed by name - var name to a set of var usages.
-        vindex_usages = {}
-
-        for var_usage in var_usages:
-            ns = var_usage.get("to")
-            name = var_usage.get("name")
-            name_row = var_usage.get("name-row")
-
-            vindex_usages.setdefault((ns, name), []).append(var_usage)
-
         # There's no need to index namespace usages in the classpath.
         namespace_index_ = namespace_index(
             analysis,
@@ -1115,16 +1062,19 @@ def analyze_classpath(window):
             nrn_usages=False,
         )
 
-        classpath_analysis_ = {
-            "vindex": vindex,
-            "vindex_usages": vindex_usages,
-        }
+        # There's no need to index var usages in the classpath.
+        var_index_ = var_index(
+            analysis,
+            vindex_usages=False,
+            vrn=False,
+            vrn_usages=False,
+        )
 
         set_classpath_analysis(
             project_path(window),
             {
                 **namespace_index_,
-                **classpath_analysis_,
+                **var_index_,
             },
         )
 
@@ -1187,38 +1137,19 @@ def analyze_paths(window):
 
             kindex.setdefault((ns, name), []).append(keyword)
 
-        var_definitions = analysis.get("var-definitions", [])
-
-        var_usages = analysis.get("var-usages", [])
-
-        # Var definitions indexed by (namespace, name) tuple.
-        vindex = {}
-
-        for var_definition in var_definitions:
-            ns = var_definition.get("ns")
-            name = var_definition.get("name")
-
-            vindex[(ns, name)] = var_definition
-
-        # Var usages indexed by name - var name to a set of var usages.
-        vindex_usages = {}
-
-        for var_usage in var_usages:
-            ns = var_usage.get("to")
-            name = var_usage.get("name")
-            name_row = var_usage.get("name-row")
-
-            vindex_usages.setdefault((ns, name), []).append(var_usage)
-
         namespace_index_ = namespace_index(
             analysis,
             nrn=False,
             nrn_usages=False,
         )
 
+        var_index_ = var_index(
+            analysis,
+            vrn=False,
+            vrn_usages=False,
+        )
+
         paths_analysis = {
-            "vindex": vindex,
-            "vindex_usages": vindex_usages,
             "kindex": kindex,
         }
 
@@ -1227,6 +1158,7 @@ def analyze_paths(window):
             {
                 **paths_analysis,
                 **namespace_index_,
+                **var_index_,
             },
         )
 
