@@ -1661,18 +1661,21 @@ def find_local_usages(analysis, local_binding_or_usage):
 
 
 def find_var_definition(analysis, var_usage):
+    """
+    Returns a var definition thingy data or None.
+    """
+
     namespace = var_usage.get("to")
 
     name = var_usage.get("name")
 
     vindex = analysis_vindex(analysis)
 
-    return [
-        var_definition
-        for var_definition in vindex.get((namespace, name), [])
-        if file_extension(var_definition.get("filename"))
-        in thingy_file_extensions(var_usage)
-    ]
+    file_extensions = thingy_file_extensions(var_usage)
+
+    for var_definition in vindex.get((namespace, name), []):
+        if file_extension(var_definition.get("filename")) in file_extensions:
+            return var_definition
 
 
 def find_var_usages(analysis, var_definition):
