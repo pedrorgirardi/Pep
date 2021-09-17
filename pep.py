@@ -1500,6 +1500,14 @@ def var_definition_in_region(view, vrn, region):
 
 
 def thingy_file_extensions(thingy_data):
+    """
+    Returns a set of file extensions in which a thingy might be defined.
+
+    Thingy in a cljc file might be defined in clj, cljs and cljc.
+
+    Thingy in clj or cljs might be defined in cljc or same as its file extension.
+    """
+
     if file_extension_ := file_extension(thingy_data.get("filename")):
         return (
             {".clj", ".cljs", ".cljc"}
