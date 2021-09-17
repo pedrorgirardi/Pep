@@ -2069,13 +2069,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         thingy_type, _, thingy_data = thingy
 
-        var_key = None
-
-        if thingy_type == TT_VAR_DEFINITION:
-            var_key = (thingy_data.get("ns"), thingy_data.get("name"))
-
-        elif thingy_type == TT_VAR_USAGE:
-            var_key = (thingy_data.get("to"), thingy_data.get("name"))
+        definition = None
 
         project_path_ = project_path(self.view.window())
 
@@ -2083,13 +2077,23 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
-        # Try to find Var definition in view first,
-        # only if not found try paths and project analysis.
-        definition = (
-            analysis_vindex(view_analysis_).get(var_key)
-            or analysis_vindex(paths_analysis_).get(var_key)
-            or analysis_vindex(classpath_analysis_).get(var_key)
-        )
+        if thingy_type == TT_VAR_DEFINITION:
+            var_key = (thingy_data.get("ns"), thingy_data.get("name"))
+
+            definition = (
+                analysis_vindex(view_analysis_).get(var_key)
+                or analysis_vindex(paths_analysis_).get(var_key)
+                or analysis_vindex(classpath_analysis_).get(var_key)
+            )
+
+        elif thingy_type == TT_VAR_USAGE:
+            # Try to find Var definition in view first,
+            # only if not found try paths and project analysis.
+            definition = (
+                find_var_definition(view_analysis_, thingy_data)
+                or find_var_definition(paths_analysis_, thingy_data)
+                or find_var_definition(classpath_analysis_, thingy_data)
+            )
 
         if definition:
             if is_debug:
