@@ -2095,9 +2095,18 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 or find_var_definition(classpath_analysis_, thingy_data)
             )
 
+        elif (
+            thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+        ):
+            definition = (
+                find_namespace_definition(view_analysis_, thingy_data)
+                or find_namespace_definition(paths_analysis_, thingy_data)
+                or find_namespace_definition(classpath_analysis_, thingy_data)
+            )
+
         if definition:
             if is_debug:
-                print("(Pep) Var definition:\n", pprint.pformat(definition))
+                print("(Pep) Definition:\n", pprint.pformat(definition))
 
             # Name
             # ---
@@ -2110,9 +2119,11 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             filename = definition.get("filename")
 
+            link = f"{ns}/{name}" if ns else name
+
             name_minihtml = f"""
             <p class="name">
-                <a href="{filename}">{ns}/{name}</a>
+                <a href="{filename}">{link}</a>
             </p>
             """
 
