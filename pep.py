@@ -14,6 +14,7 @@ import pathlib
 
 from urllib.parse import urlparse
 from zipfile import ZipFile
+from collections import defaultdict
 
 import sublime_plugin
 import sublime
@@ -166,7 +167,7 @@ def analysis_vindex(analysis):
 
 def analysis_vindex_usages(analysis):
     """
-    Returns a dictionary of Var usages by qualified name.
+    Returns a dictionary of Var usages by (namespace, name).
 
     'vindex_usages' stands for 'Var index'.
     """
@@ -256,6 +257,34 @@ def analysis_nindex_usages(analysis):
     return analysis.get("nindex_usages", {})
 
 
+def namespace_definitions(analysis):
+    """
+    Returns a list of namespace definitions.
+    """
+
+    l = []
+
+    for namespace_definitions in analysis_nindex(analysis).values():
+        for namespace_definition in namespace_definitions:
+            l.append(namespace_definition)
+
+    return l
+
+
+def var_definitions(analysis):
+    """
+    Returns a list of var definitions.
+    """
+
+    l = []
+
+    for var_definitions in analysis_vindex(analysis).values():
+        for var_definition in var_definitions:
+            l.append(var_definition)
+
+    return l
+
+
 def var_usages(analysis, name):
     """
     Returns Var usages for name.
@@ -266,15 +295,138 @@ def var_usages(analysis, name):
     return remove_empty_rows(usages)
 
 
-def namespace_definition(analysis, name):
+def namespace_index(
+    analysis,
+    nindex=True,
+    nindex_usages=True,
+    nrn=True,
+    nrn_usages=True,
+):
     """
-    Returns namespace definition, or None of there isn't one.
+    Index namespace definitions and usages.
+
+    Definitions are indexed by name and file extension.
+
+    Usages are indexed by name.
+
+    Returns dict with keys 'nindex', 'nindex_usages', 'nrn', 'nrn_usages'.
     """
 
-    return analysis_nindex(analysis).get(name)
+    namespace_definitions = analysis.get("namespace-definitions", [])
+
+    # Namespace definitions indexed by name.
+    nindex_ = {}
+
+    # Namespace definitions indexed by row.
+    nrn_ = {}
+
+    if nindex or nrn:
+        for namespace_definition in namespace_definitions:
+
+            if nindex:
+                name = namespace_definition.get("name")
+
+                nindex_.setdefault(name, []).append(namespace_definition)
+
+            if nrn:
+                name_row = namespace_definition.get("name-row")
+
+                nrn_.setdefault(name_row, []).append(namespace_definition)
+
+    # Namespace usages indexed by name.
+    nindex_usages_ = {}
+
+    # Var usages indexed by row.
+    nrn_usages_ = {}
+
+    if nindex_usages or nrn_usages:
+        for namespace_usage in analysis.get("namespace-usages", []):
+
+            if nindex_usages:
+                name = namespace_usage.get("to")
+
+                nindex_usages_.setdefault(name, []).append(namespace_usage)
+
+            if nrn_usages:
+                name_row = namespace_usage.get("name-row")
+
+                nrn_usages_.setdefault(name_row, []).append(namespace_usage)
+
+                if namespace_usage.get("alias"):
+                    alias_row = namespace_usage.get("alias-row")
+
+                    nrn_usages_.setdefault(alias_row, []).append(namespace_usage)
+
+    return {
+        "nindex": nindex_,
+        "nindex_usages": nindex_usages_,
+        "nrn": nrn_,
+        "nrn_usages": nrn_usages_,
+    }
+
+
+def var_index(
+    analysis,
+    vindex=True,
+    vindex_usages=True,
+    vrn=True,
+    vrn_usages=True,
+):
+    # Vars indexed by row.
+    vrn_ = {}
+
+    # Vars indexed by namespace and name.
+    vindex_ = {}
+
+    if vindex or vrn:
+        for var_definition in analysis.get("var-definitions", []):
+
+            if vindex:
+                ns = var_definition.get("ns")
+
+                name = var_definition.get("name")
+
+                vindex_.setdefault((ns, name), []).append(var_definition)
+
+            if vrn:
+                name_row = var_definition.get("name-row")
+
+                vrn_.setdefault(name_row, []).append(var_definition)
+
+    # Var usages indexed by row.
+    vrn_usages_ = {}
+
+    # Var usages indexed by name - var name to a set of var usages.
+    vindex_usages_ = {}
+
+    if vindex_usages or vrn_usages:
+        for var_usage in analysis.get("var-usages", []):
+
+            if vindex_usages:
+                ns = var_usage.get("to")
+
+                name = var_usage.get("name")
+
+                vindex_usages_.setdefault((ns, name), []).append(var_usage)
+
+            if vrn_usages:
+                name_row = var_usage.get("name-row")
+
+                vrn_usages_.setdefault(name_row, []).append(var_usage)
+
+    return {
+        "vindex": vindex_,
+        "vrn": vrn_,
+        "vindex_usages": vindex_usages_,
+        "vrn_usages": vrn_usages_,
+    }
 
 
 # ---
+
+
+def file_extension(filename):
+    return pathlib.Path(filename).suffix
 
 
 def remove_empty_rows(thingies):
@@ -441,10 +593,56 @@ def goto_definition(window, definition, side_by_side=False):
     goto(window, parse_location(definition), flags=flags)
 
 
+def namespace_quick_panel_item(thingy_data):
+    namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
+    namespace_filename = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        namespace_name,
+        kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
+        annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
+    )
+
+
+def var_quick_panel_item(thingy_data):
+    var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
+    var_name = thingy_data.get("name", "")
+    var_arglist = thingy_data.get("arglist-strs", [])
+    var_filename = thingy_data.get("filename", "")
+
+    trigger = f"{var_namespace}/{var_name}"
+
+    if var_arglist:
+        return sublime.QuickPanelItem(
+            trigger,
+            kind=sublime.KIND_FUNCTION,
+            details=" ".join(var_arglist),
+            annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
+        )
+    else:
+        return sublime.QuickPanelItem(
+            trigger,
+            kind=sublime.KIND_VARIABLE,
+            annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
+        )
+
+
+def thingy_quick_panel_item(thingy_type, thingy_data):
+    if (
+        thingy_type == TT_NAMESPACE_DEFINITION
+        or thingy_type == TT_NAMESPACE_USAGE
+        or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+    ):
+        return namespace_quick_panel_item(thingy_data)
+
+    elif thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
+        return var_quick_panel_item(thingy_data)
+
+
 def var_goto_items(analysis):
     items_ = []
 
-    for var_definition in analysis_vindex(analysis).values():
+    for var_definition in var_definitions(analysis):
         var_namespace = var_definition.get("ns", "")
         var_name = var_definition.get("name", "")
         var_arglist = var_definition.get("arglist-strs", [])
@@ -456,14 +654,7 @@ def var_goto_items(analysis):
             {
                 "thingy_type": TT_VAR_DEFINITION,
                 "thingy_data": var_definition,
-                "quick_panel_item": sublime.QuickPanelItem(
-                    trigger,
-                    kind=sublime.KIND_FUNCTION
-                    if var_arglist
-                    else sublime.KIND_VARIABLE,
-                    details=" ".join(var_arglist),
-                    annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
-                ),
+                "quick_panel_item": var_quick_panel_item(var_definition),
             }
         )
 
@@ -507,7 +698,8 @@ def keyword_goto_items(analysis):
 def namespace_goto_items(analysis):
     items_ = []
 
-    for namespace_definition in analysis_nindex(analysis).values():
+    for namespace_definition in namespace_definitions(analysis):
+
         namespace_name = namespace_definition.get("name", "")
         namespace_filename = namespace_definition.get("filename", "")
 
@@ -515,11 +707,7 @@ def namespace_goto_items(analysis):
             {
                 "thingy_type": TT_NAMESPACE_DEFINITION,
                 "thingy_data": namespace_definition,
-                "quick_panel_item": sublime.QuickPanelItem(
-                    namespace_name,
-                    kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-                    annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
-                ),
+                "quick_panel_item": namespace_quick_panel_item(namespace_definition),
             }
         )
 
@@ -748,27 +936,6 @@ def analyze_view(view, on_completed=None):
     if is_debug:
         pprint.pp(analysis)
 
-    # Namespace definitions indexed by row.
-    nrn = {}
-
-    for namespace_definition in analysis.get("namespace-definitions", []):
-        name_row = namespace_definition.get("name-row")
-
-        nrn.setdefault(name_row, []).append(namespace_definition)
-
-    # Namespace usages indexed by row.
-    nrn_usages = {}
-
-    for namespace_usage in analysis.get("namespace-usages", []):
-        name_row = namespace_usage.get("name-row")
-
-        nrn_usages.setdefault(name_row, []).append(namespace_usage)
-
-        if namespace_usage.get("alias"):
-            alias_row = namespace_usage.get("alias-row")
-
-            nrn_usages.setdefault(alias_row, []).append(namespace_usage)
-
     # Keywords indexed by row.
     krn = {}
 
@@ -783,36 +950,6 @@ def analyze_view(view, on_completed=None):
         krn.setdefault(row, []).append(keyword)
 
         kindex.setdefault((ns, name), []).append(keyword)
-
-    # Vars indexed by row.
-    vrn = {}
-
-    # Vars indexed by name - tuple of namespace and name.
-    vindex = {}
-
-    for var_definition in analysis.get("var-definitions", []):
-        ns = var_definition.get("ns")
-        name = var_definition.get("name")
-        name_row = var_definition.get("name-row")
-
-        vrn.setdefault(name_row, []).append(var_definition)
-
-        vindex[(ns, name)] = var_definition
-
-    # Var usages indexed by row.
-    vrn_usages = {}
-
-    # Var usages indexed by name - var name to a set of var usages.
-    vindex_usages = {}
-
-    for var_usage in analysis.get("var-usages", []):
-        ns = var_usage.get("to")
-        name = var_usage.get("name")
-        name_row = var_usage.get("name-row")
-
-        vindex_usages.setdefault((ns, name), []).append(var_usage)
-
-        vrn_usages.setdefault(name_row, []).append(var_usage)
 
     # Locals indexed by row.
     lrn = {}
@@ -848,19 +985,24 @@ def analyze_view(view, on_completed=None):
         "summary": output.get("summary", {}),
         "kindex": kindex,
         "krn": krn,
-        "vindex": vindex,
-        "vindex_usages": vindex_usages,
-        "vrn": vrn,
-        "vrn_usages": vrn_usages,
-        "nrn": nrn,
-        "nrn_usages": nrn_usages,
         "lindex": lindex,
         "lindex_usages": lindex_usages,
         "lrn": lrn,
         "lrn_usages": lrn_usages,
     }
 
-    set_view_analysis(view.id(), view_analysis_)
+    namespace_index_ = namespace_index(analysis)
+
+    var_index_ = var_index(analysis)
+
+    set_view_analysis(
+        view.id(),
+        {
+            **namespace_index_,
+            **var_index_,
+            **view_analysis_,
+        },
+    )
 
     if on_completed:
         on_completed(view_analysis_)
@@ -912,42 +1054,29 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
-        namespace_definitions = analysis.get("namespace-definitions", [])
+        # There's no need to index namespace usages in the classpath.
+        namespace_index_ = namespace_index(
+            analysis,
+            nindex_usages=False,
+            nrn=False,
+            nrn_usages=False,
+        )
 
-        # Namespace definitions indexed by name.
-        nindex = {}
+        # There's no need to index var usages in the classpath.
+        var_index_ = var_index(
+            analysis,
+            vindex_usages=False,
+            vrn=False,
+            vrn_usages=False,
+        )
 
-        for namespace_definition in namespace_definitions:
-            name = namespace_definition.get("name")
-
-            nindex[name] = namespace_definition
-
-        var_definitions = analysis.get("var-definitions", [])
-
-        var_usages = analysis.get("var-usages", [])
-
-        # Var definitions indexed by (namespace, name) tuple.
-        vindex = {}
-
-        for var_definition in var_definitions:
-            ns = var_definition.get("ns")
-            name = var_definition.get("name")
-
-            vindex[(ns, name)] = var_definition
-
-        # Var usages indexed by name - var name to a set of var usages.
-        vindex_usages = {}
-
-        for var_usage in var_usages:
-            ns = var_usage.get("to")
-            name = var_usage.get("name")
-            name_row = var_usage.get("name-row")
-
-            vindex_usages.setdefault((ns, name), []).append(var_usage)
-
-        analysis = {"nindex": nindex, "vindex": vindex, "vindex_usages": vindex_usages}
-
-        set_classpath_analysis(project_path(window), analysis)
+        set_classpath_analysis(
+            project_path(window),
+            {
+                **namespace_index_,
+                **var_index_,
+            },
+        )
 
         print(
             f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
@@ -998,24 +1127,6 @@ def analyze_paths(window):
 
         analysis = output.get("analysis", {})
 
-        namespace_definitions = analysis.get("namespace-definitions", [])
-
-        # Namespace definitions indexed by name.
-        nindex = {}
-
-        for namespace_definition in namespace_definitions:
-            name = namespace_definition.get("name")
-
-            nindex[name] = namespace_definition
-
-        # Namespace usages indexed by name.
-        nindex_usages = {}
-
-        for namespace_usage in analysis.get("namespace-usages", []):
-            name = namespace_usage.get("to")
-
-            nindex_usages.setdefault(name, []).append(namespace_usage)
-
         # Keywords indexed by name - tuple of namespace and name.
         kindex = {}
 
@@ -1026,38 +1137,30 @@ def analyze_paths(window):
 
             kindex.setdefault((ns, name), []).append(keyword)
 
-        var_definitions = analysis.get("var-definitions", [])
+        namespace_index_ = namespace_index(
+            analysis,
+            nrn=False,
+            nrn_usages=False,
+        )
 
-        var_usages = analysis.get("var-usages", [])
+        var_index_ = var_index(
+            analysis,
+            vrn=False,
+            vrn_usages=False,
+        )
 
-        # Var definitions indexed by (namespace, name) tuple.
-        vindex = {}
-
-        for var_definition in var_definitions:
-            ns = var_definition.get("ns")
-            name = var_definition.get("name")
-
-            vindex[(ns, name)] = var_definition
-
-        # Var usages indexed by name - var name to a set of var usages.
-        vindex_usages = {}
-
-        for var_usage in var_usages:
-            ns = var_usage.get("to")
-            name = var_usage.get("name")
-            name_row = var_usage.get("name-row")
-
-            vindex_usages.setdefault((ns, name), []).append(var_usage)
-
-        analysis = {
-            "nindex": nindex,
-            "nindex_usages": nindex_usages,
-            "vindex": vindex,
-            "vindex_usages": vindex_usages,
+        paths_analysis = {
             "kindex": kindex,
         }
 
-        set_paths_analysis(project_path(window), analysis)
+        set_paths_analysis(
+            project_path(window),
+            {
+                **paths_analysis,
+                **namespace_index_,
+                **var_index_,
+            },
+        )
 
         print(
             f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})"
@@ -1393,6 +1496,18 @@ def var_definition_in_region(view, vrn, region):
             return (_region, var_definition)
 
 
+# ---
+
+
+def thingy_file_extensions(thingy_data):
+    if file_extension_ := file_extension(thingy_data.get("filename")):
+        return (
+            {".clj", ".cljs", ".cljc"}
+            if file_extension_ == ".cljc"
+            else {file_extension_, ".cljc"}
+        )
+
+
 def thingy_kind(thingy_type, thingy_data):
     """
     Mapping of thingy type to kind.
@@ -1546,9 +1661,18 @@ def find_local_usages(analysis, local_binding_or_usage):
 
 
 def find_var_definition(analysis, var_usage):
-    var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
+    namespace = var_usage.get("to")
 
-    return analysis_vindex(analysis).get(var_qualified_name)
+    name = var_usage.get("name")
+
+    vindex = analysis_vindex(analysis)
+
+    return [
+        var_definition
+        for var_definition in vindex.get((namespace, name), [])
+        if file_extension(var_definition.get("filename"))
+        in thingy_file_extensions(var_usage)
+    ]
 
 
 def find_var_usages(analysis, var_definition):
@@ -1566,7 +1690,14 @@ def find_var_usages_with_usage(analysis, var_usage):
 def find_namespace_definition(analysis, namespace_usage):
     name = namespace_usage.get("to")
 
-    return namespace_definition(analysis, name)
+    nindex = analysis_nindex(analysis)
+
+    return [
+        namespace_definition
+        for namespace_definition in nindex.get(name, [])
+        if file_extension(namespace_definition.get("filename", ".clj"))
+        in thingy_file_extensions(namespace_usage)
+    ]
 
 
 def find_namespace_usages(analysis, namespace_definition):
@@ -1576,7 +1707,14 @@ def find_namespace_usages(analysis, namespace_definition):
 
     name = namespace_definition.get("name")
 
-    return analysis_nindex_usages(analysis).get(name, [])
+    nindex_usages = analysis_nindex_usages(analysis)
+
+    return [
+        namespace_usage
+        for namespace_usage in nindex_usages.get(name, [])
+        if file_extension(namespace_usage.get("filename"))
+        in thingy_file_extensions(namespace_definition)
+    ]
 
 
 def find_namespace_usages_with_usage(analysis, namespace_usage):
@@ -1586,7 +1724,12 @@ def find_namespace_usages_with_usage(analysis, namespace_usage):
 
     name = namespace_usage.get("to")
 
-    return analysis_nindex_usages(analysis).get(name, [])
+    return [
+        usage
+        for usage in analysis_nindex_usages(analysis).get(name, [])
+        if file_extension(usage.get("filename"))
+        in thingy_file_extensions(namespace_usage)
+    ]
 
 
 def find_namespace_vars_usages(analysis, namespace_usage):
@@ -1638,7 +1781,7 @@ def find_thingy_regions(view, analysis, thingy):
 
     regions = []
 
-    if thingy_type == "keyword":
+    if thingy_type == TT_KEYWORD:
         # It's a little more involved if it's a 'keys destructuring'.
         # Keys names become locals, so their usages must be highligthed.
         if thingy_data.get("keys-destructuring"):
@@ -1665,7 +1808,7 @@ def find_thingy_regions(view, analysis, thingy):
             for keyword in keywords:
                 regions.append(keyword_region(view, keyword))
 
-    elif thingy_type == "local_binding":
+    elif thingy_type == TT_LOCAL_BINDING:
         regions.append(local_binding_region(view, thingy_data))
 
         local_usages = find_local_usages(analysis, thingy_data)
@@ -1673,7 +1816,7 @@ def find_thingy_regions(view, analysis, thingy):
         for local_usage in local_usages:
             regions.append(local_usage_region(view, local_usage))
 
-    elif thingy_type == "local_usage":
+    elif thingy_type == TT_LOCAL_USAGE:
         # It's possible to have a local usage without a local binding.
         # (It looks like a clj-kondo bug.)
         if local_binding := find_local_binding(analysis, thingy_data):
@@ -1684,7 +1827,7 @@ def find_thingy_regions(view, analysis, thingy):
         for local_usage in local_usages:
             regions.append(local_usage_region(view, local_usage))
 
-    elif thingy_type == "var_definition":
+    elif thingy_type == TT_VAR_DEFINITION:
         regions.append(var_definition_region(view, thingy_data))
 
         var_usages = find_var_usages(analysis, thingy_data)
@@ -1692,7 +1835,7 @@ def find_thingy_regions(view, analysis, thingy):
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
 
-    elif thingy_type == "var_usage":
+    elif thingy_type == TT_VAR_USAGE:
         if var_definition := find_var_definition(analysis, thingy_data):
             regions.append(var_definition_region(view, var_definition))
 
@@ -1701,10 +1844,10 @@ def find_thingy_regions(view, analysis, thingy):
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
 
-    elif thingy_type == "namespace_definition":
+    elif thingy_type == TT_NAMESPACE_DEFINITION:
         regions.append(namespace_definition_region(view, thingy_data))
 
-    elif thingy_type == "namespace_usage":
+    elif thingy_type == TT_NAMESPACE_USAGE:
         regions.append(namespace_usage_region(view, thingy_data))
 
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
@@ -1713,7 +1856,7 @@ def find_thingy_regions(view, analysis, thingy):
             if region := var_usage_namespace_region(view, var_usage):
                 regions.append(region)
 
-    elif thingy_type == "namespace_usage_alias":
+    elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
         regions.append(namespace_usage_alias_region(view, thingy_data))
 
         var_usages = find_namespace_vars_usages(analysis, thingy_data)
@@ -1766,6 +1909,7 @@ class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
         view_analysis_ = view_analysis(self.view.id())
 
         items_ = [
+            *namespace_goto_items(view_analysis_),
             *var_goto_items(view_analysis_),
             *keyword_goto_items(view_analysis_),
         ]
@@ -1821,6 +1965,9 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         paths_analysis_ = paths_analysis(project_path_)
 
         items_ = namespace_goto_items(paths_analysis_)
+
+        # Sort by namespace name.
+        items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
 
         show_goto_thingy_quick_panel(self.window, items_)
 
@@ -1895,10 +2042,10 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         var_key = None
 
-        if thingy_type == "var_definition":
+        if thingy_type == TT_VAR_DEFINITION:
             var_key = (thingy_data.get("ns"), thingy_data.get("name"))
 
-        elif thingy_type == "var_usage":
+        elif thingy_type == TT_VAR_USAGE:
             var_key = (thingy_data.get("to"), thingy_data.get("name"))
 
         project_path_ = project_path(self.view.window())
