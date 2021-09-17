@@ -1668,20 +1668,20 @@ def find_local_usages(analysis, local_binding_or_usage):
     return analysis.get("lindex_usages", {}).get(local_binding_or_usage.get("id"), [])
 
 
-def find_var_definition(analysis, var_usage):
+def find_var_definition(analysis, thingy_data):
     """
     Returns a var definition thingy data or None.
     """
 
-    namespace = var_usage.get("to")
+    ns = thingy_data.get("ns", thingy_data.get("to"))
 
-    name = var_usage.get("name")
+    name = thingy_data.get("name")
 
     vindex = analysis_vindex(analysis)
 
-    file_extensions = thingy_file_extensions(var_usage)
+    file_extensions = thingy_file_extensions(thingy_data)
 
-    for var_definition in vindex.get((namespace, name), []):
+    for var_definition in vindex.get((ns, name), []):
         definition_file_extension = None
 
         if filename := var_definition.get("filename"):
@@ -1705,16 +1705,16 @@ def find_var_usages_with_usage(analysis, var_usage):
     return var_usages(analysis, var_qualified_name)
 
 
-def find_namespace_definition(analysis, namespace_usage):
+def find_namespace_definition(analysis, thingy_data):
     """
     Returns a namespace definition thingy data or None.
     """
 
-    name = namespace_usage.get("to")
+    name = thingy_data.get("name", thingy_data.get("to"))
 
     nindex = analysis_nindex(analysis)
 
-    file_extensions = thingy_file_extensions(namespace_usage)
+    file_extensions = thingy_file_extensions(thingy_data)
 
     for namespace_definition in nindex.get(name, []):
 
@@ -2077,16 +2077,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
-        if thingy_type == TT_VAR_DEFINITION:
-            var_key = (thingy_data.get("ns"), thingy_data.get("name"))
-
-            definition = (
-                analysis_vindex(view_analysis_).get(var_key)
-                or analysis_vindex(paths_analysis_).get(var_key)
-                or analysis_vindex(classpath_analysis_).get(var_key)
-            )
-
-        elif thingy_type == TT_VAR_USAGE:
+        if thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
             # Try to find Var definition in view first,
             # only if not found try paths and project analysis.
             definition = (
@@ -2096,7 +2087,9 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             )
 
         elif (
-            thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+            thingy_type == TT_NAMESPACE_DEFINITION
+            or thingy_type == TT_NAMESPACE_USAGE
+            or thingy_type == TT_NAMESPACE_USAGE_ALIAS
         ):
             definition = (
                 find_namespace_definition(view_analysis_, thingy_data)
