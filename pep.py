@@ -1682,7 +1682,14 @@ def find_var_definition(analysis, var_usage):
     file_extensions = thingy_file_extensions(var_usage)
 
     for var_definition in vindex.get((namespace, name), []):
-        if file_extension(var_definition.get("filename", ".clj")) in file_extensions:
+        definition_file_extension = None
+
+        if filename := var_definition.get("filename"):
+            definition_file_extension = file_extension(filename)
+        else:
+            definition_file_extension = ".clj"
+
+        if definition_file_extension in file_extensions:
             return var_definition
 
 
@@ -1710,7 +1717,15 @@ def find_namespace_definition(analysis, namespace_usage):
     file_extensions = thingy_file_extensions(namespace_usage)
 
     for namespace_definition in nindex.get(name, []):
-        if file_extension(namespace_definition.get("filename", ".clj")) in file_extensions:
+
+        definition_file_extension = None
+
+        if filename := namespace_definition.get("filename"):
+            definition_file_extension = file_extension(filename)
+        else:
+            definition_file_extension = ".clj"
+
+        if definition_file_extension in file_extensions:
             return namespace_definition
 
 
