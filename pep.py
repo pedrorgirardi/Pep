@@ -426,7 +426,8 @@ def var_index(
 
 
 def file_extension(filename):
-    return pathlib.Path(filename).suffix
+    if filename:
+        return pathlib.Path(filename).suffix
 
 
 def remove_empty_rows(thingies):
@@ -1522,6 +1523,8 @@ def thingy_file_extensions(thingy_data):
             if file_extension_ == ".cljc"
             else {file_extension_, ".cljc"}
         )
+    else:
+        return {".clj"}
 
 
 def thingy_kind(thingy_type, thingy_data):
@@ -1692,8 +1695,8 @@ def find_var_definition(analysis, thingy_data):
     for var_definition in vindex.get((ns, name), []):
         definition_file_extension = None
 
-        if filename := var_definition.get("filename"):
-            definition_file_extension = file_extension(filename)
+        if file_extension_ := file_extension(var_definition.get("filename")):
+            definition_file_extension = file_extension_
         else:
             definition_file_extension = ".clj"
 
@@ -1728,8 +1731,8 @@ def find_namespace_definition(analysis, thingy_data):
 
         definition_file_extension = None
 
-        if filename := namespace_definition.get("filename"):
-            definition_file_extension = file_extension(filename)
+        if file_extension_ := file_extension(namespace_definition.get("filename")):
+            definition_file_extension = file_extension_
         else:
             definition_file_extension = ".clj"
 

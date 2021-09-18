@@ -1,7 +1,10 @@
 (ns user
+  "Pep example namespace."
   (:require [clojure.pprint :as pp :refer [pprint]]))
 
 (pp/pprint {:a 1})
+
+(pprint nil)
 
 (require '[clojure.string :as str])
 
