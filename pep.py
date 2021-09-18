@@ -1017,6 +1017,10 @@ def analyze_view_async(view, on_completed=None):
 
 
 def analyze_classpath(window):
+    """
+    Analyze classpath to create indexes for var and namespace definitions.
+    """
+
     is_debug = settings().get("debug", False)
 
     if classpath := project_classpath(window):
@@ -1088,6 +1092,10 @@ def analyze_classpath_async(window):
 
 
 def analyze_paths(window):
+    """
+    Analyze paths to create indexes for var and namespace definitions, and keywords.
+    """
+
     is_debug = settings().get("debug", False)
 
     if paths := project_data_paths(window):
