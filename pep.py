@@ -2252,7 +2252,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                         self.view, lrn, region
                     ) or (None, None)
 
-                    thingy = ("local_binding", thingy_region, thingy_data)
+                    thingy = (TT_LOCAL_BINDING, thingy_region, thingy_data)
 
                     # Find local usages for this local binding (thingy).
                     local_usages = find_local_usages(state, thingy_data)
