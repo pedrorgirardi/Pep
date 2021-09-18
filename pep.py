@@ -2754,7 +2754,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
-    def run(self, edit, select=False):
+    def run(self, edit):
         analysis = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
