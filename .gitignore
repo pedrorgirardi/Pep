@@ -2,3 +2,4 @@ Pep.sublime-workspace
 .DS_Store
 .clj-kondo
 .vscode
+.cpcache

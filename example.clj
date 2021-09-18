@@ -1,4 +1,4 @@
-(ns user
+(ns example
   "Pep example namespace."
   (:require [clojure.pprint :as pp :refer [pprint]]))
 

@@ -5,6 +5,13 @@
         }
     ],
     "pep": {
-        "classpath": ["clojure", "-Spath"]
+        "classpath": [
+            "clojure",
+            "-Spath"
+        ],
+        "paths": [
+            "example.clj",
+            "example.cljs"
+        ]
     }
 }
