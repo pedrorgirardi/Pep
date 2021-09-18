@@ -2180,7 +2180,11 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             )
 
 
-class PgPepNavigateCommand(sublime_plugin.TextCommand):
+class PgPepJumpCommand(sublime_plugin.TextCommand):
+    """
+    Command to jump to thingies.
+    """
+
     def initialize_thingy_navigation(self, navigation, thingy_id, thingy_findings):
         navigation["thingy_id"] = thingy_id
         navigation["thingy_findings"] = thingy_findings
@@ -2194,16 +2198,16 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
         return -1
 
-    def navigate(self, state, direction, findings_position):
+    def jump(self, state, movement, findings_position):
         navigation = view_navigation(state)
 
         findings_position_after = findings_position
 
-        if direction == "forward":
+        if movement == "forward":
             if findings_position < len(navigation["thingy_findings"]) - 1:
                 findings_position_after = findings_position + 1
 
-        elif direction == "back":
+        elif movement == "back":
             if findings_position > 0:
                 findings_position_after = findings_position - 1
 
@@ -2217,47 +2221,65 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
             self.view.sel().add(region)
             self.view.show(region)
 
-    def run(self, edit, direction):
-        is_debug = debug()
-
+    def run(self, edit, movement):
         state = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, state, region)
+        if thingy := thingy_in_region(self.view, state, region):
 
-        if is_debug:
-            print("(Pep) Thingy", thingy)
+            thingy_type, thingy_region, thingy_data = thingy
 
-        if thingy is None:
-            return
+            # Navigation is a dictionary with keys:
+            # - thingy_id
+            # - thingy_findings
+            navigation = view_navigation(state)
 
-        thingy_type, thingy_region, thingy_data = thingy
+            thingy_findings = []
 
-        # Navigation is a dictionary with keys:
-        # - thingy_id
-        # - thingy_findings
-        navigation = view_navigation(state)
+            thingy_id = None
 
-        thingy_findings = []
+            if thingy_type == TT_KEYWORD:
+                # It's a keyword in a keys destructuring context, so it creates a local binding.
+                # Instead of navigating to another keyword, we navigate to the next usage of the local.
+                if thingy_data.get("keys-destructuring", False):
+                    lrn = analysis_lrn(state)
 
-        thingy_id = None
+                    region = keyword_region(self.view, thingy_data)
 
-        if thingy_type == "keyword":
-            # It's a keyword in a keys destructuring context, so it creates a local binding.
-            # Instead of navigating to another keyword, we navigate to the next usage of the local.
-            if thingy_data.get("keys-destructuring", False):
-                lrn = analysis_lrn(state)
+                    # We should find a local binding for the keyword because of destructuring.
+                    thingy_region, thingy_data = local_binding_in_region(
+                        self.view, lrn, region
+                    ) or (None, None)
 
-                region = keyword_region(self.view, thingy_data)
+                    thingy = ("local_binding", thingy_region, thingy_data)
 
-                # We should find a local binding for the keyword because of destructuring.
-                thingy_region, thingy_data = local_binding_in_region(
-                    self.view, lrn, region
-                ) or (None, None)
+                    # Find local usages for this local binding (thingy).
+                    local_usages = find_local_usages(state, thingy_data)
 
-                thingy = ("local_binding", thingy_region, thingy_data)
+                    thingy_findings = [thingy_data]
+                    thingy_findings.extend(local_usages)
 
+                    thingy_id = thingy_data.get("id")
+
+                else:
+                    thingy_findings = find_keywords(state, thingy_data)
+
+                    thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
+
+                if thingy_id != navigation.get("thingy_id"):
+                    self.initialize_thingy_navigation(
+                        navigation, thingy_id, thingy_findings
+                    )
+
+                    set_view_navigation(state, navigation)
+
+                position = self.find_position(thingy, thingy_findings)
+
+                if position != -1:
+                    self.jump(state, movement, position)
+
+            elif thingy_type == TT_LOCAL_BINDING:
                 # Find local usages for this local binding (thingy).
                 local_usages = find_local_usages(state, thingy_data)
 
@@ -2266,119 +2288,93 @@ class PgPepNavigateCommand(sublime_plugin.TextCommand):
 
                 thingy_id = thingy_data.get("id")
 
-            else:
-                thingy_findings = find_keywords(state, thingy_data)
+                if thingy_id:
+                    if thingy_id != navigation.get("thingy_id"):
+                        self.initialize_thingy_navigation(
+                            navigation, thingy_id, thingy_findings
+                        )
+
+                        set_view_navigation(state, navigation)
+
+                    position = self.find_position(thingy, thingy_findings)
+
+                    if position != -1:
+                        self.jump(state, movement, position)
+
+            elif thingy_type == TT_LOCAL_USAGE:
+                # Find local binding for this local usage (thingy).
+                local_binding = find_local_binding(state, thingy_data)
+
+                # It's possible to have a local usage without a local binding.
+                # (It looks like a clj-kondo bug.)
+                if local_binding is None:
+                    return
+
+                local_usages = find_local_usages(state, local_binding)
+
+                thingy_findings = [local_binding]
+                thingy_findings.extend(local_usages)
+
+                thingy_id = thingy_data.get("id")
+
+                if thingy_id:
+                    if thingy_id != navigation.get("thingy_id"):
+                        self.initialize_thingy_navigation(
+                            navigation, thingy_id, thingy_findings
+                        )
+
+                        set_view_navigation(state, navigation)
+
+                    position = self.find_position(thingy, thingy_findings)
+
+                    if position != -1:
+                        self.jump(state, movement, position)
+
+            elif thingy_type == TT_VAR_DEFINITION:
+                # Find Var usages for this Var definition (thingy).
+                var_usages = find_var_usages(state, thingy_data)
+
+                thingy_findings = [thingy_data]
+                thingy_findings.extend(var_usages)
 
                 thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
 
-            if thingy_id != navigation.get("thingy_id"):
-                self.initialize_thingy_navigation(
-                    navigation, thingy_id, thingy_findings
-                )
+                if thingy_id:
+                    if thingy_id != navigation.get("thingy_id"):
+                        self.initialize_thingy_navigation(
+                            navigation, thingy_id, thingy_findings
+                        )
 
-                set_view_navigation(state, navigation)
+                        set_view_navigation(state, navigation)
 
-            position = self.find_position(thingy, thingy_findings)
+                    position = self.find_position(thingy, thingy_findings)
 
-            if position != -1:
-                self.navigate(state, direction, position)
+                    if position != -1:
+                        self.jump(state, movement, position)
 
-        elif thingy_type == "local_binding":
-            # Find local usages for this local binding (thingy).
-            local_usages = find_local_usages(state, thingy_data)
+            elif thingy_type == TT_VAR_USAGE:
+                # Find Var definition for this Var usage (thingy).
+                var_definition = find_var_definition(state, thingy_data)
 
-            thingy_findings = [thingy_data]
-            thingy_findings.extend(local_usages)
+                var_usages = find_var_usages_with_usage(state, thingy_data)
 
-            thingy_id = thingy_data.get("id")
+                thingy_findings = [var_definition] if var_definition else []
+                thingy_findings.extend(var_usages)
 
-            if thingy_id:
-                if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(
-                        navigation, thingy_id, thingy_findings
-                    )
+                thingy_id = (thingy_data.get("to"), thingy_data.get("name"))
 
-                    set_view_navigation(state, navigation)
+                if thingy_id:
+                    if thingy_id != navigation.get("thingy_id"):
+                        self.initialize_thingy_navigation(
+                            navigation, thingy_id, thingy_findings
+                        )
 
-                position = self.find_position(thingy, thingy_findings)
+                        set_view_navigation(state, navigation)
 
-                if position != -1:
-                    self.navigate(state, direction, position)
+                    position = self.find_position(thingy, thingy_findings)
 
-        elif thingy_type == "local_usage":
-            # Find local binding for this local usage (thingy).
-            local_binding = find_local_binding(state, thingy_data)
-
-            # It's possible to have a local usage without a local binding.
-            # (It looks like a clj-kondo bug.)
-            if local_binding is None:
-                return
-
-            local_usages = find_local_usages(state, local_binding)
-
-            thingy_findings = [local_binding]
-            thingy_findings.extend(local_usages)
-
-            thingy_id = thingy_data.get("id")
-
-            if thingy_id:
-                if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(
-                        navigation, thingy_id, thingy_findings
-                    )
-
-                    set_view_navigation(state, navigation)
-
-                position = self.find_position(thingy, thingy_findings)
-
-                if position != -1:
-                    self.navigate(state, direction, position)
-
-        elif thingy_type == "var_definition":
-            # Find Var usages for this Var definition (thingy).
-            var_usages = find_var_usages(state, thingy_data)
-
-            thingy_findings = [thingy_data]
-            thingy_findings.extend(var_usages)
-
-            thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
-
-            if thingy_id:
-                if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(
-                        navigation, thingy_id, thingy_findings
-                    )
-
-                    set_view_navigation(state, navigation)
-
-                position = self.find_position(thingy, thingy_findings)
-
-                if position != -1:
-                    self.navigate(state, direction, position)
-
-        elif thingy_type == "var_usage":
-            # Find Var definition for this Var usage (thingy).
-            var_definition = find_var_definition(state, thingy_data)
-
-            var_usages = find_var_usages_with_usage(state, thingy_data)
-
-            thingy_findings = [var_definition] if var_definition else []
-            thingy_findings.extend(var_usages)
-
-            thingy_id = (thingy_data.get("to"), thingy_data.get("name"))
-
-            if thingy_id:
-                if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(
-                        navigation, thingy_id, thingy_findings
-                    )
-
-                    set_view_navigation(state, navigation)
-
-                position = self.find_position(thingy, thingy_findings)
-
-                if position != -1:
-                    self.navigate(state, direction, position)
+                    if position != -1:
+                        self.jump(state, movement, position)
 
 
 class PgPepShowThingy(sublime_plugin.TextCommand):
