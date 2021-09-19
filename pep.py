@@ -2740,6 +2740,124 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                 )
 
 
+class PgPepFindUsages2Command(sublime_plugin.TextCommand):
+    def run(self, edit, scope="view"):
+        is_debug = debug()
+
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = self.view.sel()[0]
+
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
+
+            thingy_type, thingy_region, thingy_data = thingy
+
+            project_path_ = project_path(self.view.window())
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            thingy_usages = None
+
+            analysis_ = view_analysis_ if scope == "view" else paths_analysis_
+
+            if thingy_type == TT_KEYWORD:
+                # To be considered:
+                # If the keyword is a destructuring key,
+                # should it show its local usages?
+
+                thingy_usages = find_keyword_usages(analysis_, thingy_data)
+
+            elif thingy_type == TT_VAR_DEFINITION:
+                thingy_usages = find_var_usages(analysis_, thingy_data)
+
+            elif thingy_type == TT_VAR_USAGE:
+                thingy_usages = find_var_usages_with_usage(analysis_, thingy_data)
+
+            elif thingy_type == TT_NAMESPACE_DEFINITION:
+                thingy_usages = find_namespace_usages(analysis_, thingy_data)
+
+            elif (
+                thingy_type == TT_NAMESPACE_USAGE
+                or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+            ):
+
+                # Usages of a namespace, in the scope of a single view, shows usages of vars instead of namespace.
+                # I think it's safe to assume that this behavior is expected for view usages.
+
+                if scope == "view":
+                    thingy_usages = find_namespace_vars_usages(
+                        analysis_,
+                        thingy_data,
+                    )
+                else:
+                    thingy_usages = find_namespace_usages_with_usage(
+                        analysis_,
+                        thingy_data,
+                    )
+
+            if thingy_usages:
+
+                if len(thingy_usages) == 1:
+                    location = thingy_location(thingy_usages[0])
+
+                    goto(self.view.window(), location)
+
+                else:
+                    quick_panel_items = []
+
+                    for thingy_usage in thingy_usages:
+                        trigger = thingy_usage.get("from") or os.path.basename(
+                            thingy_usage.get("filename")
+                        )
+                        details = thingy_usage.get("filename", "")
+                        annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
+
+                        quick_panel_items.append(
+                            sublime.QuickPanelItem(
+                                trigger,
+                                details,
+                                annotation,
+                                thingy_kind(thingy_type, thingy_data),
+                            )
+                        )
+
+                    def on_done(index, _):
+                        if index == -1:
+                            self.view.window().focus_view(self.view)
+                        else:
+                            location = thingy_location(thingy_usages[index])
+
+                            goto(self.view.window(), location)
+
+                    def on_highlighted(index):
+                        location = thingy_location(thingy_usages[index])
+
+                        goto(
+                            self.view.window(),
+                            location,
+                            flags=sublime.ENCODED_POSITION | sublime.TRANSIENT,
+                        )
+
+                    placeholder = None
+
+                    if (
+                        thingy_type == TT_NAMESPACE_USAGE
+                        or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+                    ):
+                        placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
+                    else:
+                        placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+
+                    self.view.window().show_quick_panel(
+                        quick_panel_items,
+                        on_done,
+                        sublime.WANT_EVENT,
+                        0,
+                        on_highlighted,
+                        placeholder,
+                    )
+
+
 class PgPepSelectCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         is_debug = debug()
