@@ -2512,7 +2512,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def run(self, edit, scope="view"):
-        is_debug = debug()
 
         view_analysis_ = view_analysis(self.view.id())
 
