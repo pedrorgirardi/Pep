@@ -2746,6 +2746,8 @@ class PgPepFindUsages2Command(sublime_plugin.TextCommand):
 
         view_analysis_ = view_analysis(self.view.id())
 
+        viewport_position = self.view.viewport_position()
+
         region = self.view.sel()[0]
 
         if thingy := thingy_in_region(self.view, view_analysis_, region):
@@ -2823,7 +2825,16 @@ class PgPepFindUsages2Command(sublime_plugin.TextCommand):
 
                     def on_done(index, _):
                         if index == -1:
+                            # Restore selection and viewport position:
+
+                            self.view.sel().clear()
+
+                            self.view.sel().add(region)
+
                             self.view.window().focus_view(self.view)
+
+                            self.view.set_viewport_position(viewport_position, True)
+
                         else:
                             location = thingy_location(thingy_usages[index])
 
