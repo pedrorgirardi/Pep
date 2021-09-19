@@ -517,7 +517,7 @@ def htmlify(text):
         return ""
 
 
-def parse_location(thingy_data):
+def thingy_location(thingy_data):
     """
     Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
     """
@@ -591,7 +591,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 def goto_definition(window, definition, side_by_side=False):
     flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
 
-    goto(window, parse_location(definition), flags=flags)
+    goto(window, thingy_location(definition), flags=flags)
 
 
 def namespace_quick_panel_item(thingy_data):
@@ -792,7 +792,7 @@ def show_goto_thingy_quick_panel(window, items):
         if index != -1:
             thingy_data_ = items[index]["thingy_data"]
 
-            location = parse_location(thingy_data_)
+            location = thingy_location(thingy_data_)
 
             goto(window, location)
 
@@ -2170,7 +2170,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             </body>
             """
 
-            location = parse_location(definition)
+            location = thingy_location(definition)
 
             self.view.show_popup(
                 content,
@@ -2562,7 +2562,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         if thingy_usages:
 
             if len(thingy_usages) == 1:
-                location = parse_location(thingy_usages[0])
+                location = thingy_location(thingy_usages[0])
 
                 goto(self.view.window(), location)
 
@@ -2589,12 +2589,12 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     if index == -1:
                         self.view.window().focus_view(self.view)
                     else:
-                        location = parse_location(thingy_usages[index])
+                        location = thingy_location(thingy_usages[index])
 
                         goto(self.view.window(), location)
 
                 def on_highlighted(index):
-                    location = parse_location(thingy_usages[index])
+                    location = thingy_location(thingy_usages[index])
 
                     goto(
                         self.view.window(),
@@ -2676,7 +2676,7 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
         if thingy_usages:
 
             if len(thingy_usages) == 1:
-                location = parse_location(thingy_usages[0])
+                location = thingy_location(thingy_usages[0])
 
                 goto(self.view.window(), location)
 
@@ -2703,12 +2703,12 @@ class PgPepFindUsagesInProjectCommand(sublime_plugin.TextCommand):
                     if index == -1:
                         self.view.window().focus_view(self.view)
                     else:
-                        location = parse_location(thingy_usages[index])
+                        location = thingy_location(thingy_usages[index])
 
                         goto(self.view.window(), location)
 
                 def on_highlighted(index):
-                    location = parse_location(thingy_usages[index])
+                    location = thingy_location(thingy_usages[index])
 
                     goto(
                         self.view.window(),
