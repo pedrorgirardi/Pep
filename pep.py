@@ -1704,16 +1704,12 @@ def find_var_definition(analysis, thingy_data):
             return var_definition
 
 
-def find_var_usages(analysis, var_definition):
-    var_qualified_name = (var_definition.get("ns"), var_definition.get("name"))
+def find_var_usages(analysis, thingy_data):
+    var_ns = thingy_data.get("ns") or thingy_data.get("to")
 
-    return var_usages(analysis, var_qualified_name)
+    var_name = thingy_data.get("name")
 
-
-def find_var_usages_with_usage(analysis, var_usage):
-    var_qualified_name = (var_usage.get("to"), var_usage.get("name"))
-
-    return var_usages(analysis, var_qualified_name)
+    return var_usages(analysis, (var_ns, var_name))
 
 
 def find_namespace_definition(analysis, thingy_data):
@@ -1879,7 +1875,7 @@ def find_thingy_regions(view, analysis, thingy):
         if var_definition := find_var_definition(analysis, thingy_data):
             regions.append(var_definition_region(view, var_definition))
 
-        var_usages = find_var_usages_with_usage(analysis, thingy_data)
+        var_usages = find_var_usages(analysis, thingy_data)
 
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
@@ -2356,7 +2352,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 # Find Var definition for this Var usage (thingy).
                 var_definition = find_var_definition(state, thingy_data)
 
-                var_usages = find_var_usages_with_usage(state, thingy_data)
+                var_usages = find_var_usages(state, thingy_data)
 
                 thingy_findings = [var_definition] if var_definition else []
                 thingy_findings.extend(var_usages)
@@ -2542,7 +2538,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 thingy_usages = find_var_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_VAR_USAGE:
-                thingy_usages = find_var_usages_with_usage(analysis_, thingy_data)
+                thingy_usages = find_var_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_NAMESPACE_DEFINITION:
                 thingy_usages = find_namespace_usages(analysis_, thingy_data)
