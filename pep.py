@@ -2185,8 +2185,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
         navigation["thingy_id"] = thingy_id
         navigation["thingy_findings"] = thingy_findings
 
-    def find_position(self, thingy, thingy_findings):
-        thingy_type, _, thingy_data = thingy
+    def find_position(self, thingy_data, thingy_findings):
 
         for position, finding in enumerate(thingy_findings):
             if finding == thingy_data:
@@ -2270,7 +2269,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
 
                     set_view_navigation(state, navigation)
 
-                position = self.find_position(thingy, thingy_findings)
+                position = self.find_position(thingy_data, thingy_findings)
 
                 if position != -1:
                     self.jump(state, movement, position)
@@ -2292,7 +2291,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
 
                         set_view_navigation(state, navigation)
 
-                    position = self.find_position(thingy, thingy_findings)
+                    position = self.find_position(thingy_data, thingy_findings)
 
                     if position != -1:
                         self.jump(state, movement, position)
@@ -2321,7 +2320,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
 
                         set_view_navigation(state, navigation)
 
-                    position = self.find_position(thingy, thingy_findings)
+                    position = self.find_position(thingy_data, thingy_findings)
 
                     if position != -1:
                         self.jump(state, movement, position)
@@ -2343,7 +2342,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
 
                         set_view_navigation(state, navigation)
 
-                    position = self.find_position(thingy, thingy_findings)
+                    position = self.find_position(thingy_data, thingy_findings)
 
                     if position != -1:
                         self.jump(state, movement, position)
@@ -2367,10 +2366,30 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
 
                         set_view_navigation(state, navigation)
 
-                    position = self.find_position(thingy, thingy_findings)
+                    position = self.find_position(thingy_data, thingy_findings)
 
                     if position != -1:
                         self.jump(state, movement, position)
+
+                        {TT_NAMESPACE_USAGE, TT_NAMESPACE_USAGE_ALIAS}
+
+            elif (
+                thingy_type == TT_NAMESPACE_USAGE
+                or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+            ):
+                if thingy_findings := find_namespace_vars_usages(state, thingy_data):
+
+                    thingy_id = thingy_data.get("to")
+
+                    if thingy_id != navigation.get("thingy_id"):
+                        self.initialize_thingy_navigation(
+                            navigation, thingy_id, thingy_findings
+                        )
+
+                        set_view_navigation(state, navigation)
+
+                    # Jump to first var usage.
+                    self.jump(state, movement, -1)
 
 
 class PgPepShowThingy(sublime_plugin.TextCommand):
