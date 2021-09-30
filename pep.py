@@ -2181,9 +2181,17 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
     Command to jump to thingies.
     """
 
-    def initialize_thingy_navigation(self, navigation, thingy_id, thingy_findings):
-        navigation["thingy_id"] = thingy_id
-        navigation["thingy_findings"] = thingy_findings
+    def initialize_navigation(self, analysis, thingy_id, thingy_findings):
+        navigation = view_navigation(analysis)
+
+        if thingy_id != navigation.get("thingy_id"):
+            set_view_navigation(
+                analysis,
+                {
+                    "thingy_id": thingy_id,
+                    "thingy_findings": thingy_findings,
+                },
+            )
 
     def find_position(self, thingy_data, thingy_findings):
 
@@ -2262,12 +2270,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
 
                     thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
 
-                if thingy_id != navigation.get("thingy_id"):
-                    self.initialize_thingy_navigation(
-                        navigation, thingy_id, thingy_findings
-                    )
-
-                    set_view_navigation(state, navigation)
+                self.initialize_navigation(state, thingy_id, thingy_findings)
 
                 position = self.find_position(thingy_data, thingy_findings)
 
@@ -2284,12 +2287,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_id = thingy_data.get("id")
 
                 if thingy_id:
-                    if thingy_id != navigation.get("thingy_id"):
-                        self.initialize_thingy_navigation(
-                            navigation, thingy_id, thingy_findings
-                        )
-
-                        set_view_navigation(state, navigation)
+                    self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     position = self.find_position(thingy_data, thingy_findings)
 
@@ -2313,12 +2311,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_id = thingy_data.get("id")
 
                 if thingy_id:
-                    if thingy_id != navigation.get("thingy_id"):
-                        self.initialize_thingy_navigation(
-                            navigation, thingy_id, thingy_findings
-                        )
-
-                        set_view_navigation(state, navigation)
+                    self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     position = self.find_position(thingy_data, thingy_findings)
 
@@ -2335,12 +2328,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_id = (thingy_data.get("ns"), thingy_data.get("name"))
 
                 if thingy_id:
-                    if thingy_id != navigation.get("thingy_id"):
-                        self.initialize_thingy_navigation(
-                            navigation, thingy_id, thingy_findings
-                        )
-
-                        set_view_navigation(state, navigation)
+                    self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     position = self.find_position(thingy_data, thingy_findings)
 
@@ -2359,12 +2347,8 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_id = (thingy_data.get("to"), thingy_data.get("name"))
 
                 if thingy_id:
-                    if thingy_id != navigation.get("thingy_id"):
-                        self.initialize_thingy_navigation(
-                            navigation, thingy_id, thingy_findings
-                        )
 
-                        set_view_navigation(state, navigation)
+                    self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     position = self.find_position(thingy_data, thingy_findings)
 
@@ -2386,12 +2370,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                     # ID is the namespace name.
                     thingy_id = thingy_data.get("to")
 
-                    if thingy_id != navigation.get("thingy_id"):
-                        self.initialize_thingy_navigation(
-                            navigation, thingy_id, thingy_findings
-                        )
-
-                        set_view_navigation(state, navigation)
+                    self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     # Jump to first var usage.
                     self.jump(state, movement, -1)
