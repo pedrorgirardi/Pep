@@ -2377,8 +2377,13 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_type == TT_NAMESPACE_USAGE
                 or thingy_type == TT_NAMESPACE_USAGE_ALIAS
             ):
+
+                # Jumping from a namespace usage, or alias, moves the caret
+                # to the first var usage of the namespace.
+
                 if thingy_findings := find_namespace_vars_usages(state, thingy_data):
 
+                    # ID is the namespace name.
                     thingy_id = thingy_data.get("to")
 
                     if thingy_id != navigation.get("thingy_id"):
