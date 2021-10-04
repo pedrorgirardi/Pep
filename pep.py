@@ -1367,11 +1367,11 @@ def var_usage_region(view, var_usage):
     Returns the Region of a Var usage.
     """
 
-    name_row_start = var_usage["name-row"]
-    name_col_start = var_usage["name-col"]
+    name_row_start = var_usage.get("name-row") or var_usage.get("row")
+    name_col_start = var_usage.get("name-col") or var_usage.get("col")
 
-    name_row_end = var_usage["name-end-row"]
-    name_col_end = var_usage["name-end-col"]
+    name_row_end = var_usage.get("name-end-row") or var_usage.get("end-row")
+    name_col_end = var_usage.get("name-end-col") or var_usage.get("end-col")
 
     name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
     name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
