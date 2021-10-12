@@ -547,14 +547,10 @@ def with_jar(filename, f):
 
             descriptor, tempath = tempfile.mkstemp(file_extension)
 
-            try:
-                with os.fdopen(descriptor, "w") as file:
-                    file.write(jar_file.read().decode())
+            with os.fdopen(descriptor, "w") as file:
+                file.write(jar_file.read().decode())
 
-                f(tempath, jar_file)
-
-            finally:
-                os.remove(tempath)
+            f(tempath, jar_file)
 
 
 def getlines(filename, begin, end):
@@ -579,8 +575,6 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(True)
                 view.set_read_only(True)
-
-                set_view_name(view, resource.path)
 
             with_jar(resource.path, open_file)
 
