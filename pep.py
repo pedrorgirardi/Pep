@@ -1924,10 +1924,10 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
         warnings = summary.get("warning")
 
-        sublime.status_message(f"Warnings: {warnings}, Errors: {errors}")
+        self.view.set_status("pep_view_analysis", f"Warnings: {warnings}, Errors: {errors}")
 
     def run(self, edit):
-        analyze_view_async(self.view, on_completed=self.on_analyze_completed)
+        analyze_view_async(self.view)
 
 
 class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
