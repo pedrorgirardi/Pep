@@ -2,6 +2,8 @@
   "Pep example namespace."
   (:require [clojure.pprint :as pp :refer [pprint]]))
 
+x
+
 (pp/pprint {:a 1})
 
 (pprint nil)
