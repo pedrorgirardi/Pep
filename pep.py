@@ -1177,58 +1177,6 @@ def analyze_paths_async(window):
 ## ---
 
 
-def clj_kondo_finding_message(finding):
-    def group1(regex):
-        matches = re.compile(regex).findall(finding["message"])
-
-        return matches[0] if matches is not None else finding["message"]
-
-    t = finding["type"]
-
-    minihtml = ""
-
-    if t == "unresolved-symbol":
-        minihtml = "Unresolved: " + group1(r"^Unresolved symbol:\s+(?P<symbol>.*)")
-
-    elif t == "unresolved-namespace":
-        minihtml = "Unresolved: " + group1(r"^Unresolved namespace\s+([^\s]*)")
-
-    elif t == "unused-binding":
-        minihtml = "Unused: " + group1(r"^unused binding\s+(?P<symbol>.*)")
-
-    elif t == "unused-namespace":
-        minihtml = "Unused: " + group1(r"^namespace ([^\s]*)")
-
-    elif t == "unused-referred-var":
-        minihtml = "Unused: " + group1(r"^([^\s]*)")
-
-    elif t == "missing-map-value":
-        minihtml = finding["message"].capitalize()
-
-    elif t == "refer-all":
-        minihtml = finding["message"].capitalize()
-
-    elif t == "duplicate-require":
-        minihtml = "Duplicated require: " + group1(r"^duplicate require of ([^\s]*)")
-
-    elif t == "cond-else":
-        minihtml = "Use :else instead"
-
-    elif t == "unreachable-code":
-        minihtml = "Unreachable"
-
-    elif t == "redundant-do":
-        minihtml = "Redundant do"
-
-    elif t == "redefined-var":
-        minihtml = "Redefined: " + group1(r"^redefined var ([^\s]*)")
-
-    else:
-        minihtml = finding["message"]
-
-    return minihtml
-
-
 def erase_analysis_regions(view):
     view.erase_regions("pg_pep_analysis_error")
     view.erase_regions("pg_pep_analysis_warning")
@@ -1924,7 +1872,9 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
 
         warnings = summary.get("warning")
 
-        self.view.set_status("pep_view_analysis", f"Warnings: {warnings}, Errors: {errors}")
+        self.view.set_status(
+            "pep_view_analysis", f"Warnings: {warnings}, Errors: {errors}"
+        )
 
     def run(self, edit):
         analyze_view_async(self.view)
@@ -2748,65 +2698,6 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
-
-
-class PgPepReportCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        try:
-
-            def finding_str(finding):
-                message = clj_kondo_finding_message(finding)
-
-                return f'{finding["level"].capitalize()}: {message}\n[{finding["row"]}.{finding["col"]}:{finding["end-col"]}]'
-
-            analysis = view_analysis(self.view.id())
-
-            findings = analysis_findings(analysis)
-
-            warning_str_set = []
-
-            error_str_set = []
-
-            for finding in findings:
-                if finding["level"] == "error":
-                    error_str_set.append(finding_str(finding))
-                elif finding["level"] == "warning":
-                    warning_str_set.append(finding_str(finding))
-
-            descriptor, path = tempfile.mkstemp()
-
-            try:
-                with os.fdopen(descriptor, "w") as file:
-                    s = (
-                        f"File: {self.view.file_name()}\n\n"
-                        if self.view.file_name() is not None
-                        else ""
-                    )
-                    s += "\n\n".join(error_str_set + warning_str_set)
-
-                    file.write(s)
-
-                v = self.view.window().open_file(
-                    path, flags=sublime.ADD_TO_SELECTION | sublime.SEMI_TRANSIENT
-                )
-                v.set_scratch(True)
-                v.set_read_only(True)
-                v.settings().set("word_wrap", "auto")
-                v.settings().set("gutter", False)
-                v.settings().set("line_numbers", False)
-                v.settings().set("result_file_regex", r"^File: (\S+)")
-                v.settings().set("result_line_regex", r"^\[(\d+).(\d+):(\d+)\]")
-
-                # Trick to set the name of the view.
-                set_view_name(v, "Analysis")
-            finally:
-                os.remove(path)
-
-        except Exception as e:
-            print(f"(Pep) Report failed.", traceback.format_exc())
-
-
-# ---
 
 
 class PgPepViewListener(sublime_plugin.ViewEventListener):
