@@ -1865,17 +1865,6 @@ class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
 
 
 class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
-    def on_analyze_completed(self, analysis):
-        summary = analysis.get("summary")
-
-        errors = summary.get("error")
-
-        warnings = summary.get("warning")
-
-        self.view.set_status(
-            "pep_view_analysis", f"Warnings: {warnings}, Errors: {errors}"
-        )
-
     def run(self, edit):
         analyze_view_async(self.view)
 
@@ -2694,7 +2683,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
             status_messages.append(f"Errors: {summary_errors}")
             status_messages.append(f"Warnings: {summary_warnings}")
 
-            sublime.status_message(", ".join(status_messages))
+            self.view.set_status("pg_pep_view_summary", ", ".join(status_messages))
 
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
