@@ -2686,8 +2686,12 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 if summary_warnings := analysis_summary(analysis).get("warning"):
                     status_messages.append(f"Warnings: {summary_warnings}")
 
-            if status_messages:
-                self.view.set_status("pg_pep_view_summary", ", ".join(status_messages))
+            # Show the number of errors and/or warnings:
+            # (Clear the status if there isn't any error or warning.)
+            self.view.set_status(
+                "pg_pep_view_summary",
+                ", ".join(status_messages) if status_messages else "",
+            )
 
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
