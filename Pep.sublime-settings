@@ -3,6 +3,9 @@
 
     "annotate_view_analysis": false,
 
+    "view_status_show_errors": true,
+    "view_status_show_warnings": false,
+
     "analyze_paths_on_plugin_loaded": true,
     "analyze_paths_on_load_project": true,
     "analyze_paths_on_post_save": true,

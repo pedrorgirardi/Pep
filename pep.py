@@ -2676,14 +2676,18 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 ),
             )
 
-            summary_errors = analysis_summary(analysis).get("error", 0)
-            summary_warnings = analysis_summary(analysis).get("warning", 0)
-
             status_messages = []
-            status_messages.append(f"Errors: {summary_errors}")
-            status_messages.append(f"Warnings: {summary_warnings}")
 
-            self.view.set_status("pg_pep_view_summary", ", ".join(status_messages))
+            if settings().get("view_status_show_errors", True):
+                if summary_errors := analysis_summary(analysis).get("error"):
+                    status_messages.append(f"Errors: {summary_errors}")
+
+            if settings().get("view_status_show_warnings", False):
+                if summary_warnings := analysis_summary(analysis).get("warning"):
+                    status_messages.append(f"Warnings: {summary_warnings}")
+
+            if status_messages:
+                self.view.set_status("pg_pep_view_summary", ", ".join(status_messages))
 
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
