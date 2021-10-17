@@ -46,7 +46,7 @@ Goto definition of a local binding, var, spec, re-frame handler.
 
 Default settings:
 
-```
+```jsonc
 {
     "debug": false,
 
