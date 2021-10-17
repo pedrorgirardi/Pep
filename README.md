@@ -50,13 +50,36 @@ Default settings:
 {
     "debug": false,
 
+    // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
+    "annotate_view_analysis": false,
+
+    // True if you would like to see the number of clj-kondo errors, if any, in the status bar.
+    "view_status_show_errors": false,
+
+    // True if you would like to see the number of clj-kondo warnings, if any, in the status bar.
+    "view_status_show_warnings": false,
+
+    // True if you would like to analyse your project's sources when the plugin is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_paths_on_plugin_loaded": true,
+
+    // True if you would like to analyze your project's sources when the project is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_paths_on_load_project": true,
+
+    // True if you would like to analyze your project's sources when a file is saved.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_paths_on_post_save": true,
 
+    // True if you would like to analyse your project's classpath when the plugin is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_plugin_loaded": true,
+
+    // True if you would like to analyze your project's classpath when the project is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_load_project": true,
 
+    // True if you would like to highlight vars, local bindings and keywords usages.
     "automatically_highlight": false
 }
 ```
