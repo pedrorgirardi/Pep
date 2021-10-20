@@ -1166,7 +1166,7 @@ def analyze_paths(window):
         )
 
         print(
-            f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {classpath})"
+            f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths})"
         )
 
 
