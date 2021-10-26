@@ -2322,6 +2322,9 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
         thingy_type, _, thingy_data = thingy
 
+        # Print to Console.
+        pprint.pp(thingy_data)
+
         items_html = ""
 
         for k, v in thingy_data.items():
