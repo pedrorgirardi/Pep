@@ -1508,6 +1508,15 @@ def thingy_kind(thingy_type, thingy_data):
         return sublime.KIND_AMBIGUOUS
 
 
+def thingy_sel_region(view):
+    """
+    Thingy region is no special region, is simply the first one in the selection.
+
+    Most of the time, the first region is what you're looking for.
+    """
+    return view.sel()[0]
+
+
 def thingy_in_region(view, analysis, region):
     """
     Tuple of type, region and data.
@@ -2438,9 +2447,53 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_definition(self.view.window(), definition, side_by_side)
 
 
+class PgPepTraceUsages(sublime_plugin.TextCommand):
+
+    def run(self, edit, scope="view"):
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = thingy_sel_region(self.view)
+
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
+            thingy_type, thingy_region, thingy_data = thingy
+
+            project_path_ = project_path(self.view.window())
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            thingy_usages = None
+
+            # The analysis used is based on the scope parameter:
+            analysis_ = view_analysis_ if scope == "view" else paths_analysis_
+
+            if thingy_type == TT_VAR_DEFINITION:
+                thingy_usages = find_var_usages(analysis_, thingy_data)
+
+            elif thingy_type == TT_VAR_USAGE:
+                thingy_usages = find_var_usages(analysis_, thingy_data)
+
+            for thingy_usage in thingy_usages or []:
+
+                # Trace usage up, up, and up.
+
+                print(thingy_usage.get("from") + "/" + thingy_usage.get("name"))
+
+                if from_var := thingy_usage.get("from-var"):
+
+                    thingy_usage_from = thingy_usage.get("from")
+
+                    thingy_usage_from_var = thingy_usage.get("from-var")
+
+                    print(thingy_usage_from + "/" + thingy_usage_from_var)
+
+                    from_usages = var_usages(analysis_, (thingy_usage_from, thingy_usage_from_var))
+
+                    for from_usage in from_usages or []:
+                        print(from_usage.get("from") + "/" + from_usage.get("from-var"))
+
+
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def run(self, edit, scope="view"):
-
         view_analysis_ = view_analysis(self.view.id())
 
         viewport_position = self.view.viewport_position()
@@ -2457,6 +2510,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_usages = None
 
+            # The analysis used is based on the scope parameter:
             analysis_ = view_analysis_ if scope == "view" else paths_analysis_
 
             if thingy_type == TT_KEYWORD:
