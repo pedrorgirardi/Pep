@@ -2448,7 +2448,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
-
     def run(self, edit, scope="view"):
         view_analysis_ = view_analysis(self.view.id())
 
@@ -2472,24 +2471,27 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
             elif thingy_type == TT_VAR_USAGE:
                 thingy_usages = find_var_usages(analysis_, thingy_data)
 
-            for thingy_usage in thingy_usages or []:
-
-                # Trace usage up, up, and up.
-
+            def trace_var_usages(thingy_usage):
                 print(thingy_usage.get("from") + "/" + thingy_usage.get("name"))
 
                 if from_var := thingy_usage.get("from-var"):
 
-                    thingy_usage_from = thingy_usage.get("from")
+                    from_ = thingy_usage.get("from")
 
-                    thingy_usage_from_var = thingy_usage.get("from-var")
+                    from_var_ = thingy_usage.get("from-var")
 
-                    print(thingy_usage_from + "/" + thingy_usage_from_var)
+                    print(from_ + "/" + from_var_)
 
-                    from_usages = var_usages(analysis_, (thingy_usage_from, thingy_usage_from_var))
+                    from_usages = var_usages(analysis_, (from_, from_var_))
 
                     for from_usage in from_usages or []:
-                        print(from_usage.get("from") + "/" + from_usage.get("from-var"))
+                        trace_var_usages(from_usage)
+
+            for thingy_usage in thingy_usages or []:
+
+                # Trace usage up, up, and up.
+
+                trace_var_usages(thingy_usage)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
