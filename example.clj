@@ -45,3 +45,17 @@ x
 (map inc 1)
 
 :person/age
+
+(defn foo [x] x)
+
+(defn bar [x]
+  (foo x))
+
+(defn baz [x]
+  (bar x))
+
+(foo 1)
+
+(foo 1)
+
+(foo 1)

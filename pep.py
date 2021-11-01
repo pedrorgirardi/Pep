@@ -2448,7 +2448,17 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
-    def run(self, edit, scope="view"):
+    """
+    Command to trace usages of a function or namespace.
+
+    The trace is displayed as a tree:
+
+    - (foo [x])
+        - (bar [x])
+            - (baz [x])
+    """
+
+    def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
         region = thingy_sel_region(self.view)
@@ -2462,36 +2472,39 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
             thingy_usages = None
 
-            # The analysis used is based on the scope parameter:
-            analysis_ = view_analysis_ if scope == "view" else paths_analysis_
-
-            if thingy_type == TT_VAR_DEFINITION:
-                thingy_usages = find_var_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_VAR_USAGE:
-                thingy_usages = find_var_usages(analysis_, thingy_data)
+            # Find usages, in paths analysis, from either a function definition or usage:
+            if thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
+                thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
             def trace_var_usages(thingy_usage):
-                print(thingy_usage.get("from") + "/" + thingy_usage.get("name"))
 
-                if from_var := thingy_usage.get("from-var"):
+                from_ = thingy_usage.get("from")
 
-                    from_ = thingy_usage.get("from")
+                from_var_ = thingy_usage.get("from-var")
 
-                    from_var_ = thingy_usage.get("from-var")
+                from_usages = var_usages(paths_analysis_, (from_, from_var_))
 
-                    print(from_ + "/" + from_var_)
+                return {
+                    "thingy": thingy_usage,
+                    "usages": [
+                        trace_var_usages(from_usage) for from_usage in from_usages
+                    ],
+                }
 
-                    from_usages = var_usages(analysis_, (from_, from_var_))
 
-                    for from_usage in from_usages or []:
-                        trace_var_usages(from_usage)
+            usages_ = []
 
+            # Each top usage of thingy, var or namespace the user selected, is searched for its usages:
             for thingy_usage in thingy_usages or []:
+                if trace := trace_var_usages(thingy_usage):
+                    usages_.append(trace)
 
-                # Trace usage up, up, and up.
+            trace = {
+                "thingy": thingy,
+                "usages": usages_,
+            }
 
-                trace_var_usages(thingy_usage)
+            pprint.pp(trace)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
