@@ -2485,20 +2485,37 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 from_usages = var_usages(paths_analysis_, (from_, from_var_))
 
                 return {
-                    "thingy": thingy_usage,
-                    "usages": [
+                    "thingy_data": thingy_usage,
+                    "thingy_usages": [
                         trace_var_usages(from_usage) for from_usage in from_usages
                     ],
                 }
 
             trace = {
-                "thingy": thingy,
-                "usages": [
+                "thingy_data": thingy_data,
+                "thingy_usages": [
                     trace_var_usages(thingy_usage) for thingy_usage in thingy_usages
                 ],
             }
 
+            def mdtrace(trace):
+                thingy_data = trace.get("thingy_data", {})
+
+                name_or_from = thingy_data.get("from-var") or thingy_data.get("name")
+                filename = thingy_data.get("filename", "")
+                row = thingy_data.get("row", "")
+                col = thingy_data.get("col", "")
+
+                md = f"- {name_or_from} {filename}:{row}:{col}\n\t"
+
+                for trace in trace["thingy_usages"]:
+                    md = md + mdtrace(trace)
+
+                return md
+
             pprint.pp(trace)
+
+            print(mdtrace(trace))
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
