@@ -2491,17 +2491,11 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-
-            usages_ = []
-
-            # Each top usage of thingy, var or namespace the user selected, is searched for its usages:
-            for thingy_usage in thingy_usages or []:
-                if trace := trace_var_usages(thingy_usage):
-                    usages_.append(trace)
-
             trace = {
                 "thingy": thingy,
-                "usages": usages_,
+                "usages": [
+                    trace_var_usages(thingy_usage) for thingy_usage in thingy_usages
+                ],
             }
 
             pprint.pp(trace)
