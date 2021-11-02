@@ -2490,13 +2490,6 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-            trace = {
-                "thingy_data": thingy_data,
-                "thingy_traces": [
-                    trace_var_usages(thingy_usage) for thingy_usage in thingy_usages
-                ],
-            }
-
             def tracestr_(trace, level=1):
                 thingy_data = trace.get("thingy_data", {})
 
@@ -2513,7 +2506,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 s = s + f"- {from_namespace}{from_var} {filename}:{row}:{col}"
 
                 for trace in trace["thingy_traces"]:
-                    s = s + tracestr_(trace, level=level+1)
+                    s = s + tracestr_(trace, level=level + 1)
 
                 # print(s)
 
@@ -2535,7 +2528,15 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 return s
 
-            print(tracestr(trace))
+            if thingy_usages:
+                trace = {
+                    "thingy_data": thingy_data,
+                    "thingy_traces": [
+                        trace_var_usages(thingy_usage) for thingy_usage in thingy_usages
+                    ],
+                }
+
+                print(tracestr(trace))
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
