@@ -2503,7 +2503,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 col = thingy_data.get("col", "")
 
                 s = "\n" + ("\t" * level)
-                s = s + f"- {from_namespace}{from_var} {filename}:{row}:{col}"
+                s = s + f"- {from_namespace}{from_var}"
 
                 for trace in trace["thingy_traces"]:
                     s = s + tracestr_(trace, level=level + 1)
@@ -2521,7 +2521,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 row = thingy_data.get("row", "")
                 col = thingy_data.get("col", "")
 
-                s = f"- {namespace}/{name} {filename}:{row}:{col}"
+                s = f"- {namespace}/{name}"
 
                 for trace in trace["thingy_traces"]:
                     s = s + tracestr_(trace) + "\n"
