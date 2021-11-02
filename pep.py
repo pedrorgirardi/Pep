@@ -2477,7 +2477,6 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
             def trace_var_usages(thingy_usage):
-
                 from_ = thingy_usage.get("from")
 
                 from_var_ = thingy_usage.get("from-var")
@@ -2486,36 +2485,57 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 return {
                     "thingy_data": thingy_usage,
-                    "thingy_usages": [
+                    "thingy_traces": [
                         trace_var_usages(from_usage) for from_usage in from_usages
                     ],
                 }
 
             trace = {
                 "thingy_data": thingy_data,
-                "thingy_usages": [
+                "thingy_traces": [
                     trace_var_usages(thingy_usage) for thingy_usage in thingy_usages
                 ],
             }
 
-            def mdtrace(trace):
+            def tracestr_(trace, level=1):
                 thingy_data = trace.get("thingy_data", {})
 
-                name_or_from = thingy_data.get("from-var") or thingy_data.get("name")
+                from_namespace = thingy_data.get("from")
+
+                from_var = thingy_data.get("from-var")
+                from_var = "/" + from_var if from_var else ""
+
                 filename = thingy_data.get("filename", "")
                 row = thingy_data.get("row", "")
                 col = thingy_data.get("col", "")
 
-                md = f"- {name_or_from} {filename}:{row}:{col}\n\t"
+                s = "\n" + ("\t" * level)
+                s = s + f"- {from_namespace}{from_var} {filename}:{row}:{col}"
 
-                for trace in trace["thingy_usages"]:
-                    md = md + mdtrace(trace)
+                for trace in trace["thingy_traces"]:
+                    s = s + tracestr_(trace, level=level+1)
 
-                return md
+                # print(s)
 
-            pprint.pp(trace)
+                return s
 
-            print(mdtrace(trace))
+            def tracestr(trace):
+                thingy_data = trace.get("thingy_data", {})
+
+                name = thingy_data.get("name")
+                namespace = thingy_data.get("ns") or thingy_data.get("from")
+                filename = thingy_data.get("filename", "")
+                row = thingy_data.get("row", "")
+                col = thingy_data.get("col", "")
+
+                s = f"- {namespace}/{name} {filename}:{row}:{col}"
+
+                for trace in trace["thingy_traces"]:
+                    s = s + tracestr_(trace) + "\n"
+
+                return s
+
+            print(tracestr(trace))
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
