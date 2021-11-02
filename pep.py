@@ -2498,17 +2498,19 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 from_var = thingy_data.get("from-var")
                 from_var = "/" + from_var if from_var else ""
 
-                filename = thingy_data.get("filename", "")
-                row = thingy_data.get("row", "")
-                col = thingy_data.get("col", "")
+                s = ""
 
-                s = "\n" + ("\t" * level)
-                s = s + f"- {from_namespace}{from_var}"
+                # It doesn't seem useful to show a refered var usage, so it's ignored.
+                # There might be other cases that should be ignored too.
+
+                is_ignored = thingy_data.get("refer", False)
+
+                if not is_ignored:
+                    s = "\n" + ("\t" * level)
+                    s = s + f"- {from_namespace}{from_var}"
 
                 for trace in trace["thingy_traces"]:
                     s = s + tracestr_(trace, level=level + 1)
-
-                # print(s)
 
                 return s
 
