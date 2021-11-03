@@ -295,6 +295,19 @@ def var_usages(analysis, name):
     return remove_empty_rows(usages)
 
 
+def recursive_usage(thingy_usage):
+    usage_from = thingy_usage.get("from")
+    usage_to = thingy_usage.get("to")
+
+    usage_name = thingy_usage.get("name")
+    usage_from_var = thingy_usage.get("from-var")
+
+    is_same_ns = usage_from == usage_to
+    is_same_var = usage_name == usage_from_var
+
+    return is_same_ns and is_same_var
+
+
 def namespace_index(
     analysis,
     nindex=True,
@@ -2483,18 +2496,6 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 from_usages = var_usages(paths_analysis_, (from_, from_var_))
 
-                def recursive_usage(thingy_usage):
-                    usage_from = thingy_usage.get("from")
-                    usage_to = thingy_usage.get("to")
-
-                    usage_name = thingy_usage.get("name")
-                    usage_from_var = thingy_usage.get("from-var")
-
-                    is_same_ns = usage_from == usage_to
-                    is_same_var = usage_name == usage_from_var
-
-                    return is_same_ns and is_same_var
-
                 return {
                     "thingy_data": thingy_usage,
                     "thingy_traces": [
@@ -2548,7 +2549,9 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 trace = {
                     "thingy_data": thingy_data,
                     "thingy_traces": [
-                        trace_var_usages(thingy_usage) for thingy_usage in thingy_usages
+                        trace_var_usages(thingy_usage)
+                        for thingy_usage in thingy_usages
+                        if not recursive_usage(thingy_usage)
                     ],
                 }
 
