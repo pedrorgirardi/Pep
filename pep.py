@@ -2505,13 +2505,17 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-            def tracestr_(trace, level=1):
+            def tree_branches(trace, level=1):
                 thingy_data = trace.get("thingy_data", {})
 
                 from_namespace = thingy_data.get("from")
 
                 from_var = thingy_data.get("from-var")
                 from_var = "/" + from_var if from_var else ""
+
+                filename = thingy_data.get("filename", "")
+                row = thingy_data.get("row", "")
+                col = thingy_data.get("col", "")
 
                 s = ""
 
@@ -2522,28 +2526,26 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 if not is_ignored:
                     s = "\n" + ("\t" * level)
-                    s = s + f"- {from_namespace}{from_var}"
+                    s = s + f"- {from_namespace}{from_var} {filename}:{row}:{col}"
 
                 for trace in trace["thingy_traces"]:
-                    s = s + tracestr_(trace, level=level + 1)
+                    s = s + tree_branches(trace, level=level + 1)
 
                 return s
 
-            def tracestr(trace):
+            def tree(trace):
                 thingy_data = trace.get("thingy_data", {})
 
                 name = thingy_data.get("name")
                 namespace = thingy_data.get("ns") or thingy_data.get("from")
-                filename = thingy_data.get("filename", "")
-                row = thingy_data.get("row", "")
-                col = thingy_data.get("col", "")
 
                 s = f"- {namespace}/{name}"
 
                 for trace in trace["thingy_traces"]:
-                    s = s + tracestr_(trace)
+                    s = s + tree_branches(trace)
 
                 return s
+
 
             if thingy_usages:
                 trace = {
@@ -2555,7 +2557,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-                print(tracestr(trace))
+                print(tree(trace))
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
