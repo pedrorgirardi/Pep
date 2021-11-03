@@ -2526,7 +2526,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 s = f"- {namespace}/{name}"
 
                 for trace in trace["thingy_traces"]:
-                    s = s + tracestr_(trace) + "\n"
+                    s = s + tracestr_(trace)
 
                 return s
 
