@@ -2557,7 +2557,24 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-                print(tree(trace))
+                window = self.view.window()
+
+                output_view_ = output_panel(window)
+                output_view_.set_read_only(False)
+                output_view_.settings().set("line_numbers", False)
+                output_view_.settings().set("gutter", False)
+                output_view_.settings().set("is_widget", True)
+                output_view_.run_command("select_all")
+                output_view_.run_command("right_delete")
+                output_view_.run_command(
+                    "append",
+                    {
+                        "characters": tree(trace),
+                    },
+                )
+                output_view_.set_read_only(True)
+
+                show_output_panel(window)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
