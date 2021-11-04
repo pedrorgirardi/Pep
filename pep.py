@@ -2564,6 +2564,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 output_view_.settings().set("line_numbers", False)
                 output_view_.settings().set("gutter", False)
                 output_view_.settings().set("is_widget", True)
+                output_view_.settings().set("word_wrap", False)
                 output_view_.run_command("select_all")
                 output_view_.run_command("right_delete")
                 output_view_.run_command(
