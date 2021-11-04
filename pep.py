@@ -2525,7 +2525,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 is_ignored = thingy_data.get("refer", False)
 
                 if not is_ignored:
-                    s = "\n⎸" + ("⎯" * (level * 3))
+                    s = "\n⎸" + ("⎯" * (level * 2))
                     s = s + f" {from_namespace}{from_var} {filename}:{row}:{col}"
 
                 for trace in trace["thingy_traces"]:
