@@ -2539,9 +2539,11 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 name = thingy_data.get("name")
                 namespace = thingy_data.get("ns") or thingy_data.get("from")
 
-                s = f"⎸ {namespace}/{name}"
+                thingy_traces = trace["thingy_traces"]
 
-                for trace in trace["thingy_traces"]:
+                s = f"⎸ {namespace}/{name} (Usages: {len(thingy_traces)})"
+
+                for trace in thingy_traces:
                     s = s + tree_branches(trace)
 
                 return s
