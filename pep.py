@@ -295,6 +295,19 @@ def var_usages(analysis, name):
     return remove_empty_rows(usages)
 
 
+def recursive_usage(thingy_usage):
+    usage_from = thingy_usage.get("from")
+    usage_to = thingy_usage.get("to")
+
+    usage_name = thingy_usage.get("name")
+    usage_from_var = thingy_usage.get("from-var")
+
+    is_same_ns = usage_from == usage_to
+    is_same_var = usage_name == usage_from_var
+
+    return is_same_ns and is_same_var
+
+
 def namespace_index(
     analysis,
     nindex=True,
@@ -1508,6 +1521,15 @@ def thingy_kind(thingy_type, thingy_data):
         return sublime.KIND_AMBIGUOUS
 
 
+def thingy_sel_region(view):
+    """
+    Thingy region is no special region, is simply the first one in the selection.
+
+    Most of the time, the first region is what you're looking for.
+    """
+    return view.sel()[0]
+
+
 def thingy_in_region(view, analysis, region):
     """
     Tuple of type, region and data.
@@ -2438,9 +2460,125 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_definition(self.view.window(), definition, side_by_side)
 
 
+class PgPepTraceUsages(sublime_plugin.TextCommand):
+    """
+    Command to trace usages of a var or namespace.
+    """
+
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = thingy_sel_region(self.view)
+
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
+            thingy_type, thingy_region, thingy_data = thingy
+
+            project_path_ = project_path(self.view.window())
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            thingy_usages = None
+
+            # Find usages, in paths analysis, from var definition or usage:
+            if thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
+                thingy_usages = find_var_usages(paths_analysis_, thingy_data)
+
+            def trace_var_usages(thingy_usage):
+                from_ = thingy_usage.get("from")
+
+                from_var_ = thingy_usage.get("from-var")
+
+                from_usages = var_usages(paths_analysis_, (from_, from_var_))
+
+                return {
+                    "thingy_data": thingy_usage,
+                    "thingy_traces": [
+                        trace_var_usages(from_usage)
+                        for from_usage in from_usages
+                        if not recursive_usage(from_usage)
+                    ],
+                }
+
+            def tree_branches(trace, level=1):
+                thingy_data = trace.get("thingy_data", {})
+
+                from_namespace = thingy_data.get("from")
+
+                from_var = thingy_data.get("from-var")
+                from_var = "/" + from_var if from_var else ""
+
+                filename = thingy_data.get("filename", "")
+                row = thingy_data.get("row", "")
+                col = thingy_data.get("col", "")
+
+                s = ""
+
+                # It doesn't seem useful to show a refered var usage, so it's ignored.
+                # There might be other cases that should be ignored too.
+
+                is_ignored = thingy_data.get("refer", False)
+
+                if not is_ignored:
+                    s = "\n⎸" + ("⎯" * (level * 2))
+                    s = s + f" {from_namespace}{from_var} (File: {filename}:{row}:{col})"
+
+                for trace in trace["thingy_traces"]:
+                    s = s + tree_branches(trace, level=level + 1)
+
+                return s
+
+            def tree(trace):
+                thingy_data = trace.get("thingy_data", {})
+
+                name = thingy_data.get("name")
+                namespace = thingy_data.get("ns") or thingy_data.get("from")
+
+                thingy_traces = trace["thingy_traces"]
+
+                s = f"⎸ {namespace}/{name} (Usages: {len(thingy_traces)})"
+
+                for trace in thingy_traces:
+                    s = s + tree_branches(trace)
+
+                return s
+
+
+            if thingy_usages:
+                trace = {
+                    "thingy_data": thingy_data,
+                    "thingy_traces": [
+                        trace_var_usages(thingy_usage)
+                        for thingy_usage in thingy_usages
+                        if not recursive_usage(thingy_usage)
+                    ],
+                }
+
+                window = self.view.window()
+
+                output_view_ = output_panel(window)
+                output_view_.set_read_only(False)
+                output_view_.settings().set("line_numbers", False)
+                output_view_.settings().set("gutter", False)
+                output_view_.settings().set("is_widget", True)
+                output_view_.settings().set("word_wrap", False)
+                output_view_.settings().set("line_padding_top", 0)
+                output_view_.settings().set("line_padding_bottom", 0)
+                output_view_.settings().set("result_file_regex", r'\(File: ([^\"]+):(\d+):(\d+)\)')
+                output_view_.run_command("select_all")
+                output_view_.run_command("right_delete")
+                output_view_.run_command(
+                    "append",
+                    {
+                        "characters": tree(trace),
+                    },
+                )
+                output_view_.set_read_only(True)
+
+                show_output_panel(window)
+
+
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def run(self, edit, scope="view"):
-
         view_analysis_ = view_analysis(self.view.id())
 
         viewport_position = self.view.viewport_position()
@@ -2457,6 +2595,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_usages = None
 
+            # The analysis used is based on the scope parameter:
             analysis_ = view_analysis_ if scope == "view" else paths_analysis_
 
             if thingy_type == TT_KEYWORD:
