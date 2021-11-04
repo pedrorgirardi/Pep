@@ -2462,13 +2462,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
     """
-    Command to trace usages of a function or namespace.
-
-    The trace is displayed as a tree:
-
-    - (foo [x])
-        - (bar [x])
-            - (baz [x])
+    Command to trace usages of a var or namespace.
     """
 
     def run(self, edit):
@@ -2485,7 +2479,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
             thingy_usages = None
 
-            # Find usages, in paths analysis, from either a function definition or usage:
+            # Find usages, in paths analysis, from var definition or usage:
             if thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
                 thingy_usages = find_var_usages(paths_analysis_, thingy_data)
 
