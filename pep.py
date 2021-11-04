@@ -2526,7 +2526,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 if not is_ignored:
                     s = "\n⎸" + ("⎯" * (level * 2))
-                    s = s + f" {from_namespace}{from_var} {filename}:{row}:{col}"
+                    s = s + f" {from_namespace}{from_var} (File: {filename}:{row}:{col})"
 
                 for trace in trace["thingy_traces"]:
                     s = s + tree_branches(trace, level=level + 1)
@@ -2569,6 +2569,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 output_view_.settings().set("word_wrap", False)
                 output_view_.settings().set("line_padding_top", 0)
                 output_view_.settings().set("line_padding_bottom", 0)
+                output_view_.settings().set("result_file_regex", r'\(File: ([^\"]+):(\d+):(\d+)\)')
                 output_view_.run_command("select_all")
                 output_view_.run_command("right_delete")
                 output_view_.run_command(
