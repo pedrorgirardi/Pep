@@ -2525,8 +2525,8 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 is_ignored = thingy_data.get("refer", False)
 
                 if not is_ignored:
-                    s = "\n" + ("\t" * level)
-                    s = s + f"- {from_namespace}{from_var} {filename}:{row}:{col}"
+                    s = "\n⎸" + ("⎯" * (level * 3))
+                    s = s + f" {from_namespace}{from_var} {filename}:{row}:{col}"
 
                 for trace in trace["thingy_traces"]:
                     s = s + tree_branches(trace, level=level + 1)
@@ -2539,7 +2539,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 name = thingy_data.get("name")
                 namespace = thingy_data.get("ns") or thingy_data.get("from")
 
-                s = f"- {namespace}/{name}"
+                s = f"⎸ {namespace}/{name}"
 
                 for trace in trace["thingy_traces"]:
                     s = s + tree_branches(trace)
