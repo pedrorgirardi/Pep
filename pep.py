@@ -2368,7 +2368,11 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         </body>
         """
 
-        self.view.window().new_html_sheet(thingy_type, html)
+        flags = (
+            sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
+        )
+
+        self.view.window().new_html_sheet(thingy_type, html, flags)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
