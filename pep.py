@@ -2344,9 +2344,6 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
         thingy_type, _, thingy_data = thingy
 
-        # Print to Console.
-        pprint.pp(thingy_data)
-
         items_html = ""
 
         for k, v in thingy_data.items():
@@ -2371,9 +2368,7 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         </body>
         """
 
-        flags = sublime.COOPERATE_WITH_AUTO_COMPLETE | sublime.HIDE_ON_MOUSE_MOVE_AWAY
-
-        self.view.show_popup(html, flags, -1, 500)
+        self.view.window().new_html_sheet(thingy_type, html)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
@@ -2520,7 +2515,10 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 if not is_ignored:
                     s = "\n " + (" " * level) + ("∙" * level)
-                    s = s + f" {from_namespace}{from_var} (File: {filename}:{row}:{col})"
+                    s = (
+                        s
+                        + f" {from_namespace}{from_var} (File: {filename}:{row}:{col})"
+                    )
 
                 for trace in trace["thingy_traces"]:
                     s = s + tree_branches(trace, level=level + 1)
@@ -2542,7 +2540,6 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 return s
 
-
             if thingy_usages:
                 trace = {
                     "thingy_data": thingy_data,
@@ -2563,7 +2560,9 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 output_view_.settings().set("word_wrap", False)
                 output_view_.settings().set("line_padding_top", 0)
                 output_view_.settings().set("line_padding_bottom", 0)
-                output_view_.settings().set("result_file_regex", r'\(File: ([^\"]+):(\d+):(\d+)\)')
+                output_view_.settings().set(
+                    "result_file_regex", r"\(File: ([^\"]+):(\d+):(\d+)\)"
+                )
                 output_view_.run_command("select_all")
                 output_view_.run_command("right_delete")
                 output_view_.run_command(
