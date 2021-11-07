@@ -2014,7 +2014,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, side_by_side=False):
         is_debug = debug()
 
         view_analysis_ = view_analysis(self.view.id())
@@ -2022,9 +2022,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         region = self.view.sel()[0]
 
         thingy = thingy_in_region(self.view, view_analysis_, region)
-
-        if is_debug:
-            print("(Pep) Thingy", thingy)
 
         if thingy is None:
             return
@@ -2074,11 +2071,11 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             filename = definition.get("filename")
 
-            link = f"{ns}/{name}" if ns else name
+            qualified_name = f"{ns}/{name}" if ns else name
 
             name_minihtml = f"""
             <p class="name">
-                <a href="{filename}">{link}</a>
+                <a href="{filename}">{qualified_name}</a>
             </p>
             """
 
@@ -2123,12 +2120,22 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             location = thingy_location(definition)
 
-            self.view.show_popup(
-                content,
-                location=-1,
-                max_width=500,
-                on_navigate=lambda href: goto(self.view.window(), location),
-            )
+            if side_by_side:
+                sheet = self.view.window().new_html_sheet(
+                    qualified_name,
+                    content,
+                    sublime.SEMI_TRANSIENT,
+                )
+
+                self.view.window().focus_sheet(sheet)
+
+            else:
+                self.view.show_popup(
+                    content,
+                    location=-1,
+                    max_width=500,
+                    on_navigate=lambda href: goto(self.view.window(), location),
+                )
 
 
 class PgPepJumpCommand(sublime_plugin.TextCommand):
