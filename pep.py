@@ -534,9 +534,9 @@ def thingy_location(thingy_data):
     """
     Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
     """
-    if thingy_data and (file := thingy_data.get("filename")):
+    if thingy_data and (filename := thingy_data.get("filename")):
         return {
-            "resource": urlparse(file),
+            "filename": filename,
             "line": thingy_data.get("name-row") or thingy_data.get("row"),
             "column": thingy_data.get("name-col") or thingy_data.get("col"),
         }
@@ -578,21 +578,21 @@ def getlines(filename, begin, end):
 
 def goto(window, location, flags=sublime.ENCODED_POSITION):
     if location:
-        resource = location["resource"]
+        filename = location["filename"]
         line = location["line"]
         column = location["column"]
 
-        if ".jar:" in resource.path:
+        if ".jar:" in filename:
 
             def open_file(filename, file):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(True)
                 view.set_read_only(True)
 
-            with_jar(resource.path, open_file)
+            with_jar(filename, open_file)
 
         else:
-            return window.open_file(f"{resource.path}:{line}:{column}", flags=flags)
+            return window.open_file(f"{filename}:{line}:{column}", flags=flags)
 
 
 def goto_definition(window, definition, side_by_side=False):
@@ -2057,9 +2057,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             )
 
         if definition:
-            if is_debug:
-                print("(Pep) Definition:\n", pprint.pformat(definition))
-
             # Name
             # ---
 
@@ -2073,9 +2070,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             qualified_name = f"{ns}/{name}" if ns else name
 
+            goto_command_url = sublime.command_url(
+                "pg_pep_goto_definition",
+                {"location": thingy_location(definition)},
+            )
+
             name_minihtml = f"""
             <p class="name">
-                <a href="{filename}">{qualified_name}</a>
+                <a href="{goto_command_url}">{qualified_name}</a>
             </p>
             """
 
@@ -2118,8 +2120,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             </body>
             """
 
-            location = thingy_location(definition)
-
             if side_by_side:
                 sheet = self.view.window().new_html_sheet(
                     qualified_name,
@@ -2134,7 +2134,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     content,
                     location=-1,
                     max_width=500,
-                    on_navigate=lambda href: goto(self.view.window(), location),
                 )
 
 
@@ -2382,88 +2381,95 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         self.view.window().new_html_sheet(thingy_type, html, flags)
 
 
-class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
-    def run(self, edit, side_by_side=False):
-        is_debug = debug()
+class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
+    def run(self, side_by_side=False, location=None):
 
-        analysis = view_analysis(self.view.id())
+        window = self.window
 
-        region = self.view.sel()[0]
+        view = self.window.active_view()
 
-        thingy = thingy_in_region(self.view, analysis, region)
+        if location:
+            flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
 
-        if is_debug:
-            print("(Pep) Thingy", thingy)
+            goto(window, location, flags)
 
-        if thingy is None:
-            return
+        else:
+            analysis = view_analysis(view.id())
 
-        thingy_type, _, thingy_data = thingy
+            region = view.sel()[0]
 
-        if thingy_type == TT_LOCAL_USAGE:
-            if definition := find_local_binding(analysis, thingy_data):
-                goto_definition(self.view.window(), definition, side_by_side)
+            thingy = thingy_in_region(view, analysis, region)
 
-        elif (
-            thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS
-        ):
-            project_path_ = project_path(self.view.window())
+            if thingy is None:
+                return
 
-            paths_analysis_ = paths_analysis(project_path_)
+            thingy_type, _, thingy_data = thingy
 
-            classpath_analysis_ = classpath_analysis(project_path_)
+            if thingy_type == TT_LOCAL_USAGE:
+                if definition := find_local_binding(analysis, thingy_data):
+                    goto_definition(window, definition, side_by_side)
 
-            definition = (
-                find_namespace_definition(analysis, thingy_data)
-                or find_namespace_definition(paths_analysis_, thingy_data)
-                or find_namespace_definition(classpath_analysis_, thingy_data)
-            )
+            elif (
+                thingy_type == TT_NAMESPACE_USAGE
+                or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+            ):
+                project_path_ = project_path(window)
 
-            if definition:
-                goto_definition(self.view.window(), definition, side_by_side)
+                paths_analysis_ = paths_analysis(project_path_)
 
-        elif thingy_type == TT_VAR_USAGE:
-            namespace_ = thingy_data.get("to", None)
-            name_ = thingy_data.get("name", None)
+                classpath_analysis_ = classpath_analysis(project_path_)
 
-            print("(Pep) Goto var definition:", f"{namespace_}/{name_}")
+                definition = (
+                    find_namespace_definition(analysis, thingy_data)
+                    or find_namespace_definition(paths_analysis_, thingy_data)
+                    or find_namespace_definition(classpath_analysis_, thingy_data)
+                )
 
-            project_path_ = project_path(self.view.window())
+                if definition:
+                    goto_definition(window, definition, side_by_side)
 
-            paths_analysis_ = paths_analysis(project_path_)
+            elif thingy_type == TT_VAR_USAGE:
+                namespace_ = thingy_data.get("to", None)
+                name_ = thingy_data.get("name", None)
 
-            classpath_analysis_ = classpath_analysis(project_path_)
+                print("(Pep) Goto var definition:", f"{namespace_}/{name_}")
 
-            definition = (
-                find_var_definition(analysis, thingy_data)
-                or find_var_definition(paths_analysis_, thingy_data)
-                or find_var_definition(classpath_analysis_, thingy_data)
-            )
+                project_path_ = project_path(window)
 
-            if definition:
-                goto_definition(self.view.window(), definition, side_by_side)
+                paths_analysis_ = paths_analysis(project_path_)
 
-        elif thingy_type == TT_KEYWORD:
-            keyword_namespace = thingy_data.get("ns", None)
-            keyword_name = thingy_data.get("name", None)
+                classpath_analysis_ = classpath_analysis(project_path_)
 
-            print(
-                "(Pep) Goto keyword definition:",
-                f"{keyword_namespace}/{keyword_name}"
-                if keyword_namespace
-                else keyword_name,
-            )
+                definition = (
+                    find_var_definition(analysis, thingy_data)
+                    or find_var_definition(paths_analysis_, thingy_data)
+                    or find_var_definition(classpath_analysis_, thingy_data)
+                )
 
-            project_path_ = project_path(self.view.window())
+                if definition:
+                    goto_definition(window, definition, side_by_side)
 
-            paths_analysis_ = paths_analysis(project_path_)
+            elif thingy_type == TT_KEYWORD:
+                keyword_namespace = thingy_data.get("ns", None)
+                keyword_name = thingy_data.get("name", None)
 
-            definition = find_keyword_definition(
-                analysis, thingy_data
-            ) or find_keyword_definition(paths_analysis_, thingy_data)
+                print(
+                    "(Pep) Goto keyword definition:",
+                    f"{keyword_namespace}/{keyword_name}"
+                    if keyword_namespace
+                    else keyword_name,
+                )
 
-            if definition:
-                goto_definition(self.view.window(), definition, side_by_side)
+                project_path_ = project_path(window)
+
+                paths_analysis_ = paths_analysis(project_path_)
+
+                definition = find_keyword_definition(
+                    analysis, thingy_data
+                ) or find_keyword_definition(paths_analysis_, thingy_data)
+
+                if definition:
+                    goto_definition(window, definition, side_by_side)
 
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
