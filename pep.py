@@ -2378,13 +2378,12 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
 
 class PgPepGotoCommand(sublime_plugin.WindowCommand):
-
-    def run(self, side_by_side=False, location=None):
+    def run(self, location=None, side_by_side=False):
         if location:
             flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
 
             goto(self.window, location, flags)
-            
+
         else:
             print("(Pep) Can't goto without a location")
 
@@ -2458,7 +2457,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 definition = find_keyword_definition(
                     analysis, thingy_data
                 ) or find_keyword_definition(paths_analysis_, thingy_data)
-
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
