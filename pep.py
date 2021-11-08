@@ -595,12 +595,6 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             return window.open_file(f"{filename}:{line}:{column}", flags=flags)
 
 
-def goto_definition(window, definition, side_by_side=False):
-    flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
-
-    goto(window, thingy_location(definition), flags=flags)
-
-
 def namespace_quick_panel_item(thingy_data):
     namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
     namespace_filename = thingy_data.get("filename", "")
@@ -2391,42 +2385,31 @@ class PgPepGotoCommand(sublime_plugin.WindowCommand):
         goto(self.window, location, flags)
 
 
-class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
+class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
     """
     Command to goto definition of a var, namespace, and keyword.
 
     In case of a keyword, it works for re-frame handlers and Clojure Spec.
-
-    It's a WindowCommand instead of a TextCommand,
-    because the command might be invoked from a Sheet with `subl` protocol.
     """
 
-    def run(self, side_by_side=False, location=None):
+    def run(self, edit, side_by_side=False):
 
-        window = self.window
+        window = self.view.window()
 
-        view = self.window.active_view()
+        view = self.view
 
-        if location:
-            flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+        analysis = view_analysis(view.id())
 
-            goto(window, location, flags)
+        region = thingy_sel_region(view)
 
-        else:
-            analysis = view_analysis(view.id())
-
-            region = view.sel()[0]
-
-            thingy = thingy_in_region(view, analysis, region)
-
-            if thingy is None:
-                return
+        if thingy := thingy_in_region(view, analysis, region):
 
             thingy_type, _, thingy_data = thingy
 
+            definition = None
+
             if thingy_type == TT_LOCAL_USAGE:
-                if definition := find_local_binding(analysis, thingy_data):
-                    goto_definition(window, definition, side_by_side)
+                definition = find_local_binding(analysis, thingy_data)
 
             elif (
                 thingy_type == TT_NAMESPACE_USAGE
@@ -2444,14 +2427,9 @@ class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
                     or find_namespace_definition(classpath_analysis_, thingy_data)
                 )
 
-                if definition:
-                    goto_definition(window, definition, side_by_side)
-
             elif thingy_type == TT_VAR_USAGE:
                 namespace_ = thingy_data.get("to", None)
                 name_ = thingy_data.get("name", None)
-
-                print("(Pep) Goto var definition:", f"{namespace_}/{name_}")
 
                 project_path_ = project_path(window)
 
@@ -2465,19 +2443,9 @@ class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
                     or find_var_definition(classpath_analysis_, thingy_data)
                 )
 
-                if definition:
-                    goto_definition(window, definition, side_by_side)
-
             elif thingy_type == TT_KEYWORD:
                 keyword_namespace = thingy_data.get("ns", None)
                 keyword_name = thingy_data.get("name", None)
-
-                print(
-                    "(Pep) Goto keyword definition:",
-                    f"{keyword_namespace}/{keyword_name}"
-                    if keyword_namespace
-                    else keyword_name,
-                )
 
                 project_path_ = project_path(window)
 
@@ -2487,8 +2455,14 @@ class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
                     analysis, thingy_data
                 ) or find_keyword_definition(paths_analysis_, thingy_data)
 
-                if definition:
-                    goto_definition(window, definition, side_by_side)
+
+            if definition:
+                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+
+                goto(window, thingy_location(definition), flags)
+
+            else:
+                print("(Pep) Unable to find definition")
 
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
