@@ -2384,6 +2384,15 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
+    """
+    Command to goto definition of a var, namespace, and keyword.
+
+    In case of a keyword, it works for re-frame handlers and Clojure Spec.
+
+    It's a WindowCommand instead of a TextCommand,
+    because the command might be invoked from a Sheet with `subl` protocol.
+    """
+
     def run(self, side_by_side=False, location=None):
 
         window = self.window
