@@ -2378,7 +2378,9 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
             sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
         )
 
-        self.view.window().new_html_sheet(thingy_type, html, flags)
+        sheet = self.view.window().new_html_sheet(thingy_type, html, flags)
+
+        self.view.window().focus_sheet(sheet)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
