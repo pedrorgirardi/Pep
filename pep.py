@@ -2071,7 +2071,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             qualified_name = f"{ns}/{name}" if ns else name
 
             goto_command_url = sublime.command_url(
-                "pg_pep_goto_definition",
+                "pg_pep_goto",
                 {"location": thingy_location(definition)},
             )
 
@@ -2381,6 +2381,14 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         sheet = self.view.window().new_html_sheet(thingy_type, html, flags)
 
         self.view.window().focus_sheet(sheet)
+
+
+class PgPepGotoCommand(sublime_plugin.WindowCommand):
+
+    def run(self, side_by_side=False, location=None):
+        flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
+
+        goto(self.window, location, flags)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.WindowCommand):
