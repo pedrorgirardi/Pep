@@ -556,9 +556,10 @@ def with_jar(filename, f):
     with ZipFile(filename_jar) as jar:
         with jar.open(filename_file) as jar_file:
 
-            file_extension = pathlib.Path(filename_file).suffix
+            tmp_path = pathlib.Path(filename_file)
+            tmp_file_suffix = "." + tmp_path.name
 
-            descriptor, tempath = tempfile.mkstemp(file_extension)
+            descriptor, tempath = tempfile.mkstemp(suffix=tmp_file_suffix)
 
             with os.fdopen(descriptor, "w") as file:
                 file.write(jar_file.read().decode())
