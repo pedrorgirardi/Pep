@@ -257,6 +257,24 @@ def analysis_nindex_usages(analysis):
     return analysis.get("nindex_usages", {})
 
 
+def analysis_nrn(analysis):
+    """
+    Returns a dictionary of namespaces by row.
+    """
+    return analysis.get("nrn", {})
+
+
+def analysis_nrn_usages(analysis):
+    """
+    Returns a dictionary of namespace usages by row.
+
+    This index can be used to quicky find a namespace usage by row.
+
+    'nrn' stands for 'namespace row name'.
+    """
+    return analysis.get("nrn_usages", {})
+
+
 def namespace_definitions(analysis):
     """
     Returns a list of namespace definitions.

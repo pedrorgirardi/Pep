@@ -10,8 +10,7 @@
             "-Spath"
         ],
         "paths": [
-            "example.clj",
-            "example.cljs"
+            "tests"
         ]
     }
 }
