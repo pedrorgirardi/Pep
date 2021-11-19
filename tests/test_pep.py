@@ -5,7 +5,7 @@ from unittest import TestCase
 import Pep.pep as pep
 
 
-def new_scratch_view(append=None):
+def scratch_view(append=None):
     view = sublime.active_window().new_file()
     view.set_scratch(True)
 
@@ -24,7 +24,7 @@ class TestAnalyzeViewCljKondo(TestCase):
         view = None
 
         try:
-            view = new_scratch_view("")
+            view = scratch_view("")
 
             clj_kondo_data = pep.analyze_view_clj_kondo(view)
 
@@ -45,36 +45,38 @@ class TestAnalyzeViewCljKondo(TestCase):
             if view:
                 view.close()
 
+    def test_analyze_view_clj_kondo_2(self):
+        """
+        Findings & invalid syntax.
+        """
 
-class TestNamespaceIndex(TestCase):
-    def test_namespace_index(self):
         view = None
+
         try:
-            view = new_scratch_view("(ns ns1 (:require [clojure.str :as str :refer [blank?]]))")
+            view = scratch_view("(")
 
             clj_kondo_data = pep.analyze_view_clj_kondo(view)
 
-            analysis = clj_kondo_data.get("analysis", {})
-
-            namespace_index = pep.namespace_index(analysis)
-
-            # Namespace defintions.
             self.assertEqual(
-                {
-                    "ns1": [
-                        {
-                            "filename": "-",
-                            "row": 1,
-                            "col": 1,
-                            "name": "ns1",
-                            "name-col": 5,
-                            "name-end-col": 8,
-                            "name-row": 1,
-                            "name-end-row": 1,
-                        }
-                    ]
-                },
-                pep.analysis_nindex(namespace_index),
+                [
+                    {
+                        "filename": "-",
+                        "row": 1,
+                        "col": 1,
+                        "level": "error",
+                        "type": "syntax",
+                        "message": "Found an opening ( with no matching )",
+                    },
+                    {
+                        "filename": "-",
+                        "row": 1,
+                        "col": 2,
+                        "level": "error",
+                        "type": "syntax",
+                        "message": "Expected a ) to match ( from line 1",
+                    },
+                ],
+                clj_kondo_data["findings"],
             )
 
         finally:
@@ -82,10 +84,10 @@ class TestNamespaceIndex(TestCase):
                 view.close()
 
 
-class TestPep(TestCase):
+class TestIndexes(TestCase):
     def setUp(self):
         self.window = sublime.active_window()
-        self.view = new_scratch_view()
+        self.view = scratch_view()
 
     def tearDown(self):
         if self.view:
