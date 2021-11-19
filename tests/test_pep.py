@@ -5,9 +5,12 @@ from unittest import TestCase
 import Pep.pep as pep
 
 
-def new_scratch_view():
+def new_scratch_view(append=None):
     view = sublime.active_window().new_file()
     view.set_scratch(True)
+
+    if append:
+        view.run_command("append", {"characters": append})
 
     return view
 
@@ -21,11 +24,7 @@ class TestAnalyzeViewCljKondo(TestCase):
         view = None
 
         try:
-            view = new_scratch_view()
-            view.run_command(
-                "append",
-                {"characters": ""},
-            )
+            view = new_scratch_view("")
 
             clj_kondo_data = pep.analyze_view_clj_kondo(view)
 
@@ -51,13 +50,7 @@ class TestNamespaceIndex(TestCase):
     def test_namespace_index(self):
         view = None
         try:
-            view = new_scratch_view()
-            view.run_command(
-                "append",
-                {
-                    "characters": "(ns ns1 (:require [clojure.str :as str :refer [blank?]]))"
-                },
-            )
+            view = new_scratch_view("(ns ns1 (:require [clojure.str :as str :refer [blank?]]))")
 
             clj_kondo_data = pep.analyze_view_clj_kondo(view)
 
