@@ -24,14 +24,30 @@ class TestNamespaceIndex(TestCase):
                 },
             )
 
-            pep.analyze_view(view)
+            clj_kondo_data = pep.analyze_view_clj_kondo(view)
 
-            view_analysis_ = pep.view_analysis(view.id())
+            analysis = clj_kondo_data.get("analysis", {})
 
-            namespace_index = pep.namespace_index(view_analysis_)
+            namespace_index = pep.namespace_index(analysis)
 
-            # TODO
-            # self.assertEqual({}, namespace_index)
+            # Namespace defintions.
+            self.assertEqual(
+                {
+                    "ns1": [
+                        {
+                            "filename": "-",
+                            "row": 1,
+                            "col": 1,
+                            "name": "ns1",
+                            "name-col": 5,
+                            "name-end-col": 8,
+                            "name-row": 1,
+                            "name-end-row": 1,
+                        }
+                    ]
+                },
+                pep.analysis_nindex(namespace_index),
+            )
 
         finally:
             if view:

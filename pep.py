@@ -895,6 +895,54 @@ def project_classpath(window):
 
 ## ---
 
+def analyze_view_clj_kondo(view):
+
+    window = view.window()
+
+    view_file_name = view.file_name()
+
+    project_file_name = window.project_file_name() if window else None
+
+    # Setting the working directory is important because of clj-kondo's cache.
+    cwd = None
+
+    if project_file_name:
+        cwd = os.path.dirname(project_file_name)
+    elif view_file_name:
+        cwd = os.path.dirname(view_file_name)
+
+    analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true} :format :json :canonical-paths true} \
+                        :lint-as {reagent.core/with-let clojure.core/let}}"
+
+    # --lint <file>: a file can either be a normal file, directory or classpath.
+    # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
+    # Use - as filename for reading from stdin.
+
+    # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
+
+    analysis_subprocess_args = [
+        clj_kondo_path(),
+        "--config",
+        analysis_config,
+        "--lint",
+        "-",
+        "--filename",
+        view_file_name or "-",
+    ]
+
+    analysis_completed_process = subprocess.run(
+        analysis_subprocess_args,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        input=view_text(view),
+    )
+
+    try:
+        return json.loads(analysis_completed_process.stdout)
+    except:
+        return {}
+
 
 def analyze_view(view, on_completed=None):
     is_debug = settings().get("debug", False)
