@@ -12,6 +12,41 @@ def new_scratch_view():
     return view
 
 
+class TestAnalyzeViewCljKondo(TestCase):
+    def test_analyze_view_clj_kondo_1(self):
+        """
+        Blank view.
+        """
+
+        view = None
+
+        try:
+            view = new_scratch_view()
+            view.run_command(
+                "append",
+                {"characters": ""},
+            )
+
+            clj_kondo_data = pep.analyze_view_clj_kondo(view)
+
+            self.assertEqual(
+                {
+                    "namespace-definitions": [],
+                    "namespace-usages": [],
+                    "var-definitions": [],
+                    "var-usages": [],
+                    "locals": [],
+                    "local-usages": [],
+                    "keywords": [],
+                },
+                clj_kondo_data["analysis"],
+            )
+
+        finally:
+            if view:
+                view.close()
+
+
 class TestNamespaceIndex(TestCase):
     def test_namespace_index(self):
         view = None
