@@ -5,18 +5,49 @@ from unittest import TestCase
 import Pep.pep as pep
 
 
+def new_scratch_view():
+    view = sublime.active_window().new_file()
+    view.set_scratch(True)
+
+    return view
+
+
+class TestNamespaceIndex(TestCase):
+    def test_namespace_index(self):
+        view = None
+        try:
+            view = new_scratch_view()
+            view.run_command(
+                "append",
+                {
+                    "characters": "(ns ns1 (:require [clojure.str :as str :refer [blank?]]))"
+                },
+            )
+
+            pep.analyze_view(view)
+
+            view_analysis_ = pep.view_analysis(view.id())
+
+            namespace_index = pep.namespace_index(view_analysis_)
+
+            # TODO
+            # self.assertEqual({}, namespace_index)
+
+        finally:
+            if view:
+                view.close()
+
+
 class TestPep(TestCase):
     def setUp(self):
         self.window = sublime.active_window()
-        self.view = self.window.new_file()
+        self.view = new_scratch_view()
 
     def tearDown(self):
         if self.view:
             self.view.close()
 
     def test_indexes(self):
-        self.view.set_scratch(True)
-
         self.view.run_command(
             "append",
             {

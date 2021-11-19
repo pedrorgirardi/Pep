@@ -383,6 +383,8 @@ def namespace_index(
 
                 nrn_usages_.setdefault(name_row, []).append(namespace_usage)
 
+                # Index alias row (in case there's one).
+                # Note: It's possible to have both the name and alias in the same row.
                 if namespace_usage.get("alias"):
                     alias_row = namespace_usage.get("alias-row")
 
