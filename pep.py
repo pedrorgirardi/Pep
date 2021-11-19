@@ -895,6 +895,7 @@ def project_classpath(window):
 
 ## ---
 
+
 def analyze_view_clj_kondo(view):
     try:
 
@@ -939,7 +940,6 @@ def analyze_view_clj_kondo(view):
             input=view_text(view),
         )
 
-
         return json.loads(analysis_completed_process.stdout)
 
     except:
@@ -948,67 +948,13 @@ def analyze_view_clj_kondo(view):
 
 
 def analyze_view(view, on_completed=None):
-    is_debug = settings().get("debug", False)
-
-    window = view.window()
-
-    view_file_name = view.file_name()
-
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
     view_change_count = view.change_count()
 
-    project_file_name = window.project_file_name() if window else None
+    clj_kondo_data = analyze_view_clj_kondo(view)
 
-    # Setting the working directory is important because of clj-kondo's cache.
-    cwd = None
-
-    if project_file_name:
-        cwd = os.path.dirname(project_file_name)
-    elif view_file_name:
-        cwd = os.path.dirname(view_file_name)
-
-    analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true} :format :json :canonical-paths true} \
-                        :lint-as {reagent.core/with-let clojure.core/let}}"
-
-    # --lint <file>: a file can either be a normal file, directory or classpath.
-    # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
-    # Use - as filename for reading from stdin.
-
-    # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
-
-    analysis_subprocess_args = [
-        clj_kondo_path(),
-        "--config",
-        analysis_config,
-        "--lint",
-        "-",
-        "--filename",
-        view_file_name or "-",
-    ]
-
-    if is_debug:
-        print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
-
-    analysis_completed_process = subprocess.run(
-        analysis_subprocess_args,
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        input=view_text(view),
-    )
-
-    output = None
-
-    try:
-        output = json.loads(analysis_completed_process.stdout)
-    except:
-        output = {}
-
-    analysis = output.get("analysis", {})
-
-    if is_debug:
-        pprint.pp(analysis)
+    analysis = clj_kondo_data.get("analysis", {})
 
     # Keywords indexed by row.
     krn = {}
@@ -1055,8 +1001,8 @@ def analyze_view(view, on_completed=None):
 
     view_analysis_ = {
         "view_change_count": view_change_count,
-        "findings": output.get("findings", {}),
-        "summary": output.get("summary", {}),
+        "findings": clj_kondo_data.get("findings", {}),
+        "summary": clj_kondo_data.get("summary", {}),
         "kindex": kindex,
         "krn": krn,
         "lindex": lindex,
