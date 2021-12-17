@@ -1122,7 +1122,7 @@ def analyze_paths(window):
         classpath = ":".join(paths)
 
         print(
-            f"(Pep) Analyzing paths... (Project {project_path(window)}, Paths {paths})"
+            f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
         )
 
         analysis_config = "{:output {:analysis {:arglists true :keywords true} :format :json :canonical-paths true}}"
