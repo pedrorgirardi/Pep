@@ -1882,6 +1882,17 @@ def find_thingy_regions(view, analysis, thingy):
 
 # ---
 
+class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        global _view_analysis_
+        _view_analysis_ = {}
+
+        global _paths_analysis_
+        _paths_analysis_ = {}
+
+        global _classpath_analysis_
+        _classpath_analysis_ = {}
+
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
     def run(self, edit):

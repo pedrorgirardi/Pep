@@ -26,5 +26,9 @@
     {
         "caption": "Pep: Goto Spec...",
         "command": "pg_pep_goto_spec"
-    }
+    },
+    {
+        "caption": "Pep: Clear Cache",
+        "command": "pg_pep_clear_cache"
+    },
 ]
