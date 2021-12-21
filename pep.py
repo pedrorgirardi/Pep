@@ -1882,6 +1882,7 @@ def find_thingy_regions(view, analysis, thingy):
 
 # ---
 
+
 class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         global _view_analysis_
