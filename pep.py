@@ -2967,8 +2967,9 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
         print(f"(Pep) Clear project cache (Project: {project_path_})")
 
-        set_paths_analysis(project_path_, {})
-        set_classpath_analysis(project_path_, {})
+        if project_path_:
+            set_paths_analysis(project_path_, {})
+            set_classpath_analysis(project_path_, {})
 
 
 # ---
