@@ -54,6 +54,21 @@ _paths_analysis_ = {}
 _classpath_analysis_ = {}
 
 
+# TODO: Read from a configuration file.
+_lint_as_ = """{defn-spec.core/defn-spec clojure.core/defn
+
+                compute.ui.re-frame/reg-sub-raw-wrap re-frame.core/reg-sub-raw
+                compute.ui.re-frame/reg-kw-sub re-frame.core/reg-sub
+                compute.ui.re-frame/reg-event-db re-frame.core/reg-event-db
+                compute.ui.components.constructors/defc clojure.core/def
+
+                compute.http-api.utils/def-pull-resolver clojure.core/def
+
+                cs.analytics.aws-fetcher/for-with-anomalies clojure.core/for
+
+                reagent.core/with-let clojure.core/let}"""
+
+
 def show_output_panel(window):
     window.run_command("show_panel", {"panel": OUTPUT_PANEL_NAME_PREFIXED})
 
@@ -913,11 +928,8 @@ def analyze_view_clj_kondo(view):
         elif view_file_name:
             cwd = os.path.dirname(view_file_name)
 
-        lint_as = """{defn-spec.core/defn-spec clojure.core/defn
-                      reagent.core/with-let clojure.core/let}"""
-
         analysis_config = f"""{{:output {{:analysis {{:arglists true :locals true :keywords true}} :format :json :canonical-paths true}} \
-                                :lint-as {lint_as}}}"""
+                                :lint-as {_lint_as_}}}"""
 
         # --lint <file>: a file can either be a normal file, directory or classpath.
         # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
@@ -1049,9 +1061,7 @@ def analyze_classpath(window):
     if classpath := project_classpath(window):
         print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-        analysis_config = (
-            "{:output {:analysis {:arglists true} :format :json :canonical-paths true}}"
-        )
+        analysis_config = f"""{{:output {{:analysis {{:arglists true}} :format :json :canonical-paths true}} :lint-as {_lint_as_} }}"""
 
         analysis_subprocess_args = [
             clj_kondo_path(),
@@ -1128,7 +1138,7 @@ def analyze_paths(window):
             f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
         )
 
-        analysis_config = "{:output {:analysis {:arglists true :keywords true} :format :json :canonical-paths true}}"
+        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} :lint-as {_lint_as_} }}"""
 
         analysis_subprocess_args = [
             clj_kondo_path(),
