@@ -60,6 +60,7 @@ _lint_as_ = """{defn-spec.core/defn-spec clojure.core/defn
                 compute.ui.re-frame/reg-sub-raw-wrap re-frame.core/reg-sub-raw
                 compute.ui.re-frame/reg-kw-sub re-frame.core/reg-sub
                 compute.ui.re-frame/reg-event-db re-frame.core/reg-event-db
+                compute.ui.pipe/defcs clojure.core/defn
                 compute.ui.components.constructors/defc clojure.core/def
 
                 compute.http-api.utils/def-pull-resolver clojure.core/def
