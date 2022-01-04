@@ -2051,6 +2051,34 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, items_)
 
 
+class PgPepCopyNameCommand(sublime_plugin.TextCommand):
+    """
+    Copy a Thingy's name to the clipboard.
+    """
+
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = thingy_sel_region(self.view)
+
+        thingy = thingy_in_region(self.view, view_analysis_, region)
+
+        if thingy:
+            thingy_type, _, thingy_data = thingy
+
+            thingy_namespace = thingy_data.get("ns") or thingy_data.get("from")
+
+            thingy_name = thingy_data.get("name")
+
+            thingy_qualified_name = (
+                f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+            )
+
+            sublime.set_clipboard(thingy_qualified_name)
+
+            self.view.window().status_message("Copied")
+
+
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
     def run(self, edit, side_by_side=False):
         is_debug = debug()
