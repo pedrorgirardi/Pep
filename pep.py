@@ -57,6 +57,8 @@ _classpath_analysis_ = {}
 # TODO: Read from a configuration file.
 _lint_as_ = """{defn-spec.core/defn-spec clojure.core/defn
 
+                com.wsscode.pathom3.connect.operation/defresolver clojure.core/defn
+
                 compute.ui.re-frame/reg-sub-raw-wrap re-frame.core/reg-sub-raw
                 compute.ui.re-frame/reg-kw-sub re-frame.core/reg-sub
                 compute.ui.re-frame/reg-event-db re-frame.core/reg-event-db
