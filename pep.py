@@ -59,12 +59,15 @@ _lint_as_ = """{defn-spec.core/defn-spec clojure.core/defn
 
                 com.wsscode.pathom3.connect.operation/defresolver clojure.core/defn
 
+                compute.ui.re-frame/reg-sub re-frame.core/reg-sub
+                compute.ui.re-frame/reg-fx re-frame.core/reg-fx
                 compute.ui.re-frame/reg-sub-raw-wrap re-frame.core/reg-sub-raw
                 compute.ui.re-frame/reg-kw-sub re-frame.core/reg-sub
                 compute.ui.re-frame/reg-event-db re-frame.core/reg-event-db
+                compute.ui.re-frame/reg-event-fx re-frame.core/reg-event-fx
+
                 compute.ui.pipe/defcs clojure.core/defn
                 compute.ui.components.constructors/defc clojure.core/def
-                compute.ui.re-frame/reg-sub re-frame.core/reg-sub
 
                 compute.http-api.utils/def-pull-resolver clojure.core/def
 
