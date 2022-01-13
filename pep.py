@@ -1991,15 +1991,17 @@ class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
 
 class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     """
-    Goto namespace in paths.
+    Goto namespace in scope.
+
+    Scope is either 'classpath' or 'paths'.
     """
 
-    def run(self):
+    def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        paths_analysis_ = paths_analysis(project_path_)
+        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
 
-        items_ = namespace_goto_items(paths_analysis_)
+        items_ = namespace_goto_items(analysis_)
 
         # Sort by namespace name.
         items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
@@ -2009,45 +2011,51 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
     """
-    Goto var in paths.
+    Goto var in paths in scope.
+
+    Scope is either 'classpath' or 'paths'.
     """
 
-    def run(self):
+    def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        paths_analysis_ = paths_analysis(project_path_)
+        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
 
-        items_ = var_goto_items(paths_analysis_)
+        items_ = var_goto_items(analysis_)
 
         show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
     """
-    Goto keyword in paths.
+    Goto keyword in scope.
+
+    Scope is either 'classpath' or 'paths'.
     """
 
-    def run(self):
+    def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        paths_analysis_ = paths_analysis(project_path_)
+        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
 
-        items_ = keyword_goto_items(paths_analysis_)
+        items_ = keyword_goto_items(analysis_)
 
         show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
     """
-    Goto keyword defined by Clojure Spec in paths.
+    Goto keyword defined by Clojure Spec in scope.
+
+    Scope is either 'classpath' or 'paths'.
     """
 
-    def run(self):
+    def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        paths_analysis_ = paths_analysis(project_path_)
+        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
 
-        items_ = keyword_goto_items(paths_analysis_)
+        items_ = keyword_goto_items(analysis_)
         items_ = [
             item_
             for item_ in items_
