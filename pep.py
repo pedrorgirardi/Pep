@@ -420,6 +420,26 @@ def namespace_index(
     }
 
 
+def keyword_index(
+    analysis,
+    kindex=True,
+):
+    # Keywords indexed by name - tuple of namespace and name.
+    kindex_ = {}
+
+    if kindex:
+        for keyword in analysis.get("keywords", []):
+            ns = keyword.get("ns")
+            name = keyword.get("name")
+            row = keyword.get("row")
+
+            kindex_.setdefault((ns, name), []).append(keyword)
+
+    return {
+        "kindex": kindex_,
+    }
+
+
 def var_index(
     analysis,
     vindex=True,
@@ -1098,6 +1118,8 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
+        keyword_index_ = keyword_index(analysis)
+
         # There's no need to index namespace usages in the classpath.
         namespace_index_ = namespace_index(
             analysis,
@@ -1114,20 +1136,10 @@ def analyze_classpath(window):
             vrn_usages=False,
         )
 
-        # Keywords indexed by name - tuple of namespace and name.
-        kindex = {}
-
-        for keyword in analysis.get("keywords", []):
-            ns = keyword.get("ns")
-            name = keyword.get("name")
-            row = keyword.get("row")
-
-            kindex.setdefault((ns, name), []).append(keyword)
-
         set_classpath_analysis(
             project_path(window),
             {
-                "kindex": kindex,
+                **keyword_index_,
                 **namespace_index_,
                 **var_index_,
             },
@@ -1196,6 +1208,8 @@ def analyze_paths(window):
 
             kindex.setdefault((ns, name), []).append(keyword)
 
+        keyword_index_ = keyword_index(analysis)
+
         namespace_index_ = namespace_index(
             analysis,
             nrn=False,
@@ -1208,14 +1222,10 @@ def analyze_paths(window):
             vrn_usages=False,
         )
 
-        paths_analysis = {
-            "kindex": kindex,
-        }
-
         set_paths_analysis(
             project_path(window),
             {
-                **paths_analysis,
+                **keyword_index_,
                 **namespace_index_,
                 **var_index_,
             },
@@ -2010,7 +2020,11 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
+        analysis_ = (
+            paths_analysis(project_path_)
+            if scope == "paths"
+            else classpath_analysis(project_path_)
+        )
 
         items_ = namespace_goto_items(analysis_)
 
@@ -2030,7 +2044,11 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
+        analysis_ = (
+            paths_analysis(project_path_)
+            if scope == "paths"
+            else classpath_analysis(project_path_)
+        )
 
         items_ = var_goto_items(analysis_)
 
@@ -2047,7 +2065,11 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
+        analysis_ = (
+            paths_analysis(project_path_)
+            if scope == "paths"
+            else classpath_analysis(project_path_)
+        )
 
         items_ = keyword_goto_items(analysis_)
 
@@ -2064,7 +2086,11 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
+        analysis_ = (
+            paths_analysis(project_path_)
+            if scope == "paths"
+            else classpath_analysis(project_path_)
+        )
 
         items_ = keyword_goto_items(analysis_)
 
