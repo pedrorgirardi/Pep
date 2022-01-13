@@ -2036,7 +2036,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
     """
-    Goto var in paths in scope.
+    Goto var in scope.
 
     Scope is either 'classpath' or 'paths'.
     """
