@@ -1068,7 +1068,7 @@ def analyze_classpath(window):
     if classpath := project_classpath(window):
         print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true}} :format :json :canonical-paths true}} :lint-as {_lint_as_} }}"""
+        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} :lint-as {_lint_as_} }}"""
 
         analysis_subprocess_args = [
             clj_kondo_path(),
@@ -1114,9 +1114,20 @@ def analyze_classpath(window):
             vrn_usages=False,
         )
 
+        # Keywords indexed by name - tuple of namespace and name.
+        kindex = {}
+
+        for keyword in analysis.get("keywords", []):
+            ns = keyword.get("ns")
+            name = keyword.get("name")
+            row = keyword.get("row")
+
+            kindex.setdefault((ns, name), []).append(keyword)
+
         set_classpath_analysis(
             project_path(window),
             {
+                "kindex": kindex,
                 **namespace_index_,
                 **var_index_,
             },
@@ -2056,6 +2067,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         analysis_ = paths_analysis(project_path_) if scope == "paths" else classpath_analysis(project_path_)
 
         items_ = keyword_goto_items(analysis_)
+
         items_ = [
             item_
             for item_ in items_
