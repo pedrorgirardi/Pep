@@ -1933,6 +1933,42 @@ class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
         analyze_view_async(self.view)
 
 
+class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
+    """
+    Goto anything in scope.
+
+    Scope is one of: 'view', 'paths' or 'classpath'.
+    """
+
+    def run(self, scope="view"):
+        project_path_ = project_path(self.window)
+
+        active_view = self.window.active_view()
+
+        view_analysis_ = view_analysis(active_view.id()) if active_view else {}
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        classpath_analysis_ = classpath_analysis(project_path_)
+
+        analysis_ = {}
+
+        if scope == "view":
+            analysis_ = view_analysis_
+        elif scope == "paths":
+            analysis_ = paths_analysis_
+        elif scope == "classpath":
+            analysis_ = classpath_analysis_
+
+        items_ = [
+            *namespace_goto_items(analysis_),
+            *var_goto_items(analysis_),
+            *keyword_goto_items(analysis_),
+        ]
+
+        show_goto_thingy_quick_panel(self.window, items_)
+
+
 class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
     """
     Goto thingy in view.
