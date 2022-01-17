@@ -1945,6 +1945,10 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
 
         active_view = self.window.active_view()
 
+        # Goto is a window command, so it's possible
+        # that there isn't an active view.
+        # In that case, an empty analysis dict is used.
+
         view_analysis_ = view_analysis(active_view.id()) if active_view else {}
 
         paths_analysis_ = paths_analysis(project_path_)
