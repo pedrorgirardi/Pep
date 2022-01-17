@@ -1973,60 +1973,6 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, items_)
 
 
-class PgPepGotoInViewCommand(sublime_plugin.TextCommand):
-    """
-    Goto thingy in view.
-    """
-
-    def run(self, edit):
-        view_analysis_ = view_analysis(self.view.id())
-
-        items_ = [
-            *namespace_goto_items(view_analysis_),
-            *var_goto_items(view_analysis_),
-            *keyword_goto_items(view_analysis_),
-        ]
-
-        show_goto_thingy_quick_panel(self.view.window(), items_)
-
-
-class PgPepGotoInPathsCommand(sublime_plugin.WindowCommand):
-    """
-    Goto thingy in paths.
-    """
-
-    def run(self):
-        project_path_ = project_path(self.window)
-
-        paths_analysis_ = paths_analysis(project_path_)
-
-        items_ = [
-            *namespace_goto_items(paths_analysis_),
-            *var_goto_items(paths_analysis_),
-            *keyword_goto_items(paths_analysis_),
-        ]
-
-        show_goto_thingy_quick_panel(self.window, items_)
-
-
-class PgPepGotoInClasspathCommand(sublime_plugin.WindowCommand):
-    """
-    Goto thingy in classpath.
-    """
-
-    def run(self):
-        project_path_ = project_path(self.window)
-
-        classpath_analysis_ = classpath_analysis(project_path_)
-
-        items_ = [
-            *namespace_goto_items(classpath_analysis_),
-            *var_goto_items(classpath_analysis_),
-        ]
-
-        show_goto_thingy_quick_panel(self.window, items_)
-
-
 class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     """
     Goto namespace in scope.
