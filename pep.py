@@ -967,6 +967,11 @@ def analyze_view_clj_kondo(view):
 
 
 def analyze_view(view, on_completed=None):
+
+    # View is explictly set to ignore Pep.
+    if view.settings().get("pep_ignore"):
+        return False
+
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
     view_change_count = view.change_count()
