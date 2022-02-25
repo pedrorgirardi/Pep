@@ -853,7 +853,7 @@ def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
 
-def debug():
+def is_debug():
     return settings().get("debug", False)
 
 
@@ -1065,10 +1065,8 @@ def analyze_classpath(window):
     Analyze classpath to create indexes for var and namespace definitions.
     """
 
-    is_debug = debug()
-
     if classpath := project_classpath(window):
-        if is_debug:
+        if is_debug():
             print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
         analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} }}"""
@@ -1125,7 +1123,7 @@ def analyze_classpath(window):
             },
         )
 
-        if is_debug:
+        if is_debug():
             print(
                 f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
             )
@@ -1140,12 +1138,10 @@ def analyze_paths(window):
     Analyze paths to create indexes for var and namespace definitions, and keywords.
     """
 
-    is_debug = debug()
-
     if paths := project_data_paths(window):
         classpath = ":".join(paths)
 
-        if is_debug:
+        if is_debug():
             print(
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
             )
@@ -1210,7 +1206,7 @@ def analyze_paths(window):
             },
         )
 
-        if is_debug:
+        if is_debug():
             print(
                 f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths})"
             )
@@ -2131,8 +2127,6 @@ class PgPepThingyNamespaceCommand(sublime_plugin.TextCommand):
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
     def run(self, edit, side_by_side=False):
-        is_debug = debug()
-
         view_analysis_ = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
@@ -2840,8 +2834,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        is_debug = debug()
-
         view_analysis_ = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
@@ -3055,8 +3047,8 @@ class PgPepEventListener(sublime_plugin.EventListener):
         """
         Called right before a project is closed.
         """
-        if project_path_ := project_path(window) :
-            if debug():
+        if project_path_ := project_path(window):
+            if is_debug():
                 print(f"(Pep) Clear project cache (Project: {project_path_})")
 
             set_paths_analysis(project_path_, {})
@@ -3067,7 +3059,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 
 def plugin_loaded():
-    if debug():
+    if is_debug():
         print("(Pep) Plugin loaded")
 
     if window := sublime.active_window():
