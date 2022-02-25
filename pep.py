@@ -3055,12 +3055,10 @@ class PgPepEventListener(sublime_plugin.EventListener):
         """
         Called right before a project is closed.
         """
-        project_path_ = project_path(window)
+        if project_path_ := project_path(window) :
+            if debug():
+                print(f"(Pep) Clear project cache (Project: {project_path_})")
 
-        if debug():
-            print(f"(Pep) Clear project cache (Project: {project_path_})")
-
-        if project_path_:
             set_paths_analysis(project_path_, {})
             set_classpath_analysis(project_path_, {})
 
