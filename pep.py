@@ -1065,10 +1065,11 @@ def analyze_classpath(window):
     Analyze classpath to create indexes for var and namespace definitions.
     """
 
-    is_debug = settings().get("debug", False)
+    is_debug = debug()
 
     if classpath := project_classpath(window):
-        print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
+        if is_debug:
+            print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
         analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} }}"""
 
@@ -1080,9 +1081,6 @@ def analyze_classpath(window):
             "--lint",
             classpath,
         ]
-
-        if is_debug:
-            print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
@@ -1127,9 +1125,10 @@ def analyze_classpath(window):
             },
         )
 
-        print(
-            f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
-        )
+        if is_debug:
+            print(
+                f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
+            )
 
 
 def analyze_classpath_async(window):
@@ -1141,14 +1140,15 @@ def analyze_paths(window):
     Analyze paths to create indexes for var and namespace definitions, and keywords.
     """
 
-    is_debug = settings().get("debug", False)
+    is_debug = debug()
 
     if paths := project_data_paths(window):
         classpath = ":".join(paths)
 
-        print(
-            f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
-        )
+        if is_debug:
+            print(
+                f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
+            )
 
         analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} }}"""
 
@@ -1160,9 +1160,6 @@ def analyze_paths(window):
             "--lint",
             classpath,
         ]
-
-        if is_debug:
-            print("(Pep) clj-kondo\n", pprint.pformat(analysis_subprocess_args))
 
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
@@ -1213,9 +1210,10 @@ def analyze_paths(window):
             },
         )
 
-        print(
-            f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths})"
-        )
+        if is_debug:
+            print(
+                f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths})"
+            )
 
 
 def analyze_paths_async(window):
@@ -2850,9 +2848,6 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
         thingy = thingy_in_region(self.view, view_analysis_, region)
 
-        if is_debug:
-            print("(Pep) Thingy", thingy)
-
         if thingy:
             regions = find_thingy_regions(self.view, view_analysis_, thingy)
 
@@ -3062,7 +3057,8 @@ class PgPepEventListener(sublime_plugin.EventListener):
         """
         project_path_ = project_path(window)
 
-        print(f"(Pep) Clear project cache (Project: {project_path_})")
+        if debug():
+            print(f"(Pep) Clear project cache (Project: {project_path_})")
 
         if project_path_:
             set_paths_analysis(project_path_, {})
@@ -3073,7 +3069,8 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 
 def plugin_loaded():
-    print("(Pep) Plugin loaded")
+    if debug():
+        print("(Pep) Plugin loaded")
 
     if window := sublime.active_window():
         if settings().get("analyze_paths_on_plugin_loaded", False):
