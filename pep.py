@@ -54,6 +54,10 @@ _paths_analysis_ = {}
 _classpath_analysis_ = {}
 
 
+# It's not the ideal way of loadig settings, but it will do for now.
+_annotation_font_size_ = settings().get("annotation_font_size", "0.9em")
+
+
 def show_output_panel(window):
     window.run_command("show_panel", {"panel": OUTPUT_PANEL_NAME_PREFIXED})
 
@@ -2885,7 +2889,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 return f"""
                 <body>
                 <div">
-                    <span style="font-size:0.9em">{htmlify(finding["message"])}</span></div>
+                    <span style="font-size:{_annotation_font_size_}">{htmlify(finding["message"])}</span></div>
                 </div>
                 </body>
                 """

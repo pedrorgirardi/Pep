@@ -4,6 +4,9 @@
     // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
     "annotate_view_analysis": false,
 
+    // The font-size used by view analysis annotations.
+    "annotation_font_size": "0.9em",
+
     // True if you would like to see the number of clj-kondo errors, if any, in the status bar.
     "view_status_show_errors": false,
 
