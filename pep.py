@@ -2885,7 +2885,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 return f"""
                 <body>
                 <div">
-                    <span>{htmlify(finding["message"])}</span></div>
+                    <span style="font-size:0.9em">{htmlify(finding["message"])}</span></div>
                 </div>
                 </body>
                 """
