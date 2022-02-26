@@ -54,8 +54,30 @@ _paths_analysis_ = {}
 _classpath_analysis_ = {}
 
 
+# -- Settings
+
+
+def settings():
+    return sublime.load_settings("Pep.sublime-settings")
+
+
+def is_debug():
+    return settings().get("debug", False)
+
+
+def automatically_highlight():
+    return settings().get("automatically_highlight", False)
+
+
+def annotate_view_analysis():
+    return settings().get("annotate_view_analysis", False)
+
+
 # It's not the ideal way of loadig settings, but it will do for now.
 _annotation_font_size_ = settings().get("annotation_font_size", "0.9em")
+
+
+# -- Output
 
 
 def show_output_panel(window):
@@ -75,6 +97,9 @@ def output_panel(window):
     return window.find_output_panel(OUTPUT_PANEL_NAME) or window.create_output_panel(
         OUTPUT_PANEL_NAME
     )
+
+
+# -- Analysis
 
 
 def set_paths_analysis(project_path, analysis):
@@ -851,22 +876,6 @@ def show_goto_thingy_quick_panel(window, items):
 
 
 ## ---
-
-
-def settings():
-    return sublime.load_settings("Pep.sublime-settings")
-
-
-def is_debug():
-    return settings().get("debug", False)
-
-
-def automatically_highlight():
-    return settings().get("automatically_highlight", False)
-
-
-def annotate_view_analysis():
-    return settings().get("annotate_view_analysis", False)
 
 
 def set_view_name(view, name):
