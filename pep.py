@@ -73,8 +73,8 @@ def annotate_view_analysis():
     return settings().get("annotate_view_analysis", False)
 
 
-# It's not the ideal way of loadig settings, but it will do for now.
-_annotation_font_size_ = settings().get("annotation_font_size", "0.9em")
+def annotation_font_size():
+    return settings().get("annotation_font_size", "0.9em")
 
 
 # -- Output
@@ -2898,7 +2898,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 return f"""
                 <body>
                 <div">
-                    <span style="font-size:{_annotation_font_size_}">{htmlify(finding["message"])}</span></div>
+                    <span style="font-size:{annotation_font_size()}">{htmlify(finding["message"])}</span></div>
                 </div>
                 </body>
                 """
