@@ -2101,6 +2101,10 @@ class PgPepCopyNameCommand(sublime_plugin.TextCommand):
                 f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
             )
 
+            # Prefix ':' to a Keyword Thingy.
+            if thingy_type == TT_KEYWORD:
+                thingy_qualified_name = ":" + thingy_qualified_name
+
             sublime.set_clipboard(thingy_qualified_name)
 
             self.view.window().status_message("Copied")
