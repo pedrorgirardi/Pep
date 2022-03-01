@@ -2078,6 +2078,24 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, items_)
 
 
+def thingy_name(thingy):
+    thingy_type, _, thingy_data = thingy
+
+    thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
+
+    thingy_name = thingy_data.get("name")
+
+    thingy_qualified_name = (
+        f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+    )
+
+    # Prefix ':' to a Keyword Thingy.
+    if thingy_type == TT_KEYWORD:
+        thingy_qualified_name = ":" + thingy_qualified_name
+
+    return thingy_qualified_name
+
+
 class PgPepCopyNameCommand(sublime_plugin.TextCommand):
     """
     Copy a Thingy's name to the clipboard.
@@ -2088,24 +2106,8 @@ class PgPepCopyNameCommand(sublime_plugin.TextCommand):
 
         region = thingy_sel_region(self.view)
 
-        thingy = thingy_in_region(self.view, view_analysis_, region)
-
-        if thingy:
-            thingy_type, _, thingy_data = thingy
-
-            thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
-
-            thingy_name = thingy_data.get("name")
-
-            thingy_qualified_name = (
-                f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
-            )
-
-            # Prefix ':' to a Keyword Thingy.
-            if thingy_type == TT_KEYWORD:
-                thingy_qualified_name = ":" + thingy_qualified_name
-
-            sublime.set_clipboard(thingy_qualified_name)
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
+            sublime.set_clipboard(thingy_name(thingy))
 
             self.view.window().status_message("Copied")
 
@@ -2120,27 +2122,11 @@ class PgPepShowNameCommand(sublime_plugin.TextCommand):
 
         region = thingy_sel_region(self.view)
 
-        thingy = thingy_in_region(self.view, view_analysis_, region)
-
-        if thingy:
-            thingy_type, _, thingy_data = thingy
-
-            thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
-
-            thingy_name = thingy_data.get("name")
-
-            thingy_qualified_name = (
-                f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
-            )
-
-            # Prefix ':' to a Keyword Thingy.
-            if thingy_type == TT_KEYWORD:
-                thingy_qualified_name = ":" + thingy_qualified_name
-
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
             content = f"""
-                    <body id='pg-pep-thingy-namespace'>
+                    <body id='pg-pep-show-name'>
 
-                        {htmlify(thingy_qualified_name)}
+                        {htmlify(thingy_name(thingy))}
 
                     </body>
                     """
