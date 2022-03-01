@@ -2110,9 +2110,9 @@ class PgPepCopyNameCommand(sublime_plugin.TextCommand):
             self.view.window().status_message("Copied")
 
 
-class PgPepThingyNamespaceCommand(sublime_plugin.TextCommand):
+class PgPepShowNameCommand(sublime_plugin.TextCommand):
     """
-    Show a Thingy's namespace in a popup.
+    Show a Thingy's name in a popup.
     """
 
     def run(self, edit):
@@ -2125,21 +2125,31 @@ class PgPepThingyNamespaceCommand(sublime_plugin.TextCommand):
         if thingy:
             thingy_type, _, thingy_data = thingy
 
-            if thingy_namespace := thingy_data.get("ns") or thingy_data.get("to"):
+            thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
 
-                content = f"""
+            thingy_name = thingy_data.get("name")
+
+            thingy_qualified_name = (
+                f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+            )
+
+            # Prefix ':' to a Keyword Thingy.
+            if thingy_type == TT_KEYWORD:
+                thingy_qualified_name = ":" + thingy_qualified_name
+
+            content = f"""
                     <body id='pg-pep-thingy-namespace'>
 
-                        {htmlify(thingy_namespace)}
+                        {htmlify(thingy_qualified_name)}
 
                     </body>
                     """
 
-                self.view.show_popup(
-                    content,
-                    location=-1,
-                    max_width=500,
-                )
+            self.view.show_popup(
+                content,
+                location=-1,
+                max_width=500,
+            )
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
