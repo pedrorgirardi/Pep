@@ -50,6 +50,8 @@ Default settings:
 {
     "debug": false,
 
+    "clj_kondo_path": "clj-kondo",
+
     // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
     "annotate_view_analysis": false,
 
