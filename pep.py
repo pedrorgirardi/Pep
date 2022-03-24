@@ -77,6 +77,10 @@ def annotation_font_size():
     return settings().get("annotation_font_size", "0.9em")
 
 
+def clj_kondo_path():
+    return settings().get("clj_kondo_path")
+
+
 # -- Output
 
 
@@ -888,10 +892,6 @@ def set_view_name(view, name):
 
 def view_text(view):
     return view.substr(sublime.Region(0, view.size()))
-
-
-def clj_kondo_path():
-    return settings().get("clj_kondo_path")
 
 
 def project_classpath(window):
