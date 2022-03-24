@@ -891,12 +891,7 @@ def view_text(view):
 
 
 def clj_kondo_path():
-    # Bundled:
-    # os.path.join(sublime.packages_path(), "Pep", "bin", "clj-kondo")
-    #
-    # TODO: Setting to configure clj-kondo path.
-
-    return "clj-kondo"
+    return settings().get("clj_kondo_path")
 
 
 def project_classpath(window):
