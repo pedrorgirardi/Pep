@@ -615,7 +615,7 @@ def thingy_location(thingy_data):
         }
 
 
-def with_jar(filename, f):
+def open_jar(filename, f):
     """
     Open JAR `filename` and call `f` with filename and a file-like object (ZipExtFile).
 
@@ -663,7 +663,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view.set_scratch(True)
                 view.set_read_only(True)
 
-            with_jar(filename, open_file)
+            open_jar(filename, open_file)
 
         else:
             window.open_file(f"{filename}:{line}:{column}", flags=flags)
@@ -819,7 +819,7 @@ def preview_thingy(window, thingy_type, thingy_data):
                     nonlocal text_
                     text_ = "".join(getlines(filename, lineno_begin, lineno_end))
 
-                with_jar(thingy_filename, read_jar_source)
+                open_jar(thingy_filename, read_jar_source)
 
             else:
                 text_ = "".join(getlines(thingy_filename, lineno_begin, lineno_end))
