@@ -666,8 +666,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             with_jar(filename, open_file)
 
         else:
-            view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
-            view.set_scratch(True)
+            window.open_file(f"{filename}:{line}:{column}", flags=flags)
 
 
 def namespace_quick_panel_item(thingy_data):
