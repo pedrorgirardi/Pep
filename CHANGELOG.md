@@ -2,6 +2,7 @@
 
 ## 0.5 -
 - Revert scratch change
+- Internal: rename function `open_jar`
 
 ## 0.4 - 2022-03-25
 - Improvement: Goto always sets view as scratch
