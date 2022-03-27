@@ -731,18 +731,6 @@ def keyword_quick_panel_item(thingy_data):
     )
 
 
-def thingy_quick_panel_item(thingy_type, thingy_data):
-    if (
-        thingy_type == TT_NAMESPACE_DEFINITION
-        or thingy_type == TT_NAMESPACE_USAGE
-        or thingy_type == TT_NAMESPACE_USAGE_ALIAS
-    ):
-        return namespace_quick_panel_item(thingy_data)
-
-    elif thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
-        return var_quick_panel_item(thingy_data)
-
-
 def var_goto_items(analysis):
     items_ = []
 
