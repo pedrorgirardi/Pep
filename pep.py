@@ -669,16 +669,24 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             window.open_file(f"{filename}:{line}:{column}", flags=flags)
 
 
+def thingy_quick_panel_item_annotation(thingy_data):
+    """
+    Uses a thingy lang or filename for QuickPanelItem's annotation.
+
+    Note: clj-kondo adds 'lang' to .cljc files only.
+    """
+    return thingy_data.get("lang") or pathlib.Path(
+        thingy_data.get("filename", "")
+    ).suffix.replace(".", "")
+
+
 def namespace_quick_panel_item(thingy_data):
     namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
-    namespace_lang = thingy_data.get("lang")
-    namespace_filename = thingy_data.get("filename", "")
 
     return sublime.QuickPanelItem(
         namespace_name,
         kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-        annotation=namespace_lang
-        or pathlib.Path(namespace_filename).suffix.replace(".", ""),
+        annotation=thingy_quick_panel_item_annotation(thingy_data)
     )
 
 
@@ -686,12 +694,10 @@ def var_quick_panel_item(thingy_data):
     var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
     var_name = thingy_data.get("name", "")
     var_arglist = thingy_data.get("arglist-strs", [])
-    var_lang = thingy_data.get("lang")
-    var_filename = thingy_data.get("filename", "")
 
     trigger = f"{var_namespace}/{var_name}"
 
-    annotation = var_lang or pathlib.Path(var_filename).suffix.replace(".", "")
+    annotation = thingy_quick_panel_item_annotation(thingy_data)
 
     if var_arglist:
         return sublime.QuickPanelItem(
@@ -750,8 +756,6 @@ def keyword_goto_items(analysis):
             if reg := keyword_.get("reg", None):
                 keyword_namespace = keyword_.get("ns", "")
                 keyword_name = keyword_.get("name", "")
-                keyword_filename = keyword_.get("filename", "")
-                keyword_lang = keyword_.get("lang")
 
                 trigger = ":" + (
                     f"{keyword_namespace}/{keyword_name}"
@@ -767,8 +771,7 @@ def keyword_goto_items(analysis):
                             trigger,
                             kind=sublime.KIND_KEYWORD,
                             details=reg,
-                            annotation=keyword_lang
-                            or pathlib.Path(keyword_filename).suffix.replace(".", ""),
+                            annotation=thingy_quick_panel_item_annotation(keyword_),
                         ),
                     }
                 )
