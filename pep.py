@@ -747,13 +747,6 @@ def var_goto_items(analysis):
     items_ = []
 
     for var_definition in var_definitions(analysis):
-        var_namespace = var_definition.get("ns", "")
-        var_name = var_definition.get("name", "")
-        var_arglist = var_definition.get("arglist-strs", [])
-        var_filename = var_definition.get("filename", "")
-
-        trigger = f"{var_namespace}/{var_name}"
-
         items_.append(
             {
                 "thingy_type": TT_VAR_DEFINITION,
@@ -771,15 +764,6 @@ def keyword_goto_items(analysis):
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
             if reg := keyword_.get("reg", None):
-                keyword_namespace = keyword_.get("ns", "")
-                keyword_name = keyword_.get("name", "")
-
-                trigger = ":" + (
-                    f"{keyword_namespace}/{keyword_name}"
-                    if keyword_namespace
-                    else keyword_name
-                )
-
                 items_.append(
                     {
                         "thingy_type": TT_KEYWORD,
@@ -795,10 +779,6 @@ def namespace_goto_items(analysis):
     items_ = []
 
     for namespace_definition in namespace_definitions(analysis):
-
-        namespace_name = namespace_definition.get("name", "")
-        namespace_filename = namespace_definition.get("filename", "")
-
         items_.append(
             {
                 "thingy_type": TT_NAMESPACE_DEFINITION,
