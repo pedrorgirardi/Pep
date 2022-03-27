@@ -686,7 +686,7 @@ def namespace_quick_panel_item(thingy_data):
     return sublime.QuickPanelItem(
         namespace_name,
         kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-        annotation=thingy_quick_panel_item_annotation(thingy_data)
+        annotation=thingy_quick_panel_item_annotation(thingy_data),
     )
 
 
@@ -712,6 +712,23 @@ def var_quick_panel_item(thingy_data):
             kind=sublime.KIND_VARIABLE,
             annotation=annotation,
         )
+
+
+def keyword_quick_panel_item(thingy_data):
+    keyword_namespace = thingy_data.get("ns", "")
+    keyword_name = thingy_data.get("name", "")
+    keyword_reg = thingy_data.get("reg", "")
+
+    trigger = ":" + (
+        f"{keyword_namespace}/{keyword_name}" if keyword_namespace else keyword_name
+    )
+
+    return sublime.QuickPanelItem(
+        trigger,
+        kind=sublime.KIND_KEYWORD,
+        details=keyword_reg,
+        annotation=thingy_quick_panel_item_annotation(thingy_data),
+    )
 
 
 def thingy_quick_panel_item(thingy_type, thingy_data):
@@ -767,12 +784,7 @@ def keyword_goto_items(analysis):
                     {
                         "thingy_type": TT_KEYWORD,
                         "thingy_data": keyword_,
-                        "quick_panel_item": sublime.QuickPanelItem(
-                            trigger,
-                            kind=sublime.KIND_KEYWORD,
-                            details=reg,
-                            annotation=thingy_quick_panel_item_annotation(keyword_),
-                        ),
+                        "quick_panel_item": keyword_quick_panel_item(keyword_),
                     }
                 )
 
