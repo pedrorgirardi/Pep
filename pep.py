@@ -671,12 +671,12 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
 def namespace_quick_panel_item(thingy_data):
     namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
-    namespace_filename = thingy_data.get("filename", "")
+    namespace_lang = thingy_data.get("lang", "")
 
     return sublime.QuickPanelItem(
         namespace_name,
         kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-        annotation=pathlib.Path(namespace_filename).suffix.replace(".", ""),
+        annotation=namespace_lang,
     )
 
 
@@ -684,7 +684,7 @@ def var_quick_panel_item(thingy_data):
     var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
     var_name = thingy_data.get("name", "")
     var_arglist = thingy_data.get("arglist-strs", [])
-    var_filename = thingy_data.get("filename", "")
+    var_lang = thingy_data.get("lang", "")
 
     trigger = f"{var_namespace}/{var_name}"
 
@@ -693,13 +693,13 @@ def var_quick_panel_item(thingy_data):
             trigger,
             kind=sublime.KIND_FUNCTION,
             details=" ".join(var_arglist),
-            annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
+            annotation=var_lang,
         )
     else:
         return sublime.QuickPanelItem(
             trigger,
             kind=sublime.KIND_VARIABLE,
-            annotation=pathlib.Path(var_filename).suffix.replace(".", ""),
+            annotation=var_lang,
         )
 
 
