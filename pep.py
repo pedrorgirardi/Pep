@@ -671,12 +671,14 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
 def namespace_quick_panel_item(thingy_data):
     namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
-    namespace_lang = thingy_data.get("lang", "")
+    namespace_lang = thingy_data.get("lang")
+    namespace_filename = thingy_data.get("filename", "")
 
     return sublime.QuickPanelItem(
         namespace_name,
         kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
-        annotation=namespace_lang,
+        annotation=namespace_lang
+        or pathlib.Path(namespace_filename).suffix.replace(".", ""),
     )
 
 
@@ -684,22 +686,25 @@ def var_quick_panel_item(thingy_data):
     var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
     var_name = thingy_data.get("name", "")
     var_arglist = thingy_data.get("arglist-strs", [])
-    var_lang = thingy_data.get("lang", "")
+    var_lang = thingy_data.get("lang")
+    var_filename = thingy_data.get("filename", "")
 
     trigger = f"{var_namespace}/{var_name}"
+
+    annotation = var_lang or pathlib.Path(var_filename).suffix.replace(".", "")
 
     if var_arglist:
         return sublime.QuickPanelItem(
             trigger,
             kind=sublime.KIND_FUNCTION,
             details=" ".join(var_arglist),
-            annotation=var_lang,
+            annotation=annotation,
         )
     else:
         return sublime.QuickPanelItem(
             trigger,
             kind=sublime.KIND_VARIABLE,
-            annotation=var_lang,
+            annotation=annotation,
         )
 
 
@@ -746,6 +751,7 @@ def keyword_goto_items(analysis):
                 keyword_namespace = keyword_.get("ns", "")
                 keyword_name = keyword_.get("name", "")
                 keyword_filename = keyword_.get("filename", "")
+                keyword_lang = keyword_.get("lang")
 
                 trigger = ":" + (
                     f"{keyword_namespace}/{keyword_name}"
@@ -761,9 +767,8 @@ def keyword_goto_items(analysis):
                             trigger,
                             kind=sublime.KIND_KEYWORD,
                             details=reg,
-                            annotation=pathlib.Path(keyword_filename).suffix.replace(
-                                ".", ""
-                            ),
+                            annotation=keyword_lang
+                            or pathlib.Path(keyword_filename).suffix.replace(".", ""),
                         ),
                     }
                 )
