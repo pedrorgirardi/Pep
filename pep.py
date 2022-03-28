@@ -988,8 +988,6 @@ def analyze_view(view, on_completed=None):
 
     analysis = clj_kondo_data.get("analysis", {})
 
-    pprint.pprint(analysis)
-
     # Keywords indexed by row.
     krn = {}
 
@@ -1100,8 +1098,6 @@ def analyze_classpath(window):
             output = {}
 
         analysis = output.get("analysis", {})
-
-        pprint.pprint(analysis.get("java-class-definitions"))
 
         keyword_index_ = keyword_index(analysis)
 
