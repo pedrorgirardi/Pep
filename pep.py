@@ -81,6 +81,14 @@ def show_view_namespace():
     return settings().get("show_view_namespace", False)
 
 
+def view_namespace_prefix():
+    return settings().get("view_namespace_prefix", None)
+
+
+def view_namespace_suffix():
+    return settings().get("view_namespace_suffix", None)
+
+
 def clj_kondo_path():
     return settings().get("clj_kondo_path")
 
@@ -2987,7 +2995,11 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             # It's possible to get the namespace wrong since it's a list of definitions,
             # but it's unlikely because of the scope (view) of the analysis.
             if namespaces := list(analysis_nindex(analysis).keys()):
-                self.view.set_status("pg_pep_view_namespace", namespaces[0])
+                namespace_prefix = view_namespace_prefix() or ""
+                namespace_suffix = view_namespace_suffix() or ""
+                namespace = namespace_prefix + namespaces[0] + namespace_suffix
+
+                self.view.set_status("pg_pep_view_namespace", namespace)
 
     def on_activated_async(self):
         analyze_view_async(self.view, on_completed=self.view_analysis_completed)
