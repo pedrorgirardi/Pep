@@ -2991,6 +2991,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if annotate_view_analysis():
             self.view.run_command("pg_pep_annotate")
 
+        # Always erase view's namespace - it's up to the settings implementation to show it again.
+        self.view.erase_status("pg_pep_view_namespace")
+
         if show_view_namespace():
             # It's possible to get the namespace wrong since it's a list of definitions,
             # but it's unlikely because of the scope (view) of the analysis.
