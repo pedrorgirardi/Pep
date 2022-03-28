@@ -941,7 +941,7 @@ def analyze_view_clj_kondo(view):
         elif view_file_name:
             cwd = os.path.dirname(view_file_name)
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true :locals true :keywords true}} :format :json :canonical-paths true}} }}"""
+        analysis_config = f"""{{:output {{:analysis {{:arglists true :locals true :keywords true :java-class-usages true}} :format :json :canonical-paths true}} }}"""
 
         # --lint <file>: a file can either be a normal file, directory or classpath.
         # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
@@ -987,6 +987,8 @@ def analyze_view(view, on_completed=None):
     clj_kondo_data = analyze_view_clj_kondo(view)
 
     analysis = clj_kondo_data.get("analysis", {})
+
+    pprint.pprint(analysis.get("java-class-usages"))
 
     # Keywords indexed by row.
     krn = {}
@@ -1072,7 +1074,7 @@ def analyze_classpath(window):
         if is_debug():
             print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} }}"""
+        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-definitions true}} :format :json :canonical-paths true}} }}"""
 
         analysis_subprocess_args = [
             clj_kondo_path(),
@@ -1098,6 +1100,8 @@ def analyze_classpath(window):
             output = {}
 
         analysis = output.get("analysis", {})
+
+        pprint.pprint(analysis.get("java-class-definitions"))
 
         keyword_index_ = keyword_index(analysis)
 
