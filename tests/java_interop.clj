@@ -2,8 +2,4 @@
 
 Date
 
-(Date.)
-
 java.util.Date
-
-(java.util.Date.)
