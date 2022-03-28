@@ -77,6 +77,10 @@ def annotation_font_size():
     return settings().get("annotation_font_size", "0.9em")
 
 
+def show_view_namespace():
+    return settings().get("show_view_namespace", False)
+
+
 def clj_kondo_path():
     return settings().get("clj_kondo_path")
 
@@ -1019,7 +1023,13 @@ def analyze_view(view, on_completed=None):
 
         lrn_usages.setdefault(name_row, []).append(local_usage)
 
+    namespace_index_ = namespace_index(analysis)
+
+    var_index_ = var_index(analysis)
+
     view_analysis_ = {
+        **namespace_index_,
+        **var_index_,
         "view_change_count": view_change_count,
         "findings": clj_kondo_data.get("findings", {}),
         "summary": clj_kondo_data.get("summary", {}),
@@ -1031,18 +1041,7 @@ def analyze_view(view, on_completed=None):
         "lrn_usages": lrn_usages,
     }
 
-    namespace_index_ = namespace_index(analysis)
-
-    var_index_ = var_index(analysis)
-
-    set_view_analysis(
-        view.id(),
-        {
-            **namespace_index_,
-            **var_index_,
-            **view_analysis_,
-        },
-    )
+    set_view_analysis(view.id(), view_analysis_)
 
     if on_completed:
         on_completed(view_analysis_)
@@ -2983,6 +2982,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def view_analysis_completed(self, analysis):
         if annotate_view_analysis():
             self.view.run_command("pg_pep_annotate")
+
+        if show_view_namespace():
+            # It's possible to get the namespace wrong since it's a list of definitions,
+            # but it's unlikely because of the scope (view) of the analysis.
+            if namespaces := list(analysis_nindex(analysis).keys()):
+                self.view.set_status("pg_pep_view_namespace", namespaces[0])
 
     def on_activated_async(self):
         analyze_view_async(self.view, on_completed=self.view_analysis_completed)
