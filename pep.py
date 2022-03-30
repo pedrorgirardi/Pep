@@ -1207,7 +1207,7 @@ def analyze_paths(window):
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
             )
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true}} :format :json :canonical-paths true}} }}"""
+        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-usages true :java-class-definitions true}} :format :json :canonical-paths true}} }}"""
 
         analysis_subprocess_args = [
             clj_kondo_path(),
@@ -1258,12 +1258,19 @@ def analyze_paths(window):
             vrn_usages=False,
         )
 
+        java_class_index_ = java_class_index(
+            analysis,
+            jrn=False,
+            jrn_usages=False,
+        )
+
         set_paths_analysis(
             project_path(window),
             {
                 **keyword_index_,
                 **namespace_index_,
                 **var_index_,
+                **java_class_index_,
             },
         )
 
@@ -2941,7 +2948,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     ):
                         placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
                     else:
-                        placeholder = f"{thingy_data.get('name')} is used {len(thingy_usages)} times"
+                        sym = thingy_data.get("name") or thingy_data.get("class")
+
+                        placeholder = f"{sym} is used {len(thingy_usages)} times"
 
                     self.view.window().show_quick_panel(
                         quick_panel_items,
