@@ -42,6 +42,7 @@ TT_VAR_USAGE = "var_usage"
 TT_NAMESPACE_DEFINITION = "namespace_definition"
 TT_NAMESPACE_USAGE = "namespace_usage"
 TT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
+TT_JAVA_CLASS_USAGE = "java_class_usage"
 
 OUTPUT_PANEL_NAME = "pep"
 OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
@@ -239,6 +240,26 @@ def analysis_vrn_usages(analysis):
     'vrn' stands for 'var row name'.
     """
     return analysis.get("vrn_usages", {})
+
+
+def analysis_jrn_usages(analysis):
+    """
+    Returns a dictionary of Java class usages by row.
+
+    This index can be used to quicky find a Java class usage by row.
+
+    'jrn' stands for 'java row name'.
+    """
+    return analysis.get("jrn_usages", {})
+
+
+def analysis_jindex_usages(analysis):
+    """
+    Returns a dictionary of Java class usages indexed by name - Class name to a set of class usages.
+
+    'jindex_usages' stands for 'java class usages index'.
+    """
+    return analysis.get("jindex_usages", {})
 
 
 def analysis_lindex(analysis):
@@ -517,6 +538,38 @@ def var_index(
         "vrn": vrn_,
         "vindex_usages": vindex_usages_,
         "vrn_usages": vrn_usages_,
+    }
+
+
+def java_class_index(
+    analysis,
+    jindex=True,
+    jindex_usages=True,
+    jrn=True,
+    jrn_usages=True,
+):
+    # Java class usages indexed by row.
+    jrn_usages_ = {}
+
+    # Java class usages indexed by name - Class name to a set of class usages.
+    jindex_usages_ = {}
+
+    if jindex_usages or jrn_usages:
+        for java_class_usage in analysis.get("java-class-usages", []):
+
+            if jindex_usages:
+                jindex_usages_.setdefault(java_class_usage.get("class"), []).append(
+                    java_class_usage
+                )
+
+            if jrn_usages:
+                jrn_usages_.setdefault(java_class_usage.get("row"), []).append(
+                    java_class_usage
+                )
+
+    return {
+        "jindex_usages": jindex_usages_,
+        "jrn_usages": jrn_usages_,
     }
 
 
@@ -988,8 +1041,6 @@ def analyze_view(view, on_completed=None):
 
     analysis = clj_kondo_data.get("analysis", {})
 
-    pprint.pprint(analysis)
-
     # Keywords indexed by row.
     krn = {}
 
@@ -1037,9 +1088,12 @@ def analyze_view(view, on_completed=None):
 
     var_index_ = var_index(analysis)
 
+    java_class_index_ = java_class_index(analysis)
+
     view_analysis_ = {
         **namespace_index_,
         **var_index_,
+        **java_class_index_,
         "view_change_count": view_change_count,
         "findings": clj_kondo_data.get("findings", {}),
         "summary": clj_kondo_data.get("summary", {}),
@@ -1370,6 +1424,23 @@ def var_usage_region(view, var_usage):
     return sublime.Region(name_start_point, name_end_point)
 
 
+def java_class_usage_region(view, java_class_usage):
+    """
+    Returns the Region of a Java class usage.
+    """
+
+    name_row_start = java_class_usage.get("row")
+    name_col_start = java_class_usage.get("col")
+
+    name_row_end = java_class_usage.get("end-row")
+    name_col_end = java_class_usage.get("end-col")
+
+    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
+    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+
+    return sublime.Region(name_start_point, name_end_point)
+
+
 def var_usage_namespace_region(view, var_usage):
     """
     Returns the namespace Region of var_usage, or None.
@@ -1496,6 +1567,16 @@ def var_definition_in_region(view, vrn, region):
             return (_region, var_definition)
 
 
+def java_class_usage_in_region(view, jrn_usages, region):
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    for java_class_usage in jrn_usages.get(region_begin_row + 1, []):
+        _region = java_class_usage_region(view, java_class_usage)
+
+        if _region.contains(region):
+            return (_region, java_class_usage)
+
+
 # ---
 
 
@@ -1585,6 +1666,8 @@ def thingy_in_region(view, analysis, region):
             - Namespace usage
             - Namespace usage alias
             - Keywords
+            - Java class definition
+            - Java class usage
 
         - Region for the symbol
 
@@ -1655,6 +1738,14 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return ("namespace_definition", thingy_region, thingy_data)
 
+    # 9. Try Java class usages.
+    thingy_region, thingy_data = java_class_usage_in_region(
+        view, analysis_jrn_usages(analysis), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
+
 
 # ---
 
@@ -1710,6 +1801,10 @@ def find_var_usages(analysis, thingy_data):
     var_name = thingy_data.get("name")
 
     return var_usages(analysis, (var_ns, var_name))
+
+
+def find_java_class_usages(analysis, thingy_data):
+    return analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
 
 
 def find_namespace_definition(analysis, thingy_data):
@@ -1879,6 +1974,12 @@ def find_thingy_regions(view, analysis, thingy):
 
         for var_usage in var_usages:
             regions.append(var_usage_region(view, var_usage))
+
+    elif thingy_type == TT_JAVA_CLASS_USAGE:
+        java_class_usages = find_java_class_usages(analysis, thingy_data)
+
+        for java_class_usage in java_class_usages:
+            regions.append(java_class_usage_region(view, java_class_usage))
 
     elif thingy_type == TT_NAMESPACE_DEFINITION:
         regions.append(namespace_definition_region(view, thingy_data))
