@@ -241,6 +241,14 @@ def analysis_vrn_usages(analysis):
     """
     return analysis.get("vrn_usages", {})
 
+def analysis_jindex(analysis):
+    """
+    Returns a dictionary of Java class definitions indexed by name.
+
+    'jindex' stands for 'java class definition index'.
+    """
+    return analysis.get("jindex", {})
+
 
 def analysis_jrn_usages(analysis):
     """
@@ -1822,7 +1830,17 @@ def find_var_usages(analysis, thingy_data):
     return var_usages(analysis, (var_ns, var_name))
 
 
+def find_java_class_definition(analysis, thingy_data):
+    """
+    Returns a Java class definition analysis or None.
+    """
+    return analysis_jindex(analysis).get(thingy_data.get("class"))
+
+
 def find_java_class_usages(analysis, thingy_data):
+    """
+    Returns a list of Java class usage analysis.
+    """
     return analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
 
 
@@ -2698,6 +2716,21 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     or find_var_definition(paths_analysis_, thingy_data)
                     or find_var_definition(classpath_analysis_, thingy_data)
                 )
+
+            elif thingy_type == TT_JAVA_CLASS_USAGE:
+                project_path_ = project_path(window)
+
+                paths_analysis_ = paths_analysis(project_path_)
+
+                classpath_analysis_ = classpath_analysis(project_path_)
+
+                definition = (
+                    find_java_class_definition(analysis, thingy_data)
+                    or find_java_class_definition(paths_analysis_, thingy_data)
+                    or find_java_class_definition(classpath_analysis_, thingy_data)
+                )
+
+                print(definition)
 
             elif thingy_type == TT_KEYWORD:
                 keyword_namespace = thingy_data.get("ns", None)
