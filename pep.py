@@ -2534,7 +2534,17 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                     if position != -1:
                         self.jump(state, movement, position)
 
-                        {TT_NAMESPACE_USAGE, TT_NAMESPACE_USAGE_ALIAS}
+            elif thingy_type == TT_JAVA_CLASS_USAGE:
+                thingy_findings = find_java_class_usages(state, thingy_data)
+
+                if thingy_id := thingy_data.get("class"):
+
+                    self.initialize_navigation(state, thingy_id, thingy_findings)
+
+                    position = self.find_position(thingy_data, thingy_findings)
+
+                    if position != -1:
+                        self.jump(state, movement, position)
 
             elif (
                 thingy_type == TT_NAMESPACE_USAGE
