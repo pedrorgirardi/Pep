@@ -2856,6 +2856,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             elif thingy_type == TT_VAR_USAGE:
                 thingy_usages = find_var_usages(analysis_, thingy_data)
 
+            elif thingy_type == TT_JAVA_CLASS_USAGE:
+                thingy_usages = find_java_class_usages(analysis_, thingy_data)
+
             elif thingy_type == TT_NAMESPACE_DEFINITION:
                 thingy_usages = find_namespace_usages(analysis_, thingy_data)
 
