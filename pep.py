@@ -7,7 +7,6 @@ import tempfile
 import json
 import traceback
 import pprint
-import threading
 import time
 import linecache
 import pathlib
@@ -1129,9 +1128,7 @@ def analyze_view(view, on_completed=None):
 
 
 def analyze_view_async(view, on_completed=None):
-    threading.Thread(
-        target=lambda: analyze_view(view, on_completed=on_completed), daemon=True
-    ).start()
+    sublime.set_timeout_async(lambda: analyze_view(view, on_completed=on_completed), 0)
 
 
 def analyze_classpath(window):
@@ -1212,7 +1209,7 @@ def analyze_classpath(window):
 
 
 def analyze_classpath_async(window):
-    threading.Thread(target=lambda: analyze_classpath(window), daemon=True).start()
+    sublime.set_timeout_async(lambda: analyze_classpath(window), 0)
 
 
 def analyze_paths(window):
@@ -1301,7 +1298,7 @@ def analyze_paths(window):
 
 
 def analyze_paths_async(window):
-    threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
+    sublime.set_timeout_async(lambda: analyze_paths(window), 0)
 
 
 ## ---
