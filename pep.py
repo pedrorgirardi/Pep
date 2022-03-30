@@ -545,9 +545,15 @@ def java_class_index(
     analysis,
     jindex=True,
     jindex_usages=True,
-    jrn=True,
     jrn_usages=True,
 ):
+    # Java class definition indexed by class name.
+    jindex_ = {}
+
+    if jindex:
+        for java_class_definition in analysis.get("java-class-definitions", []):
+            jindex_[java_class_definition.get("class")] = java_class_definition
+
     # Java class usages indexed by row.
     jrn_usages_ = {}
 
@@ -568,6 +574,7 @@ def java_class_index(
                 )
 
     return {
+        "jindex": jindex_,
         "jindex_usages": jindex_usages_,
         "jrn_usages": jrn_usages_,
     }
@@ -1155,8 +1162,6 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
-        pprint.pprint(analysis.get("java-class-definitions"))
-
         keyword_index_ = keyword_index(analysis)
 
         # There's no need to index namespace usages in the classpath.
@@ -1175,9 +1180,17 @@ def analyze_classpath(window):
             vrn_usages=False,
         )
 
+        # There's no need to index Java class usages in the classpath.
+        java_class_index_ = java_class_index(
+            analysis,
+            jindex_usages=False,
+            jrn_usages=False,
+        )
+
         set_classpath_analysis(
             project_path(window),
             {
+                **java_class_index_,
                 **keyword_index_,
                 **namespace_index_,
                 **var_index_,
@@ -1260,7 +1273,6 @@ def analyze_paths(window):
 
         java_class_index_ = java_class_index(
             analysis,
-            jrn=False,
             jrn_usages=False,
         )
 
