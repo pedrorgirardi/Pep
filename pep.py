@@ -1209,7 +1209,7 @@ def analyze_classpath(window):
 
 
 def analyze_classpath_async(window):
-    sublime.set_timeout_async(lambda: analyze_classpath(window), 0)
+    sublime.set_timeout_async(lambda: analyze_classpath(window), 2)
 
 
 def analyze_paths(window):
@@ -1298,7 +1298,7 @@ def analyze_paths(window):
 
 
 def analyze_paths_async(window):
-    sublime.set_timeout_async(lambda: analyze_paths(window), 0)
+    sublime.set_timeout_async(lambda: analyze_paths(window), 1)
 
 
 ## ---
