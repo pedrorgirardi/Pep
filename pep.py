@@ -1143,7 +1143,7 @@ def analyze_classpath(window):
         if is_debug():
             print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-definitions true}} :format :json :canonical-paths true}} }}"""
+        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-definitions false}} :format :json :canonical-paths true}} }}"""
 
         analysis_subprocess_args = [
             clj_kondo_path(),
