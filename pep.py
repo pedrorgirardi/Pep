@@ -2717,20 +2717,20 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     or find_var_definition(classpath_analysis_, thingy_data)
                 )
 
-            elif thingy_type == TT_JAVA_CLASS_USAGE:
-                project_path_ = project_path(window)
+            # TODO
+            # elif thingy_type == TT_JAVA_CLASS_USAGE:
+            #     project_path_ = project_path(window)
 
-                paths_analysis_ = paths_analysis(project_path_)
+            #     paths_analysis_ = paths_analysis(project_path_)
 
-                classpath_analysis_ = classpath_analysis(project_path_)
+            #     classpath_analysis_ = classpath_analysis(project_path_)
 
-                definition = (
-                    find_java_class_definition(analysis, thingy_data)
-                    or find_java_class_definition(paths_analysis_, thingy_data)
-                    or find_java_class_definition(classpath_analysis_, thingy_data)
-                )
+            #     definition = (
+            #         find_java_class_definition(analysis, thingy_data)
+            #         or find_java_class_definition(paths_analysis_, thingy_data)
+            #         or find_java_class_definition(classpath_analysis_, thingy_data)
+            #     )
 
-                print(definition)
 
             elif thingy_type == TT_KEYWORD:
                 keyword_namespace = thingy_data.get("ns", None)
