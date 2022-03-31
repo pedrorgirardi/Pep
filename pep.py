@@ -1161,58 +1161,54 @@ def analyze_classpath(window):
             capture_output=True,
         )
 
-        def index_():
-            output = None
+        output = None
 
-            try:
-                output = json.loads(analysis_completed_process.stdout)
-            except:
-                output = {}
+        try:
+            output = json.loads(analysis_completed_process.stdout)
+        except:
+            output = {}
 
-            analysis = output.get("analysis", {})
+        analysis = output.get("analysis", {})
 
-            keyword_index_ = keyword_index(analysis)
+        keyword_index_ = keyword_index(analysis)
 
-            # There's no need to index namespace usages in the classpath.
-            namespace_index_ = namespace_index(
-                analysis,
-                nindex_usages=False,
-                nrn=False,
-                nrn_usages=False,
+        # There's no need to index namespace usages in the classpath.
+        namespace_index_ = namespace_index(
+            analysis,
+            nindex_usages=False,
+            nrn=False,
+            nrn_usages=False,
+        )
+
+        # There's no need to index var usages in the classpath.
+        var_index_ = var_index(
+            analysis,
+            vindex_usages=False,
+            vrn=False,
+            vrn_usages=False,
+        )
+
+        # There's no need to index Java class usages in the classpath.
+        java_class_index_ = java_class_index(
+            analysis,
+            jindex_usages=False,
+            jrn_usages=False,
+        )
+
+        set_classpath_analysis(
+            project_path(window),
+            {
+                **java_class_index_,
+                **keyword_index_,
+                **namespace_index_,
+                **var_index_,
+            },
+        )
+
+        if is_debug():
+            print(
+                f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
             )
-
-            # There's no need to index var usages in the classpath.
-            var_index_ = var_index(
-                analysis,
-                vindex_usages=False,
-                vrn=False,
-                vrn_usages=False,
-            )
-
-            # There's no need to index Java class usages in the classpath.
-            java_class_index_ = java_class_index(
-                analysis,
-                jindex_usages=False,
-                jrn_usages=False,
-            )
-
-            set_classpath_analysis(
-                project_path(window),
-                {
-                    **java_class_index_,
-                    **keyword_index_,
-                    **namespace_index_,
-                    **var_index_,
-                },
-            )
-
-            if is_debug():
-                print(
-                    f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
-                )
-
-        # Decode and index on an alternate thread.
-        sublime.set_timeout(index_, 0)
 
 
 def analyze_classpath_async(window):
