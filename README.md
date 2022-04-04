@@ -8,14 +8,14 @@ clj-kondo is the sole dependency, and everything else is supplied by built-in Su
 
 | Command | Status | Description |
 | ------- | ------ | ----------- |
-| `pg_pep_analyze_paths` | Stable | Analyze paths configured `pep.paths` |
-| `pg_pep_analyze_classpath` | Stable | Analyze classpath configured `pep.classpath` |
+| `pg_pep_analyze_paths` | Stable | Analyze paths configured in `pep.paths` |
+| `pg_pep_analyze_classpath` | Stable | Analyze classpath configured in `pep.classpath` |
 | `pg_pep_goto_anything` | Stable | Go to anything in scope |
 | `pg_pep_goto_namespace` | Stable | Go to namespace in scope |
 | `pg_pep_goto_var` | Stable | Go to var in scope |
 | `pg_pep_goto_keyword` | Stable | Go to keyword in scope |
 | `pg_pep_goto_spec` | Stable | Go to spec in scope |
-| `pg_pep_goto_definition` | Stable | Go definition |
+| `pg_pep_goto_definition` | Stable | Go to definition |
 | `pg_pep_show_doc` | Stable | Show documentation in a popup |
 | `pg_pep_jump` | Stable | Jump to occurrences of symbol or keyword |
 | `pg_pep_find_usages` | Stable | Find usages in scope |
