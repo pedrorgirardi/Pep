@@ -6,6 +6,26 @@ Status: in development
 
 clj-kondo is the sole dependency, and everything else is supplied by built-in Sublime Text APIs.
 
+| Command | Status | Description |
+| ------- | ------ | ----------- |
+| `pg_pep_analyze_paths` | Stable | Analyze paths configured `pep.paths` |
+| `pg_pep_analyze_classpath` | Stable | Analyze classpath configured `pep.classpath` |
+| `pg_pep_goto_anything` | Stable | Go to anything in scope |
+| `pg_pep_goto_namespace` | Stable | Go to namespace in scope |
+| `pg_pep_goto_var` | Stable | Go to var in scope |
+| `pg_pep_goto_keyword` | Stable | Go to keyword in scope |
+| `pg_pep_goto_spec` | Stable | Go to spec in scope |
+| `pg_pep_goto_definition` | Stable | Go definition |
+| `pg_pep_show_doc` | Stable | Show documentation in a popup |
+| `pg_pep_jump` | Stable | Jump to occurrences of symbol or keyword |
+| `pg_pep_find_usages` | Stable | Find usages in scope |
+| `pg_pep_select` | Stable | Select occurrences of symbol or keyword |
+| `pg_pep_highlight` | Stable | Highlight occurrences of symbol or keyword |
+| `pg_pep_annotate` | Stable | Annotate view (or lint view) |
+| `pg_pep_copy_name` | In development | Copy name of keyword or symbol to the clipboard |
+| `pg_pep_show_name` | In development | Show name of keyword or symbol in a popup |
+
+
 ## Highlight
 
 Highlight symbol or keyword under cursor and its usages.

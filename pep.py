@@ -241,6 +241,7 @@ def analysis_vrn_usages(analysis):
     """
     return analysis.get("vrn_usages", {})
 
+
 def analysis_jindex(analysis):
     """
     Returns a dictionary of Java class definitions indexed by name.
@@ -555,6 +556,14 @@ def java_class_index(
     jindex_usages=True,
     jrn_usages=True,
 ):
+    """
+    Index Java class definitions and usages.
+
+    Definitions and usages are indexed by class name.
+
+    Returns dict with keys 'jindex', 'jindex_usages', 'jrn_usages'.
+    """
+
     # Java class definition indexed by class name.
     jindex_ = {}
 
@@ -2730,7 +2739,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             #         or find_java_class_definition(paths_analysis_, thingy_data)
             #         or find_java_class_definition(classpath_analysis_, thingy_data)
             #     )
-
 
             elif thingy_type == TT_KEYWORD:
                 keyword_namespace = thingy_data.get("ns", None)
