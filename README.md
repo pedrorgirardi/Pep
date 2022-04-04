@@ -1,5 +1,7 @@
 # Pep
 
+> I'm currently working to improve the documentation.
+
 Status: in development
 
 **Pep** leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis.
@@ -24,6 +26,13 @@ Status: in development
 | `pg_pep_annotate` | Stable | Annotate view (or lint view) |
 | `pg_pep_copy_name` | In development | Copy name of keyword or symbol to the clipboard |
 | `pg_pep_show_name` | In development | Show name of keyword or symbol in a popup |
+
+I have been working on Pep for over a year, but I still consider it alpha.
+Pep is part of my Clojure(Script) development setup, combined with Tutkain, so I think it's developed enough to be useful.
+
+You're welcome to try it, and I would be happy to hear if it works for you. In case it doesn't work for you, I ask you to please create an issue, and I will do my best to address it.
+
+Pep is not available on Package Control yet, so you need to install it manually. (Clone this repo on your packages directory.)
 
 
 ## Highlight
