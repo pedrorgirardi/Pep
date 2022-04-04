@@ -302,56 +302,47 @@ class TestJavaClassAnalysis(TestCase):
 
         analysis_jindex_usages_ = pep.analysis_jindex_usages(view_analysis_)
 
-        # Assert class usages (keys).
-        self.assertEqual(list(analysis_jindex_usages_.keys()), ["java.util.Date"])
-
-        # Assert number of usages of java.util.Date.
-        self.assertEqual(len(analysis_jindex_usages_["java.util.Date"]), 3)
-
-        # TODO: Assert without filename.
         self.assertEqual(
-            {
-                "java.util.Date": [
-                    {
-                        "class": "java.util.Date",
-                        "col": 20,
-                        "end-col": 24,
-                        "end-row": 1,
-                        "filename": "/Users/pedro/Library/Application "
-                        "Support/Sublime "
-                        "Text/Packages/Pep/tests/java_class_usage1.clj",
-                        "row": 1,
-                        "uri": None,
-                    },
-                    {
-                        "class": "java.util.Date",
-                        "col": 1,
-                        "end-col": 5,
-                        "end-row": 3,
-                        "filename": "/Users/pedro/Library/Application "
-                        "Support/Sublime "
-                        "Text/Packages/Pep/tests/java_class_usage1.clj",
-                        "name-col": 1,
-                        "name-end-col": 5,
-                        "name-end-row": 3,
-                        "name-row": 3,
-                        "row": 3,
-                        "uri": None,
-                    },
-                    {
-                        "class": "java.util.Date",
-                        "col": 1,
-                        "end-col": 15,
-                        "end-row": 5,
-                        "filename": "/Users/pedro/Library/Application "
-                        "Support/Sublime "
-                        "Text/Packages/Pep/tests/java_class_usage1.clj",
-                        "row": 5,
-                        "uri": None,
-                    },
-                ]
-            },
-            analysis_jindex_usages_,
+            [
+                {
+                    "class": "java.util.Date",
+                    "col": 20,
+                    "end-col": 24,
+                    "end-row": 1,
+                    "filename": "/Users/pedro/Library/Application "
+                    "Support/Sublime "
+                    "Text/Packages/Pep/tests/java_class_usage1.clj",
+                    "row": 1,
+                    "uri": None,
+                },
+                {
+                    "class": "java.util.Date",
+                    "col": 1,
+                    "end-col": 5,
+                    "end-row": 3,
+                    "filename": "/Users/pedro/Library/Application "
+                    "Support/Sublime "
+                    "Text/Packages/Pep/tests/java_class_usage1.clj",
+                    "name-col": 1,
+                    "name-end-col": 5,
+                    "name-end-row": 3,
+                    "name-row": 3,
+                    "row": 3,
+                    "uri": None,
+                },
+                {
+                    "class": "java.util.Date",
+                    "col": 1,
+                    "end-col": 15,
+                    "end-row": 5,
+                    "filename": "/Users/pedro/Library/Application "
+                    "Support/Sublime "
+                    "Text/Packages/Pep/tests/java_class_usage1.clj",
+                    "row": 5,
+                    "uri": None,
+                },
+            ],
+            analysis_jindex_usages_.get("java.util.Date"),
         )
 
         view.close()

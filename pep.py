@@ -1219,6 +1219,10 @@ def analyze_classpath(window):
                 f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
             )
 
+        return True
+
+    return False
+
 
 def analyze_classpath_async(window):
     threading.Thread(target=lambda: analyze_classpath(window), daemon=True).start()
