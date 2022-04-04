@@ -1,6 +1,6 @@
 # Pep
 
-Status: in development
+Status: __in development__
 
 **Pep** leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis.
 
