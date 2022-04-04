@@ -35,6 +35,10 @@ You're welcome to try it, and I would be happy to hear if it works for you. In c
 Pep is not available on Package Control yet, so you need to install it manually. (Clone this repo on your packages directory.)
 
 
+## Annotate (Lint)
+
+![Pep Annotate](docs/Annotate.png)
+
 ## Highlight
 
 Highlight symbol or keyword under cursor and its usages.
