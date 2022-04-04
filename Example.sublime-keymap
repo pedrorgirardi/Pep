@@ -1,93 +1,182 @@
 [
-    // Pep: Analyze Paths
-    { 
-        "keys": ["ctrl+x", "p", "p"], 
+    // -- Analyze Paths
+    {
+        "keys": ["ctrl+x", "p", "p"],
         "command": "pg_pep_analyze_paths"
     },
 
-    // Pep: Analyze Classpath
-    { 
-        "keys": ["ctrl+x", "p", "P"], 
+    // -- Analyze Classpath
+    {
+        "keys": ["ctrl+x", "p", "P"],
         "command": "pg_pep_analyze_classpath"
     },
 
-    // Pep: Find Usages
-    { 
-        "keys": ["ctrl+u"], 
+    // -- Copy Name
+    {
+        "keys": ["ctrl+x", "."],
+        "command": "pg_pep_copy_name",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.edn | source.clojure"
+            }
+        ]
+    },
+
+    // -- Show Name
+    {
+        "keys": ["ctrl+x", ","],
+        "command": "pg_pep_show_name",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.edn | source.clojure"
+            }
+        ]
+    },
+
+    // -- Find Usages in View
+    {
+        "keys": ["ctrl+u"],
         "command": "pg_pep_find_usages",
         "context": [
             {
-                "key": "selector", 
-                "operator": "equal", 
+                "key": "selector",
+                "operator": "equal",
                 "operand": "source.clojure"
             }
-        ]
+        ],
+        "args": {"scope": "view"}
     },
 
-    // Pep: Find Usages in Project
-    { 
-        "keys": ["ctrl+super+u"], 
-        "command": "pg_pep_find_usages_in_project",
+    // -- Find Usages in Project
+    {
+        "keys": ["ctrl+super+u"],
+        "command": "pg_pep_find_usages",
         "context": [
             {
-                "key": "selector", 
-                "operator": "equal", 
+                "key": "selector",
+                "operator": "equal",
                 "operand": "source.clojure"
             }
-        ]
+        ],
+        "args": {"scope": "paths"}
     },
 
-    // Pep: Select
-    { 
-        "keys": ["ctrl+s", "s"], 
+    // -- Select
+    {
+        "keys": ["ctrl+s", "s"],
         "command": "pg_pep_select",
         "context": [
             {
-                "key": "selector", 
-                "operator": "equal", 
+                "key": "selector",
+                "operator": "equal",
                 "operand": "source.clojure"
             }
         ]
     },
 
-    // Pep: Navigate Back
-    { 
-    	"keys": ["ctrl+alt+up"], 
-    	"command": "pg_pep_navigate", 
-    	"args": {"direction": "back"} 
-    },
+    // -- Jump
+    { "keys": ["ctrl+alt+up"], "command": "pg_pep_jump", "args": {"movement": "back"} },
+    { "keys": ["ctrl+alt+down"], "command": "pg_pep_jump", "args": {"movement": "forward"} },
 
-    // Pep: Navigate Forward
-    { 
-    	"keys": ["ctrl+alt+down"], 
-    	"command": "pg_pep_navigate", 
-    	"args": {"direction": "forward"} 
-    },
-    
-
-    // Pep: Show Doc
+    // -- Show Doc
     {
         "keys": ["ctrl+i"],
         "command": "pg_pep_show_doc",
         "context": [{"key": "selector", "operator": "equal", "operand": "source.clojure"}]
     },
 
-    // Pep: Goto Definition
+    // -- Show doc side by side
+    {
+        "keys": ["ctrl+super+i"],
+        "command": "pg_pep_show_doc",
+        "args": {"side_by_side": true},
+        "context": [{"key": "selector", "operator": "equal", "operand": "source.clojure"}]
+    },
+
+    // -- Goto anything in view
+    {
+        "keys": ["shift", "."],
+        "command": "pg_pep_goto_anything",
+        "args": {"scope": "view"}
+    },
+
+    // -- Goto anything in paths
+    {
+        "keys": ["shift", "p"],
+        "command": "pg_pep_goto_anything",
+        "args": {"scope": "paths"}
+    },
+
+    // -- Goto anything in classpath
+    {
+        "keys": ["shift", "shift"],
+        "command": "pg_pep_goto_anything",
+        "args": {"scope": "classpath"}
+    },
+
+    // -- Goto namespace in paths
+    {
+        "keys": ["shift", "n"],
+        "command": "pg_pep_goto_namespace",
+        "args": {"scope": "paths"},
+    },
+
+    // -- Goto namespace in classpath
+    {
+        "keys": ["shift+alt+n"],
+        "command": "pg_pep_goto_namespace",
+        "args": {"scope": "classpath"},
+    },
+
+    // -- Goto to var in paths
+    {
+        "keys": ["shift", "o"],
+        "command": "pg_pep_goto_var",
+        "args": {"scope": "paths"},
+    },
+
+    // -- Goto to keyword in paths
+    {
+        "keys": ["shift", "k"],
+        "command": "pg_pep_goto_keyword",
+        "args": {"scope": "paths"},
+    },
+
+    // -- Goto Spec in paths
+    {
+        "keys": ["shift", "s"],
+        "command": "pg_pep_goto_spec",
+        "args": {"scope": "paths"},
+    },
+
+    // -- Goto Spec in classpath
+    {
+        "keys": ["shift+alt+s"],
+        "command": "pg_pep_goto_spec",
+        "args": {"scope": "classpath"},
+    },
+
+    // -- Goto definition
     {
         "keys": ["ctrl+d"],
         "command": "pg_pep_goto_definition",
-        "context": [{"key": "selector", 
-                     "operator": "equal", 
+        "context": [{"key": "selector",
+                     "operator": "equal",
                      "operand": "source.clojure"}]
     },
-
-    // Pep: Goto Definition Side by Side
+    // -- Goto definition side by side
     {
         "keys": ["ctrl+o"],
         "command": "pg_pep_goto_definition",
         "args": {"side_by_side": "true"},
-        "context": [{"key": "selector", 
-                     "operator": "equal", 
+        "context": [{"key": "selector",
+                     "operator": "equal",
                      "operand": "source.clojure"}]
-    }
+    },
+
+
 ]
