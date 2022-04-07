@@ -12,23 +12,85 @@
         "command": "pg_pep_analyze_paths"
     },
     {
-        "caption": "Pep: Goto Namespace...",
+        "caption": "Pep: Goto Namespace in Paths",
         "command": "pg_pep_goto_namespace"
     },
     {
-        "caption": "Pep: Goto Var...",
-        "command": "pg_pep_goto_var"
+        "caption": "Pep: Goto Var in Paths",
+        "command": "pg_pep_goto_var",
+        "args": {"scope": "paths"}
     },
     {
-        "caption": "Pep: Goto Keyword...",
-        "command": "pg_pep_goto_keyword"
+        "caption": "Pep: Goto Keyword in View",
+        "command": "pg_pep_goto_keyword",
+        "args": {"scope": "view"}
     },
     {
-        "caption": "Pep: Goto Spec...",
-        "command": "pg_pep_goto_spec"
+        "caption": "Pep: Goto Keyword in Paths",
+        "command": "pg_pep_goto_keyword",
+        "args": {"scope": "paths"}
+    },
+    {
+        "caption": "Pep: Goto Spec in View",
+        "command": "pg_pep_goto_spec",
+        "args": {"scope": "view"}
+    },
+    {
+        "caption": "Pep: Goto Spec in Paths",
+        "command": "pg_pep_goto_spec",
+        "args": {"scope": "paths"}
+    },
+    {
+        "caption": "Pep: Goto Anything in View",
+        "command": "pg_pep_goto_anything",
+        "args": {"scope": "view"}
+    },
+    {
+        "caption": "Pep: Goto Anything in Paths",
+        "command": "pg_pep_goto_anything",
+        "args": {"scope": "paths"}
+    },
+    {
+        "caption": "Pep: Goto Definition",
+        "command": "pg_pep_goto_definition",
+        "context": [{"key": "selector",
+                     "operator": "equal",
+                     "operand": "source.clojure"}],
+    },
+    {
+        "caption": "Pep: Goto Definition Side by Side",
+        "command": "pg_pep_goto_definition",
+        "context": [{"key": "selector",
+                     "operator": "equal",
+                     "operand": "source.clojure"}],
+        "args": {"side_by_side": "true"},
     },
     {
         "caption": "Pep: Clear Cache",
         "command": "pg_pep_clear_cache"
+    },
+    {
+        "caption": "Pep: Find Usages in View",
+        "command": "pg_pep_find_usages",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ],
+        "args": {"scope": "view"}
+    },
+    {
+        "caption": "Pep: Find Usages in Paths",
+        "command": "pg_pep_find_usages",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ],
+        "args": {"scope": "paths"}
     },
 ]
