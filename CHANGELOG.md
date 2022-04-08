@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 0.5 -
+## 0.5 - 2022-04-08
 - Revert scratch change
 - Internal: rename function `open_jar`
 - Fix QuickPanelItem file type annotation
@@ -9,6 +9,7 @@
 	- `view_namespace_prefix`
 	- `view_namespace_suffix`
 - Add commands to Command Palette
+- Analyze Java class usages
 
 ## 0.4 - 2022-03-25
 - Improvement: Goto always sets view as scratch
