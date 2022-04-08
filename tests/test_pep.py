@@ -302,47 +302,37 @@ class TestJavaClassAnalysis(TestCase):
 
         analysis_jindex_usages_ = pep.analysis_jindex_usages(view_analysis_)
 
+        java_util_date_usages = [
+            {
+                k: u[k]
+                for k in [
+                    "class",
+                    "row",
+                    "uri",
+                ]
+            }
+            for u in analysis_jindex_usages_.get("java.util.Date")
+        ]
+
         self.assertEqual(
             [
                 {
                     "class": "java.util.Date",
-                    "col": 20,
-                    "end-col": 24,
-                    "end-row": 1,
-                    "filename": "/Users/pedro/Library/Application "
-                    "Support/Sublime "
-                    "Text/Packages/Pep/tests/java_class_usage1.clj",
                     "row": 1,
                     "uri": None,
                 },
                 {
                     "class": "java.util.Date",
-                    "col": 1,
-                    "end-col": 5,
-                    "end-row": 3,
-                    "filename": "/Users/pedro/Library/Application "
-                    "Support/Sublime "
-                    "Text/Packages/Pep/tests/java_class_usage1.clj",
-                    "name-col": 1,
-                    "name-end-col": 5,
-                    "name-end-row": 3,
-                    "name-row": 3,
                     "row": 3,
                     "uri": None,
                 },
                 {
                     "class": "java.util.Date",
-                    "col": 1,
-                    "end-col": 15,
-                    "end-row": 5,
-                    "filename": "/Users/pedro/Library/Application "
-                    "Support/Sublime "
-                    "Text/Packages/Pep/tests/java_class_usage1.clj",
                     "row": 5,
                     "uri": None,
                 },
             ],
-            analysis_jindex_usages_.get("java.util.Date"),
+            java_util_date_usages,
         )
 
         view.close()
