@@ -28,7 +28,7 @@ Status: in development
 | `pg_pep_show_name` | In development | Show name of keyword or symbol in a popup |
 
 I have been working on Pep for over a year, but I still consider it alpha.
-Pep is part of my Clojure(Script) development setup, combined with Tutkain, so I think it's developed enough to be useful.
+Pep is part of my Clojure(Script) development setup, combined with [Tutkain](https://github.com/eerohele/Tutkain), so I think it's developed enough to be useful.
 
 You're welcome to try it, and I would be happy to hear if it works for you. In case it doesn't work for you, I ask you to please create an issue, and I will do my best to address it.
 
