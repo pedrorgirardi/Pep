@@ -8,8 +8,10 @@
 	- `show_view_namespace`
 	- `view_namespace_prefix`
 	- `view_namespace_suffix`
-- Add commands to Command Palette
+- Add commands to Command Palette:
+	- Most of Pep commands are now available in the **Command Palette**;
 - Analyze Java class usages
+	- Now `Pep: Find Usages` (in view or path) works for Java classes too;
 
 ## 0.4 - 2022-03-25
 - Improvement: Goto always sets view as scratch
