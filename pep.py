@@ -58,40 +58,50 @@ _classpath_analysis_ = {}
 # -- Settings
 
 
-def settings():
+def settings(window):
     return sublime.load_settings("Pep.sublime-settings")
 
 
-def is_debug():
-    return settings().get("debug", False)
+def project_data(window):
+    """
+    Pep project data.
+    """
+    if project_data := window.project_data():
+        return project_data.get("pep")
+    else:
+        return None
 
 
-def automatically_highlight():
-    return settings().get("automatically_highlight", False)
+def is_debug(window):
+    return settings(window).get("debug", False)
 
 
-def annotate_view_analysis():
-    return settings().get("annotate_view_analysis", False)
+def automatically_highlight(window):
+    return settings(window).get("automatically_highlight", False)
 
 
-def annotation_font_size():
-    return settings().get("annotation_font_size", "0.9em")
+def annotate_view_analysis(window):
+    return settings(window).get("annotate_view_analysis", False)
 
 
-def show_view_namespace():
-    return settings().get("show_view_namespace", False)
+def annotation_font_size(window):
+    return settings(window).get("annotation_font_size", "0.9em")
 
 
-def view_namespace_prefix():
-    return settings().get("view_namespace_prefix", None)
+def show_view_namespace(window):
+    return settings(window).get("show_view_namespace", False)
 
 
-def view_namespace_suffix():
-    return settings().get("view_namespace_suffix", None)
+def view_namespace_prefix(window):
+    return settings(window).get("view_namespace_prefix", None)
 
 
-def clj_kondo_path():
-    return settings().get("clj_kondo_path")
+def view_namespace_suffix(window):
+    return settings(window).get("view_namespace_suffix", None)
+
+
+def clj_kondo_path(window):
+    return settings(window).get("clj_kondo_path")
 
 
 # -- Output
@@ -1027,7 +1037,7 @@ def analyze_view_clj_kondo(view):
         # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
 
         analysis_subprocess_args = [
-            clj_kondo_path(),
+            clj_kondo_path(view.window()),
             "--config",
             analysis_config,
             "--lint",
@@ -1155,7 +1165,7 @@ def analyze_classpath(window):
         analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-definitions false}} :format :json :canonical-paths true}} }}"""
 
         analysis_subprocess_args = [
-            clj_kondo_path(),
+            clj_kondo_path(window),
             "--config",
             analysis_config,
             "--parallel",
@@ -1236,7 +1246,7 @@ def analyze_paths(window):
     if paths := project_data_paths(window):
         classpath = ":".join(paths)
 
-        if is_debug():
+        if is_debug(window):
             print(
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
             )
@@ -1244,7 +1254,7 @@ def analyze_paths(window):
         analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-usages true :java-class-definitions true}} :format :json :canonical-paths true}} }}"""
 
         analysis_subprocess_args = [
-            clj_kondo_path(),
+            clj_kondo_path(window),
             "--config",
             analysis_config,
             "--parallel",
@@ -1307,7 +1317,7 @@ def analyze_paths(window):
             },
         )
 
-        if is_debug():
+        if is_debug(window):
             print(
                 f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths})"
             )
@@ -3072,7 +3082,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 return f"""
                 <body>
                 <div">
-                    <span style="font-size:{annotation_font_size()}">{htmlify(finding["message"])}</span></div>
+                    <span style="font-size:{annotation_font_size(self.view.window())}">{htmlify(finding["message"])}</span></div>
                 </div>
                 </body>
                 """
@@ -3172,18 +3182,18 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.modified_time = None
 
     def view_analysis_completed(self, analysis):
-        if annotate_view_analysis():
+        if annotate_view_analysis(self.view.window()):
             self.view.run_command("pg_pep_annotate")
 
         # Always erase view's namespace - it's up to the settings implementation to show it again.
         self.view.erase_status("pg_pep_view_namespace")
 
-        if show_view_namespace():
+        if show_view_namespace(self.view.window()):
             # It's possible to get the namespace wrong since it's a list of definitions,
             # but it's unlikely because of the scope (view) of the analysis.
             if namespaces := list(analysis_nindex(analysis).keys()):
-                namespace_prefix = view_namespace_prefix() or ""
-                namespace_suffix = view_namespace_suffix() or ""
+                namespace_prefix = view_namespace_prefix(self.view.window()) or ""
+                namespace_suffix = view_namespace_suffix(self.view.window()) or ""
                 namespace = namespace_prefix + namespaces[0] + namespace_suffix
 
                 self.view.set_status("pg_pep_view_namespace", namespace)
@@ -3201,7 +3211,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.modified_time = time.time()
 
     def on_post_save_async(self):
-        if settings().get("analyze_paths_on_post_save", False):
+        if settings(self.view.window()).get("analyze_paths_on_post_save", False):
             analyze_paths_async(self.view.window())
 
     def on_selection_modified_async(self):
@@ -3213,7 +3223,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         The view is analyzed (async) when its analysis data is staled
         and it passes a threshold (in seconds) of the last time the view was modified.
         """
-        if automatically_highlight():
+        if automatically_highlight(self.view.window()):
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
         if self.modified_time:
@@ -3237,10 +3247,10 @@ class PgPepEventListener(sublime_plugin.EventListener):
     """
 
     def on_load_project_async(self, window):
-        if settings().get("analyze_paths_on_load_project", False):
+        if settings(window).get("analyze_paths_on_load_project", False):
             analyze_paths_async(window)
 
-        if settings().get("analyze_classpath_on_load_project", False):
+        if settings(window).get("analyze_classpath_on_load_project", False):
             analyze_classpath_async(window)
 
     def on_pre_close_project(self, window):
@@ -3248,7 +3258,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
         Called right before a project is closed.
         """
         if project_path_ := project_path(window):
-            if is_debug():
+            if is_debug(window):
                 print(f"(Pep) Clear project cache (Project: {project_path_})")
 
             set_paths_analysis(project_path_, {})
@@ -3259,12 +3269,9 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 
 def plugin_loaded():
-    if is_debug():
-        print("(Pep) Plugin loaded")
-
     if window := sublime.active_window():
-        if settings().get("analyze_paths_on_plugin_loaded", False):
+        if settings(window).get("analyze_paths_on_plugin_loaded", False):
             analyze_paths_async(window)
 
-        if settings().get("analyze_classpath_on_plugin_loaded", False):
+        if settings(window).get("analyze_classpath_on_plugin_loaded", False):
             analyze_classpath_async(window)
