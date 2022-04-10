@@ -58,7 +58,7 @@ _classpath_analysis_ = {}
 # -- Settings
 
 
-def settings(window):
+def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
 
@@ -67,35 +67,35 @@ def project_data(window):
 
 
 def is_debug(window):
-    return settings(window).get("debug", False)
+    return settings().get("debug", False)
 
 
 def automatically_highlight(window):
-    return settings(window).get("automatically_highlight", False)
+    return settings().get("automatically_highlight", False)
 
 
 def annotate_view_analysis(window):
-    return settings(window).get("annotate_view_analysis", False)
+    return settings().get("annotate_view_analysis", False)
 
 
 def annotation_font_size(window):
-    return settings(window).get("annotation_font_size", "0.9em")
+    return settings().get("annotation_font_size", "0.9em")
 
 
 def show_view_namespace(window):
-    return settings(window).get("show_view_namespace", False)
+    return settings().get("show_view_namespace", False)
 
 
 def view_namespace_prefix(window):
-    return settings(window).get("view_namespace_prefix", None)
+    return settings().get("view_namespace_prefix", None)
 
 
 def view_namespace_suffix(window):
-    return settings(window).get("view_namespace_suffix", None)
+    return settings().get("view_namespace_suffix", None)
 
 
 def clj_kondo_path(window):
-    return settings(window).get("clj_kondo_path")
+    return settings().get("clj_kondo_path")
 
 
 # -- Output
@@ -3241,10 +3241,10 @@ class PgPepEventListener(sublime_plugin.EventListener):
     """
 
     def on_load_project_async(self, window):
-        if settings(window).get("analyze_paths_on_load_project", False):
+        if settings().get("analyze_paths_on_load_project", False):
             analyze_paths_async(window)
 
-        if settings(window).get("analyze_classpath_on_load_project", False):
+        if settings().get("analyze_classpath_on_load_project", False):
             analyze_classpath_async(window)
 
     def on_pre_close_project(self, window):
@@ -3264,8 +3264,8 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 def plugin_loaded():
     if window := sublime.active_window():
-        if settings(window).get("analyze_paths_on_plugin_loaded", False):
+        if settings().get("analyze_paths_on_plugin_loaded", False):
             analyze_paths_async(window)
 
-        if settings(window).get("analyze_classpath_on_plugin_loaded", False):
+        if settings().get("analyze_classpath_on_plugin_loaded", False):
             analyze_classpath_async(window)
