@@ -66,36 +66,42 @@ def project_data(window):
     return window.project_data().get("pep", {}) if window.project_data() else {}
 
 
+def setting(window, k, not_found):
+    v = project_data(window).get(k)
+
+    return v if v is not None else settings().get(k, not_found)
+
+
 def is_debug(window):
-    return settings().get("debug", False)
+    return setting(window, "debug", False)
 
 
 def automatically_highlight(window):
-    return settings().get("automatically_highlight", False)
+    return setting(window, "automatically_highlight", False)
 
 
 def annotate_view_analysis(window):
-    return settings().get("annotate_view_analysis", False)
+    return setting(window, "annotate_view_analysis", False)
 
 
 def annotation_font_size(window):
-    return settings().get("annotation_font_size", "0.9em")
+    return setting(window, "annotation_font_size", "0.9em")
 
 
 def show_view_namespace(window):
-    return settings().get("show_view_namespace", False)
+    return setting(window, "show_view_namespace", False)
 
 
 def view_namespace_prefix(window):
-    return settings().get("view_namespace_prefix", None)
+    return setting(window, "view_namespace_prefix", None)
 
 
 def view_namespace_suffix(window):
-    return settings().get("view_namespace_suffix", None)
+    return settings(window, "view_namespace_suffix", None)
 
 
 def clj_kondo_path(window):
-    return settings().get("clj_kondo_path")
+    return setting(window, "clj_kondo_path", None)
 
 
 # -- Output
@@ -3133,11 +3139,11 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
             status_messages = []
 
-            if settings().get("view_status_show_errors", True):
+            if setting(self.view.window(), "view_status_show_errors", True):
                 if summary_errors := analysis_summary(analysis).get("error"):
                     status_messages.append(f"Errors: {summary_errors}")
 
-            if settings().get("view_status_show_warnings", False):
+            if setting(self.view.window(), "view_status_show_warnings", False):
                 if summary_warnings := analysis_summary(analysis).get("warning"):
                     status_messages.append(f"Warnings: {summary_warnings}")
 
@@ -3241,10 +3247,10 @@ class PgPepEventListener(sublime_plugin.EventListener):
     """
 
     def on_load_project_async(self, window):
-        if settings().get("analyze_paths_on_load_project", False):
+        if setting(window, "analyze_paths_on_load_project", False):
             analyze_paths_async(window)
 
-        if settings().get("analyze_classpath_on_load_project", False):
+        if setting(window, "analyze_classpath_on_load_project", False):
             analyze_classpath_async(window)
 
     def on_pre_close_project(self, window):
@@ -3264,8 +3270,8 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 def plugin_loaded():
     if window := sublime.active_window():
-        if settings().get("analyze_paths_on_plugin_loaded", False):
+        if setting(window, "analyze_paths_on_plugin_loaded", False):
             analyze_paths_async(window)
 
-        if settings().get("analyze_classpath_on_plugin_loaded", False):
+        if setting(window, "analyze_classpath_on_plugin_loaded", False):
             analyze_classpath_async(window)
