@@ -63,13 +63,7 @@ def settings(window):
 
 
 def project_data(window):
-    """
-    Pep project data.
-    """
-    if project_data := window.project_data():
-        return project_data.get("pep")
-    else:
-        return None
+    return window.project_data().get("pep", {}) if window.project_data() else {}
 
 
 def is_debug(window):
