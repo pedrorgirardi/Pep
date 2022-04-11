@@ -97,7 +97,7 @@ def view_namespace_prefix(window):
 
 
 def view_namespace_suffix(window):
-    return settings(window, "view_namespace_suffix", None)
+    return setting(window, "view_namespace_suffix", None)
 
 
 def clj_kondo_path(window):
