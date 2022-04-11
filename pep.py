@@ -1159,7 +1159,7 @@ def analyze_classpath(window):
     """
 
     if classpath := project_classpath(window):
-        if is_debug():
+        if is_debug(window):
             print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
         analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-definitions false}} :format :json :canonical-paths true}} }}"""
@@ -1224,7 +1224,7 @@ def analyze_classpath(window):
             },
         )
 
-        if is_debug():
+        if is_debug(window):
             print(
                 f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
             )
