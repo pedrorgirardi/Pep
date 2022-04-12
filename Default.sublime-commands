@@ -1,5 +1,13 @@
 [
     {
+        "caption": "Pep: Settings",
+        "command": "edit_settings",
+        "args": {
+            "base_file": "${packages}/Pep/Pep.sublime-settings",
+            "user_file": "${packages}/User/Pep.sublime-settings"
+        }
+    },
+    {
         "caption": "Pep: Analyze View",
         "command": "pg_pep_analyze_view"
     },
