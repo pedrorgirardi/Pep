@@ -3211,7 +3211,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.modified_time = time.time()
 
     def on_post_save_async(self):
-        if settings(self.view.window()).get("analyze_paths_on_post_save", False):
+        if setting(self.view.window(), "analyze_paths_on_post_save", False):
             analyze_paths_async(self.view.window())
 
     def on_selection_modified_async(self):
