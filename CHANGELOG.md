@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.6 - Unreleased
+- Added command **Pep: Settings** to Command Palette
+- Added support for project specific settings [#51](https://github.com/pedrorgirardi/Pep/issues/53)
+
 ## 0.5 - 2022-04-08
 - Revert scratch change
 - Internal: rename function `open_jar`
