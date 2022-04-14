@@ -1046,11 +1046,18 @@ def analyze_view_clj_kondo(view):
             view_file_name or "-",
         ]
 
+        # Hide the console window on Windows.
+        startupinfo = None
+        if os.name == "nt":
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=cwd,
             text=True,
             capture_output=True,
+            startupinfo=startupinfo,
             input=view_text(view),
         )
 
