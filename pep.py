@@ -1180,11 +1180,18 @@ def analyze_classpath(window):
             classpath,
         ]
 
+        # Hide the console window on Windows.
+        startupinfo = None
+        if os.name == "nt":
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=project_path(window),
             text=True,
             capture_output=True,
+            startupinfo=startupinfo,
         )
 
         output = None
@@ -1269,11 +1276,18 @@ def analyze_paths(window):
             classpath,
         ]
 
+        # Hide the console window on Windows.
+        startupinfo = None
+        if os.name == "nt":
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=project_path(window),
             text=True,
             capture_output=True,
+            startupinfo=startupinfo,
         )
 
         output = None
