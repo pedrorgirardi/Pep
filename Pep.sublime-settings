@@ -27,6 +27,10 @@
     // True if you would like to see the number of highlighted regions in the status bar.
     "view_status_show_highlight": false,
 
+    "view_status_show_highlight_prefix": "⍠ Instances: ",
+
+    "view_status_show_highlight_suffix": "",
+
     // True if you would like to analyse your project's sources when the plugin is loaded.
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_paths_on_plugin_loaded": true,
