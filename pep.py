@@ -100,6 +100,14 @@ def view_namespace_suffix(window):
     return setting(window, "view_namespace_suffix", None)
 
 
+def view_status_show_errors(window):
+    return setting(window, "view_status_show_errors", True)
+
+
+def view_status_show_warnings(window):
+    return setting(window, "view_status_show_warnings", True)
+
+
 def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
@@ -3169,20 +3177,22 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
             status_messages = []
 
-            if setting(self.view.window(), "view_status_show_errors", True):
+            if view_status_show_errors(self.view.window()):
                 if summary_errors := analysis_summary(analysis).get("error"):
                     status_messages.append(f"Errors: {summary_errors}")
 
-            if setting(self.view.window(), "view_status_show_warnings", False):
+            if view_status_show_warnings(self.view.window()):
                 if summary_warnings := analysis_summary(analysis).get("warning"):
                     status_messages.append(f"Warnings: {summary_warnings}")
 
-            # Show the number of errors and/or warnings:
-            # (Clear the status if there isn't any error or warning.)
-            self.view.set_status(
-                "pg_pep_view_summary",
-                ", ".join(status_messages) if status_messages else "",
-            )
+            status_message = ", ".join(status_messages) if status_messages else ""
+
+            if status_message:
+                status_message = "⚠ " + status_message
+
+            # Show the number of errors and/or warnings.
+            # (Setting the value to the empty string will clear the status.)
+            self.view.set_status("pg_pep_view_summary", status_message)
 
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
