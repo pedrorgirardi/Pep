@@ -11,6 +11,7 @@
         ],
         "paths": [
             "tests"
-        ]
+        ],
+        "analyze_classpath_on_plugin_loaded": false,
     }
 }

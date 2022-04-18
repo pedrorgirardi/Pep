@@ -3119,12 +3119,21 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
             error_minihtml_set = []
 
             for finding in findings:
-                if finding["level"] == "error":
-                    error_region_set.append(finding_region(finding))
-                    error_minihtml_set.append(finding_minihtml(finding))
-                elif finding["level"] == "warning":
-                    warning_region_set.append(finding_region(finding))
-                    warning_minihtml_set.append(finding_minihtml(finding))
+                try:
+
+                    if finding["level"] == "error":
+                        error_region_set.append(finding_region(finding))
+                        error_minihtml_set.append(finding_minihtml(finding))
+                    elif finding["level"] == "warning":
+                        warning_region_set.append(finding_region(finding))
+                        warning_minihtml_set.append(finding_minihtml(finding))
+
+                except Exception as ex:
+                    if is_debug(self.view.window()):
+                        print(
+                            "(Pep) Failed to annotate finding.",
+                            {"error": ex, "finding": finding},
+                        )
 
             # Erase regions from previous analysis.
             erase_analysis_regions(self.view)
