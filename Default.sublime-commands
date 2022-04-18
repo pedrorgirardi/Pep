@@ -101,4 +101,27 @@
         ],
         "args": {"scope": "paths"}
     },
+    {
+        "caption": "Pep: Show Documentation",
+        "command": "pg_pep_show_doc",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ],
+    },
+    {
+        "caption": "Pep: Show Documentation Side by Side",
+        "command": "pg_pep_show_doc",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ],
+        "args": {"side_by_side": true}
+    },
 ]

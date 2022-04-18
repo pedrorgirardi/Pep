@@ -2,6 +2,8 @@
 
 ## 0.6 - Unreleased
 - Added command **Pep: Settings** to Command Palette
+- Added command **Pep: Show Documentation** to Command Palette
+- Added command **Pep: Show Documentation Side by Side** to Command Palette
 - Added support for project specific settings [#51](https://github.com/pedrorgirardi/Pep/issues/53)
 - Improved finding annotation error handling
 - Windows: Fixed clj-kondo subprocess launch
