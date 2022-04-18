@@ -1,5 +1,7 @@
 # CHANGELOG
 
+All notable changes to this project will be documented in this file.
+
 ## 0.6 - Unreleased
 - Added command **Pep: Settings** to Command Palette
 - Added command **Pep: Show Documentation** to Command Palette
