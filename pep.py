@@ -108,6 +108,10 @@ def view_status_show_warnings(window):
     return setting(window, "view_status_show_warnings", True)
 
 
+def view_status_show_highlight(window):
+    return setting(window, "view_status_show_highlight", False)
+
+
 def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
@@ -3083,6 +3087,8 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
         self.view.erase_regions("pg_pep_highligths")
 
+        status_message = ""
+
         # We can't highlight if view was modified,
         # because regions might be different.
         if thingy and not staled_analysis(self.view):
@@ -3090,6 +3096,11 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
             if regions:
                 highlight_regions(self.view, self.view.sel(), regions)
+
+                if view_status_show_highlight(self.view.window()):
+                    status_message = f"⌗{len(regions)}"
+
+        self.view.set_status("pg_pep_highligths", status_message)
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
