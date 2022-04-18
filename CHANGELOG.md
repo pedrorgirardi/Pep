@@ -4,6 +4,7 @@
 - Added command **Pep: Settings** to Command Palette
 - Added support for project specific settings [#51](https://github.com/pedrorgirardi/Pep/issues/53)
 - Improved finding annotation error handling
+- Windows: Fixed clj-kondo subprocess launch
 
 ## 0.5 - 2022-04-08
 - Revert scratch change
