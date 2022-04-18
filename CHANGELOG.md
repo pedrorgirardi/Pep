@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Added command **Pep: Show Documentation** to Command Palette
 - Added command **Pep: Show Documentation Side by Side** to Command Palette
 - Added support for project specific settings [#51](https://github.com/pedrorgirardi/Pep/issues/53)
+- Added ⚠ to error or warning status
 - Improved finding annotation error handling
 - Windows: Fixed clj-kondo subprocess launch
 
