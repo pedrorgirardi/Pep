@@ -20,8 +20,8 @@
         "command": "pg_pep_analyze_paths"
     },
     {
-        "caption": "Pep: Highlight",
-        "command": "pg_pep_highlight"
+        "caption": "Pep: Toggle Highlight",
+        "command": "pg_pep_toggle_highlight"
     },
     {
         "caption": "Pep: Goto Namespace in Paths",

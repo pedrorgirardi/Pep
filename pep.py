@@ -47,6 +47,8 @@ TT_JAVA_CLASS_USAGE = "java_class_usage"
 OUTPUT_PANEL_NAME = "pep"
 OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
 
+HIGHLIGHTED_REGIONS_KEY = "pg_pep_highligths"
+HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 
 _view_analysis_ = {}
 
@@ -2001,7 +2003,7 @@ def find_keyword_definition(analysis, keyword):
 def highlight_regions(view, selection, regions):
     if regions:
         view.add_regions(
-            "pg_pep_highligths",
+            HIGHLIGHTED_REGIONS_KEY,
             regions,
             scope="region.cyanish",
             flags=sublime.DRAW_NO_FILL,
@@ -3093,16 +3095,14 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
         thingy = thingy_in_region(self.view, analysis, region)
 
-        self.view.erase_regions("pg_pep_highligths")
+        self.view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
 
         status_message = ""
 
         # We can't highlight if view was modified,
         # because regions might be different.
         if thingy and not staled_analysis(self.view):
-            regions = find_thingy_regions(self.view, analysis, thingy)
-
-            if regions:
+            if regions := find_thingy_regions(self.view, analysis, thingy):
                 highlight_regions(self.view, self.view.sel(), regions)
 
                 if view_status_show_highlighted(self.view.window()):
@@ -3112,7 +3112,29 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
 
                     status_message = f"{prefix}{len(regions)}{suffix}"
 
-        self.view.set_status("pg_pep_highligths", status_message)
+        self.view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
+
+
+class PgPepClearHighlightedCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        self.view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
+        self.view.set_status(HIGHLIGHTED_STATUS_KEY, "")
+
+
+class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
+    def __init__(self, view):
+        self.view = view
+        self.is_toggled = (
+            True if self.view.get_regions(HIGHLIGHTED_REGIONS_KEY) else False
+        )
+
+    def run(self, edit):
+        if self.is_toggled:
+            self.view.run_command("pg_pep_clear_highlighted")
+        else:
+            self.view.run_command("pg_pep_highlight")
+
+        self.is_toggled = not self.is_toggled
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
@@ -3255,8 +3277,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             # It's possible to get the namespace wrong since it's a list of definitions,
             # but it's unlikely because of the scope (view) of the analysis.
             if namespaces := list(analysis_nindex(analysis).keys()):
-                namespace_prefix = view_status_show_namespace_prefix(self.view.window()) or ""
-                namespace_suffix = view_status_show_namespace_suffix(self.view.window()) or ""
+                namespace_prefix = (
+                    view_status_show_namespace_prefix(self.view.window()) or ""
+                )
+                namespace_suffix = (
+                    view_status_show_namespace_suffix(self.view.window()) or ""
+                )
                 namespace = namespace_prefix + namespaces[0] + namespace_suffix
 
                 self.view.set_status("pg_pep_view_namespace", namespace)
