@@ -56,7 +56,12 @@
     // True if you would like to highlight vars, local bindings and keywords usages.
     "automatically_highlight": false,
 
+    // True if you would like to highlight the region under the cursor.
+    "highlight_self": true,
+
+    // True if you would like to highlight the region with an outline.
     "highlight_region": true,
 
+    // True if you would like to highlight the gutter.
     "highlight_gutter": false,
 }

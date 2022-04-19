@@ -3104,12 +3104,18 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
         # because regions might be different.
         if thingy and not staled_analysis(self.view):
             if regions := find_thingy_regions(self.view, analysis, thingy):
+
+                window = self.view.window()
+
+                if not setting(window, "highlight_self", None):
+                    regions = [region_ for region_ in regions if not region_.contains(region)]
+
                 highlight_regions(self.view, self.view.sel(), regions)
 
-                if view_status_show_highlighted(self.view.window()):
-                    prefix = view_status_show_highlighted_prefix(self.view.window())
+                if view_status_show_highlighted(window):
+                    prefix = view_status_show_highlighted_prefix(window)
 
-                    suffix = view_status_show_highlighted_suffix(self.view.window())
+                    suffix = view_status_show_highlighted_suffix(window)
 
                     status_message = f"{prefix}{len(regions)}{suffix}"
 
