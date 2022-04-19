@@ -3089,7 +3089,7 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         analysis = view_analysis(self.view.id())
 
-        region = self.view.sel()[0]
+        region = thingy_sel_region(self.view)
 
         thingy = thingy_in_region(self.view, analysis, region)
 
