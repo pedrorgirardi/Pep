@@ -6,11 +6,11 @@
     // True if you would like to show the namespace of the view in the status bar.
     "show_view_namespace": false,
 
-    // Uncomment if you would like to add a custom prefix to the namespace of the view in the status bar.
-    // "view_namespace_prefix": "🏷 ",
+    // If you would like to add a custom prefix to the namespace of the view in the status bar.
+    "view_namespace_prefix": "⌸ Namespace: ",
 
-    // Uncomment if you would like to add a custom suffix to the namespace of the view in the status bar.
-    // "view_namespace_suffix": "",
+    // If you would like to add a custom suffix to the namespace of the view in the status bar.
+    "view_namespace_suffix": "",
 
     // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
     "annotate_view_analysis": false,

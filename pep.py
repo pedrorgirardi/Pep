@@ -93,11 +93,11 @@ def show_view_namespace(window):
 
 
 def view_namespace_prefix(window):
-    return setting(window, "view_namespace_prefix", None)
+    return setting(window, "view_namespace_prefix", "")
 
 
 def view_namespace_suffix(window):
-    return setting(window, "view_namespace_suffix", None)
+    return setting(window, "view_namespace_suffix", "")
 
 
 def view_status_show_errors(window):
