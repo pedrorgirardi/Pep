@@ -2006,7 +2006,8 @@ def highlight_regions(view, selection, regions):
             HIGHLIGHTED_REGIONS_KEY,
             regions,
             scope="region.cyanish",
-            flags=sublime.DRAW_NO_FILL,
+            icon="dot" if setting(view.window(), "highlight_gutter", None) else "",
+            flags=sublime.DRAW_NO_FILL if setting(view.window(), "highlight_region", None) else sublime.HIDDEN,
         )
 
 

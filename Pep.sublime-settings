@@ -54,5 +54,9 @@
     "analyze_classpath_on_load_project": true,
 
     // True if you would like to highlight vars, local bindings and keywords usages.
-    "automatically_highlight": false
+    "automatically_highlight": false,
+
+    "highlight_region": true,
+
+    "highlight_gutter": false,
 }
