@@ -20,7 +20,7 @@
         "command": "pg_pep_analyze_paths"
     },
     {
-        "caption": "Pep: Toggle Highlight",
+        "caption": "Pep: Toggle Usage Highlighting",
         "command": "pg_pep_toggle_highlight"
     },
     {
