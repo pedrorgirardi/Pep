@@ -27,8 +27,10 @@
     // True if you would like to see the number of highlighted regions in the status bar.
     "view_status_show_highlight": false,
 
+    // If you would like to add a custom prefix to the number of highlighted regions in the status bar.
     "view_status_show_highlight_prefix": "⍠ Instances: ",
 
+    // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
     "view_status_show_highlight_suffix": "",
 
     // True if you would like to analyse your project's sources when the plugin is loaded.
