@@ -88,16 +88,16 @@ def annotation_font_size(window):
     return setting(window, "annotation_font_size", "0.9em")
 
 
-def show_view_namespace(window):
-    return setting(window, "show_view_namespace", False)
+def view_status_show_namespace(window):
+    return setting(window, "view_status_show_namespace", False)
 
 
-def view_namespace_prefix(window):
-    return setting(window, "view_namespace_prefix", "")
+def view_status_show_namespace_prefix(window):
+    return setting(window, "view_status_show_namespace_prefix", "")
 
 
-def view_namespace_suffix(window):
-    return setting(window, "view_namespace_suffix", "")
+def view_status_show_namespace_suffix(window):
+    return setting(window, "view_status_show_namespace_suffix", "")
 
 
 def view_status_show_errors(window):
@@ -3251,12 +3251,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         # Always erase view's namespace - it's up to the settings implementation to show it again.
         self.view.erase_status("pg_pep_view_namespace")
 
-        if show_view_namespace(self.view.window()):
+        if view_status_show_namespace(self.view.window()):
             # It's possible to get the namespace wrong since it's a list of definitions,
             # but it's unlikely because of the scope (view) of the analysis.
             if namespaces := list(analysis_nindex(analysis).keys()):
-                namespace_prefix = view_namespace_prefix(self.view.window()) or ""
-                namespace_suffix = view_namespace_suffix(self.view.window()) or ""
+                namespace_prefix = view_status_show_namespace_prefix(self.view.window()) or ""
+                namespace_suffix = view_status_show_namespace_suffix(self.view.window()) or ""
                 namespace = namespace_prefix + namespaces[0] + namespace_suffix
 
                 self.view.set_status("pg_pep_view_namespace", namespace)
