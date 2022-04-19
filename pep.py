@@ -108,16 +108,16 @@ def view_status_show_warnings(window):
     return setting(window, "view_status_show_warnings", True)
 
 
-def view_status_show_highlight(window):
-    return setting(window, "view_status_show_highlight", False)
+def view_status_show_highlighted(window):
+    return setting(window, "view_status_show_highlighted", False)
 
 
-def view_status_show_highlight_prefix(window):
-    return setting(window, "view_status_show_highlight_prefix", "")
+def view_status_show_highlighted_prefix(window):
+    return setting(window, "view_status_show_highlighted_prefix", "")
 
 
-def view_status_show_highlight_suffix(window):
-    return setting(window, "view_status_show_highlight_suffix", "")
+def view_status_show_highlighted_suffix(window):
+    return setting(window, "view_status_show_highlighted_suffix", "")
 
 
 def clj_kondo_path(window):
@@ -3105,10 +3105,10 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
             if regions:
                 highlight_regions(self.view, self.view.sel(), regions)
 
-                if view_status_show_highlight(self.view.window()):
-                    prefix = view_status_show_highlight_prefix(self.view.window())
+                if view_status_show_highlighted(self.view.window()):
+                    prefix = view_status_show_highlighted_prefix(self.view.window())
 
-                    suffix = view_status_show_highlight_suffix(self.view.window())
+                    suffix = view_status_show_highlighted_suffix(self.view.window())
 
                     status_message = f"{prefix}{len(regions)}{suffix}"
 

@@ -25,13 +25,13 @@
     "view_status_show_namespace_suffix": "",
 
     // True if you would like to see the number of highlighted regions in the status bar.
-    "view_status_show_highlight": false,
+    "view_status_show_highlighted": false,
 
     // If you would like to add a custom prefix to the number of highlighted regions in the status bar.
-    "view_status_show_highlight_prefix": "⍠ Instances: ",
+    "view_status_show_highlighted_prefix": "⍠ Instances: ",
 
     // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
-    "view_status_show_highlight_suffix": "",
+    "view_status_show_highlighted_suffix": "",
 
     // True if you would like to analyse your project's sources when the plugin is loaded.
     // (Doesn't do anything if there isn't a *.sublime-project file.)
