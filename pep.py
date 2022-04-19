@@ -3129,10 +3129,9 @@ class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
         )
 
     def run(self, edit):
-        if self.is_toggled:
-            self.view.run_command("pg_pep_clear_highlighted")
-        else:
-            self.view.run_command("pg_pep_highlight")
+        self.view.run_command(
+            "pg_pep_clear_highlighted" if self.is_toggled else "pg_pep_highlight"
+        )
 
         self.is_toggled = not self.is_toggled
 
