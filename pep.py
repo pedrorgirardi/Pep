@@ -57,6 +57,17 @@ _paths_analysis_ = {}
 _classpath_analysis_ = {}
 
 
+def clear_cache():
+    global _view_analysis_
+    _view_analysis_ = {}
+
+    global _paths_analysis_
+    _paths_analysis_ = {}
+
+    global _classpath_analysis_
+    _classpath_analysis_ = {}
+
+
 # -- Settings
 
 
@@ -2007,7 +2018,9 @@ def highlight_regions(view, selection, regions):
             regions,
             scope="region.cyanish",
             icon="dot" if setting(view.window(), "highlight_gutter", None) else "",
-            flags=sublime.DRAW_NO_FILL if setting(view.window(), "highlight_region", None) else sublime.HIDDEN,
+            flags=sublime.DRAW_NO_FILL
+            if setting(view.window(), "highlight_region", None)
+            else sublime.HIDDEN,
         )
 
 
@@ -2114,14 +2127,7 @@ def find_thingy_regions(view, analysis, thingy):
 
 class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
-        global _view_analysis_
-        _view_analysis_ = {}
-
-        global _paths_analysis_
-        _paths_analysis_ = {}
-
-        global _classpath_analysis_
-        _classpath_analysis_ = {}
+        clear_cache()
 
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
@@ -3108,7 +3114,9 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
                 window = self.view.window()
 
                 if not setting(window, "highlight_self", None):
-                    regions = [region_ for region_ in regions if not region_.contains(region)]
+                    regions = [
+                        region_ for region_ in regions if not region_.contains(region)
+                    ]
 
                 highlight_regions(self.view, self.view.sel(), regions)
 
