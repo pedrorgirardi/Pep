@@ -2129,6 +2129,9 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
 
+        if is_debug(window):
+            print(f"(Pep) Cleared cache")
+
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
     def run(self, edit):
