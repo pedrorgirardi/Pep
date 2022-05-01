@@ -3183,6 +3183,34 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             print(f"(Pep) View summary status failed.", traceback.format_exc())
 
 
+class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        try:
+
+            analysis = view_analysis(self.view.id())
+
+            view_namespace = ""
+
+            if view_status_show_namespace(self.view.window()):
+                # It's possible to get the namespace wrong since it's a list of definitions,
+                # but it's unlikely because of the scope (view) of the analysis.
+                if namespaces := list(analysis_nindex(analysis).keys()):
+                    namespace_prefix = (
+                        view_status_show_namespace_prefix(self.view.window()) or ""
+                    )
+
+                    namespace_suffix = (
+                        view_status_show_namespace_suffix(self.view.window()) or ""
+                    )
+
+                    view_namespace = namespace_prefix + namespaces[0] + namespace_suffix
+
+            self.view.set_status("pg_pep_view_namespace", view_namespace)
+
+        except Exception as e:
+            print(f"(Pep) Show view namespace status failed.", traceback.format_exc())
+
+
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
@@ -3296,23 +3324,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def view_analysis_completed(self, analysis):
         self.view.run_command("pg_pep_annotate")
         self.view.run_command("pg_pep_view_summary_status")
-
-        # Always erase view's namespace - it's up to the settings implementation to show it again.
-        self.view.erase_status("pg_pep_view_namespace")
-
-        if view_status_show_namespace(self.view.window()):
-            # It's possible to get the namespace wrong since it's a list of definitions,
-            # but it's unlikely because of the scope (view) of the analysis.
-            if namespaces := list(analysis_nindex(analysis).keys()):
-                namespace_prefix = (
-                    view_status_show_namespace_prefix(self.view.window()) or ""
-                )
-                namespace_suffix = (
-                    view_status_show_namespace_suffix(self.view.window()) or ""
-                )
-                namespace = namespace_prefix + namespaces[0] + namespace_suffix
-
-                self.view.set_status("pg_pep_view_namespace", namespace)
+        self.view.run_command("pg_pep_view_namespace_status")
 
     def on_activated_async(self):
         analyze_view_async(self.view, on_completed=self.view_analysis_completed)
