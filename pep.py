@@ -696,6 +696,15 @@ def project_data_paths(window):
         return project_data.get("pep", {}).get("paths")
 
 
+def view_analysis_completed(view):
+    def on_completed(analysis):
+        view.run_command("pg_pep_annotate")
+        view.run_command("pg_pep_view_summary_status")
+        view.run_command("pg_pep_view_namespace_status")
+
+    return on_completed
+
+
 # ---
 
 
@@ -3321,13 +3330,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.view = view
         self.modified_time = None
 
-    def view_analysis_completed(self, analysis):
-        self.view.run_command("pg_pep_annotate")
-        self.view.run_command("pg_pep_view_summary_status")
-        self.view.run_command("pg_pep_view_namespace_status")
-
     def on_activated_async(self):
-        analyze_view_async(self.view, on_completed=self.view_analysis_completed)
+        analyze_view_async(self.view, on_completed=view_analysis_completed(self.view))
 
     def on_modified_async(self):
         """
