@@ -3154,6 +3154,35 @@ class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
         self.is_toggled = not self.is_toggled
 
 
+class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        try:
+
+            analysis = view_analysis(self.view.id())
+
+            status_messages = []
+
+            if view_status_show_errors(self.view.window()):
+                if summary_errors := analysis_summary(analysis).get("error"):
+                    status_messages.append(f"Errors: {summary_errors}")
+
+            if view_status_show_warnings(self.view.window()):
+                if summary_warnings := analysis_summary(analysis).get("warning"):
+                    status_messages.append(f"Warnings: {summary_warnings}")
+
+            status_message = ", ".join(status_messages) if status_messages else ""
+
+            if status_message:
+                status_message = "⚠ " + status_message
+
+            # Show the number of errors and/or warnings.
+            # (Setting the value to the empty string will clear the status.)
+            self.view.set_status("pg_pep_view_summary", status_message)
+
+        except Exception as e:
+            print(f"(Pep) View summary status failed.", traceback.format_exc())
+
+
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
@@ -3237,25 +3266,6 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 ),
             )
 
-            status_messages = []
-
-            if view_status_show_errors(self.view.window()):
-                if summary_errors := analysis_summary(analysis).get("error"):
-                    status_messages.append(f"Errors: {summary_errors}")
-
-            if view_status_show_warnings(self.view.window()):
-                if summary_warnings := analysis_summary(analysis).get("warning"):
-                    status_messages.append(f"Warnings: {summary_warnings}")
-
-            status_message = ", ".join(status_messages) if status_messages else ""
-
-            if status_message:
-                status_message = "⚠ " + status_message
-
-            # Show the number of errors and/or warnings.
-            # (Setting the value to the empty string will clear the status.)
-            self.view.set_status("pg_pep_view_summary", status_message)
-
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
 
@@ -3284,8 +3294,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.modified_time = None
 
     def view_analysis_completed(self, analysis):
-        if annotate_view_analysis(self.view.window()):
-            self.view.run_command("pg_pep_annotate")
+        self.view.run_command("pg_pep_annotate")
+        self.view.run_command("pg_pep_view_summary_status")
 
         # Always erase view's namespace - it's up to the settings implementation to show it again.
         self.view.erase_status("pg_pep_view_namespace")
