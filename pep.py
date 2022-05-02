@@ -101,6 +101,10 @@ def annotation_font_size(window):
     return setting(window, "annotation_font_size", "0.9em")
 
 
+def analyze_scratch_view(window):
+    return setting(window, "analyze_scratch_view", False)
+
+
 def view_status_show_namespace(window):
     return setting(window, "view_status_show_namespace", False)
 
@@ -1111,10 +1115,6 @@ def analyze_view_clj_kondo(view):
 
 
 def analyze_view(view, on_completed=None):
-
-    # View is explictly set to ignore Pep.
-    if view.settings().get("pep_ignore"):
-        return False
 
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
@@ -3331,7 +3331,16 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.modified_time = None
 
     def on_activated_async(self):
-        analyze_view_async(self.view, on_completed=view_analysis_completed(self.view))
+        analyze = True
+
+        if self.view.is_scratch():
+            analyze = analyze_scratch_view(self.view.window())
+
+        if analyze:
+            analyze_view_async(
+                self.view,
+                on_completed=view_analysis_completed(self.view),
+            )
 
     def on_modified_async(self):
         """
@@ -3362,10 +3371,16 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             # Don't analyze when the programmer is editing the view.
             # (When last modification timestamp is less then threshold.)
             if staled_analysis(self.view) and (time.time() - self.modified_time) > 0.2:
-                analyze_view_async(
-                    self.view,
-                    on_completed=view_analysis_completed(self.view),
-                )
+                analyze = True
+
+                if self.view.is_scratch():
+                    analyze = analyze_scratch_view(self.view.window())
+
+                if analyze:
+                    analyze_view_async(
+                        self.view,
+                        on_completed=view_analysis_completed(self.view),
+                    )
 
     def on_close(self):
         """
