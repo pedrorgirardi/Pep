@@ -106,6 +106,17 @@
         "args": {"scope": "paths"}
     },
     {
+        "caption": "Pep: Trace Usages in Paths",
+        "command": "pg_pep_trace_usages",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ]
+    },
+    {
         "caption": "Pep: Show Documentation",
         "command": "pg_pep_show_doc",
         "context": [
