@@ -2159,7 +2159,7 @@ class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
 
 class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        analyze_view_async(self.view)
+        analyze_view_async(self.view, on_completed=view_analysis_completed(self.view))
 
 
 class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
@@ -3362,7 +3362,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             # Don't analyze when the programmer is editing the view.
             # (When last modification timestamp is less then threshold.)
             if staled_analysis(self.view) and (time.time() - self.modified_time) > 0.2:
-                analyze_view_async(self.view, on_completed=self.view_analysis_completed)
+                analyze_view_async(
+                    self.view,
+                    on_completed=view_analysis_completed(self.view),
+                )
 
     def on_close(self):
         """
