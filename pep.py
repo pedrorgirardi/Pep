@@ -2136,7 +2136,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
 
-        if is_debug(window):
+        if is_debug(self.window):
             print(f"(Pep) Cleared cache")
 
 
