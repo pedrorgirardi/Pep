@@ -12,9 +12,7 @@ import time
 import linecache
 import pathlib
 
-from urllib.parse import urlparse
 from zipfile import ZipFile
-from collections import defaultdict
 
 import sublime_plugin
 import sublime
