@@ -3033,12 +3033,19 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 else:
                     quick_panel_items = []
 
-                    for thingy_usage in thingy_usages:
+                    selected_index = 0
+
+                    for index, thingy_usage in enumerate(thingy_usages):
                         trigger = thingy_usage.get("from") or os.path.basename(
                             thingy_usage.get("filename")
                         )
                         details = thingy_usage.get("filename", "")
                         annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
+
+                        # It's a nice experience to open the panel
+                        # with the thingy under the cursor as the selected index.
+                        if thingy_usage == thingy_data:
+                            selected_index = index
 
                         quick_panel_items.append(
                             sublime.QuickPanelItem(
@@ -3091,7 +3098,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         quick_panel_items,
                         on_done,
                         sublime.WANT_EVENT,
-                        0,
+                        selected_index,
                         on_highlighted,
                         placeholder,
                     )
