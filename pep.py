@@ -2988,10 +2988,12 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 thingy_usages = find_var_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_LOCAL_BINDING:
-                thingy_usages = find_local_usages(analysis_, thingy_data)
+                thingy_usages = [thingy_data]
+                thingy_usages.extend(find_local_usages(analysis_, thingy_data))
 
             elif thingy_type == TT_LOCAL_USAGE:
-                thingy_usages = find_local_usages(analysis_, thingy_data)
+                thingy_usages = [find_local_binding(analysis_, thingy_data)]
+                thingy_usages.extend(find_local_usages(analysis_, thingy_data))
 
             elif thingy_type == TT_VAR_USAGE:
                 thingy_usages = find_var_usages(analysis_, thingy_data)
