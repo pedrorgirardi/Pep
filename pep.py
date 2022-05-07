@@ -1105,7 +1105,7 @@ def analyze_view_clj_kondo(view):
             input=view_text(view),
         )
 
-        return sublime.decode_value(analysis_completed_process.stdout)
+        return json.loads(analysis_completed_process.stdout)
 
     except:
         # Always return a dict, no matter what.
@@ -1237,7 +1237,7 @@ def analyze_classpath(window):
         output = None
 
         try:
-            output = sublime.decode_value(analysis_completed_process.stdout)
+            output = json.loads(analysis_completed_process.stdout)
         except:
             output = {}
 
@@ -1333,7 +1333,7 @@ def analyze_paths(window):
         output = None
 
         try:
-            output = sublime.decode_value(analysis_completed_process.stdout)
+            output = json.loads(analysis_completed_process.stdout)
         except:
             output = {}
 
