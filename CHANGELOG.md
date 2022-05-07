@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Added support for finding usages of locals
 - Improved finding annotation error handling
 - Windows: Fixed clj-kondo subprocess launch
+- Fixes [#58](https://github.com/pedrorgirardi/Pep/issues/58)
 
 ## 0.5 - 2022-04-08
 - Revert scratch change
