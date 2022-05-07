@@ -11,6 +11,7 @@ import threading
 import time
 import linecache
 import pathlib
+import shlex
 
 from zipfile import ZipFile
 
@@ -1042,6 +1043,8 @@ def project_classpath(window):
     }
     """
     if classpath := project_data_classpath(window):
+
+        classpath = classpath if isinstance(classpath, list) else shlex.split(classpath)
 
         classpath_completed_process = subprocess.run(
             classpath, cwd=project_path(window), text=True, capture_output=True

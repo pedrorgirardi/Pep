@@ -5,10 +5,7 @@
         }
     ],
     "pep": {
-        "classpath": [
-            "clojure",
-            "-Spath"
-        ],
+        "classpath": "clojure -Spath",
         "paths": [
             "tests"
         ],
