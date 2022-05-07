@@ -97,6 +97,28 @@ Default settings:
     // True if you would like to see the number of clj-kondo warnings, if any, in the status bar.
     "view_status_show_warnings": false,
 
+    // True if you would like to show the namespace of the view in the status bar.
+    "view_status_show_namespace": false,
+
+    // If you would like to add a custom prefix to the namespace of the view in the status bar.
+    "view_status_show_namespace_prefix": "Namespace: ",
+
+    // If you would like to add a custom suffix to the namespace of the view in the status bar.
+    "view_status_show_namespace_suffix": "",
+
+    // True if you would like to see the number of highlighted regions in the status bar.
+    "view_status_show_highlighted": false,
+
+    // If you would like to add a custom prefix to the number of highlighted regions in the status bar.
+    "view_status_show_highlighted_prefix": "Usages ",
+
+    // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
+    "view_status_show_highlighted_suffix": "",
+
+    // It's unlikely to need to analyze scratch views,
+    // but you can run the command to analyze a view if you really need it.
+    "analyze_scratch_view": false,
+
     // True if you would like to analyse your project's sources when the plugin is loaded.
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_paths_on_plugin_loaded": true,
@@ -118,7 +140,16 @@ Default settings:
     "analyze_classpath_on_load_project": true,
 
     // True if you would like to highlight vars, local bindings and keywords usages.
-    "automatically_highlight": false
+    "automatically_highlight": false,
+
+    // True if you would like to highlight the region under the cursor.
+    "highlight_self": true,
+
+    // True if you would like to highlight the region with an outline.
+    "highlight_region": true,
+
+    // True if you would like to highlight the gutter.
+    "highlight_gutter": false,
 }
 ```
 
