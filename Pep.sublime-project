@@ -5,10 +5,8 @@
         }
     ],
     "pep": {
+        "paths": ["clojure/src"],
         "classpath": "clojure -Spath",
-        "paths": [
-            "tests"
-        ],
         "analyze_classpath_on_plugin_loaded": false,
     }
 }

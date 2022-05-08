@@ -1,2 +1,19 @@
-{:deps {org.clojure/clojure {:mvn/version "1.11.0"}
-        org.clojure/clojurescript {:mvn/version "1.10.879"}}}
+{:paths ["clojure/src"]
+
+ :deps
+ {org.clojure/clojure {:mvn/version "1.11.1"}
+
+  clj-kondo/clj-kondo {:mvn/version "2022.04.25"}
+
+  io.github.borkdude/quickdoc {:git/url "https://github.com/borkdude/quickdoc.git"
+                               :sha "a6d240b28d1a32880bff5ddec833cd8282312537"}}
+
+ :aliases
+ {:repl {:jvm-opts ["-Dclojure.server.repl={:port,5555,:accept,clojure.core.server/repl}"]}
+
+
+  ;; Example:
+  ;; clojure -X:quickdoc :input "..."  :output "..."
+  :quickdoc
+  {:exec-fn pep.core/quickdoc
+   :exec-args {:output "API.md"}}}}
