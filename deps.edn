@@ -6,14 +6,15 @@
   clj-kondo/clj-kondo {:mvn/version "2022.04.25"}
 
   io.github.borkdude/quickdoc {:git/url "https://github.com/borkdude/quickdoc.git"
-                               :sha "a6d240b28d1a32880bff5ddec833cd8282312537"}}
+                               :sha "1e1e814dcba04b7a5538ff6b6ffcc19bcc2bd867"}
+
+  markdown-clj/markdown-clj {:mvn/version "1.11.1"}}
 
  :aliases
  {:repl {:jvm-opts ["-Dclojure.server.repl={:port,5555,:accept,clojure.core.server/repl}"]}
 
 
   ;; Example:
-  ;; clojure -X:quickdoc :input "..."  :output "..."
+  ;; clojure -X:quickdoc :filepath '"..."'
   :quickdoc
-  {:exec-fn pep.core/quickdoc
-   :exec-args {:output "API.md"}}}}
+  {:exec-fn pep.core/quickdoc}}}
