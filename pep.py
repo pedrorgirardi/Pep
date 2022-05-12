@@ -1212,7 +1212,7 @@ def analyze_classpath(window):
         if is_debug(window):
             print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
-        analysis_config = "{:output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords false :java-class-definitions false} :format :json :canonical-paths true}}"
+        analysis_config = "{:skip-lint true :output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords false :java-class-definitions false} :format :json :canonical-paths true}}"
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
@@ -1308,7 +1308,7 @@ def analyze_paths(window):
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
             )
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true :keywords true :java-class-usages true :java-class-definitions true}} :format :json :canonical-paths true}} }}"""
+        analysis_config = "{:skip-lint true :output {:analysis {:arglists true :keywords true :java-class-usages true :java-class-definitions true} :format :json :canonical-paths true} }"
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
