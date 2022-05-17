@@ -12,6 +12,7 @@ import time
 import linecache
 import pathlib
 import shlex
+import time
 
 from zipfile import ZipFile
 
@@ -1209,6 +1210,8 @@ def analyze_classpath(window):
     """
 
     if classpath := project_classpath(window):
+        t0 = time.time()
+
         if is_debug(window):
             print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
 
@@ -1283,7 +1286,7 @@ def analyze_classpath(window):
 
         if is_debug(window):
             print(
-                f"(Pep) Classpath analysis is completed (Project: {project_path(window)})"
+                f"(Pep) Classpath analysis is completed (Project: {project_path(window)}) [{time.time() - t0:,.2f} seconds]"
             )
 
         return True
@@ -1301,6 +1304,8 @@ def analyze_paths(window):
     """
 
     if paths := project_data_paths(window):
+        t0 = time.time()
+
         classpath = ":".join(paths)
 
         if is_debug(window):
@@ -1383,7 +1388,7 @@ def analyze_paths(window):
 
         if is_debug(window):
             print(
-                f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths})"
+                f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths}) [{time.time() - t0:,.2f} seconds]"
             )
 
 
