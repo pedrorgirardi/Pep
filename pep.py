@@ -50,6 +50,9 @@ OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
 HIGHLIGHTED_REGIONS_KEY = "pg_pep_highligths"
 HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 
+# Setting used to override the clj-kondo config for a view analysis.
+S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
+
 _view_analysis_ = {}
 
 _paths_analysis_ = {}
@@ -807,6 +810,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(False)
                 view.set_read_only(True)
+                view.settings().set(S_PEP_CLJ_KONDO_CONFIG, "{:linters {:namespace-name-mismatch {:level :off}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }")
 
             open_jar(filename, open_file)
 
@@ -1076,7 +1080,8 @@ def analyze_view_clj_kondo(view):
         elif view_file_name:
             cwd = os.path.dirname(view_file_name)
 
-        analysis_config = f"""{{:output {{:analysis {{:arglists true :locals true :keywords true :java-class-usages true}} :format :json :canonical-paths true}} }}"""
+        analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }"
+        analysis_config = view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or analysis_config
 
         # --lint <file>: a file can either be a normal file, directory or classpath.
         # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
