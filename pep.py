@@ -810,7 +810,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(False)
                 view.set_read_only(True)
-                view.settings().set(S_PEP_CLJ_KONDO_CONFIG, "{:linters {:namespace-name-mismatch {:level :off}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }")
+                view.settings().set(S_PEP_CLJ_KONDO_CONFIG, "{:linters {:namespace-name-mismatch {:level :off} :unused-binding {:level :off}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }")
 
             open_jar(filename, open_file)
 
@@ -1080,7 +1080,7 @@ def analyze_view_clj_kondo(view):
         elif view_file_name:
             cwd = os.path.dirname(view_file_name)
 
-        analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }"
+        analysis_config = "{:linters {:unused-binding {:exclude-destructured-keys-in-fn-args true :exclude-destructured-as true :exclude-defmulti-args true}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }"
         analysis_config = view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or analysis_config
 
         # --lint <file>: a file can either be a normal file, directory or classpath.
