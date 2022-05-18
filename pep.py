@@ -805,7 +805,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
             def open_file(filename, file):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
-                view.set_scratch(True)
+                view.set_scratch(False)
                 view.set_read_only(True)
 
             open_jar(filename, open_file)
