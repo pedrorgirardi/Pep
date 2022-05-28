@@ -1321,7 +1321,7 @@ def analyze_paths(window):
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
             )
 
-        analysis_config = "{:skip-lint true :output {:analysis {:arglists true :keywords true :java-class-usages true :java-class-definitions true} :format :json :canonical-paths true} }"
+        analysis_config = "{:skip-lint true :output {:analysis {:var-definitions {:shallow true} :arglists true :keywords true :java-class-usages true :java-class-definitions false} :format :json :canonical-paths true} }"
 
         analysis_subprocess_args = [
             clj_kondo_path(window),

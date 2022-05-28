@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - Improved finding annotation error handling
 - Windows: Fixed clj-kondo subprocess launch
 - Fixes [#58](https://github.com/pedrorgirardi/Pep/issues/58)
+- Improve paths analysis performance
+	- Use `:var-definitions {:shallow true}` config
 
 ## 0.5 - 2022-04-08
 - Revert scratch change
