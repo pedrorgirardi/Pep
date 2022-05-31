@@ -3071,7 +3071,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                                 trigger,
                                 details,
                                 annotation,
-                                thingy_kind(thingy_type, thingy_data),
                             )
                         )
 
