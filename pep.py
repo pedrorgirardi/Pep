@@ -3045,6 +3045,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         thingy_data,
                     )
 
+            # Prune None usages - it's strange that there are None items though.
+            thingy_usages = [usage for usage in thingy_usages if usage]
+
             if thingy_usages:
 
                 if len(thingy_usages) == 1:
