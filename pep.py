@@ -813,7 +813,10 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
                 # Filename doesn't match the namespace name because it's a temp file,
                 # and that's why the linter :namespace-name-mismatch is disabled.
-                view.settings().set(S_PEP_CLJ_KONDO_CONFIG, "{:linters {:namespace-name-mismatch {:level :off}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }")
+                view.settings().set(
+                    S_PEP_CLJ_KONDO_CONFIG,
+                    "{:linters {:namespace-name-mismatch {:level :off}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }",
+                )
 
             open_jar(filename, open_file)
 
@@ -3055,8 +3058,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     selected_index = 0
 
                     for index, thingy_usage in enumerate(thingy_usages):
-                        trigger = thingy_usage.get("from") or os.path.basename(
-                            thingy_usage.get("filename")
+                        trigger = (
+                            thingy_usage.get("from")
+                            or thingy_usage.get("ns")
+                            or os.path.basename(thingy_usage.get("filename"))
                         )
                         details = thingy_usage.get("filename", "")
                         annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
