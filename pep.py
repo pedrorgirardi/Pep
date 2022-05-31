@@ -3063,21 +3063,15 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                             or thingy_usage.get("ns")
                             or os.path.basename(thingy_usage.get("filename"))
                         )
-                        details = thingy_usage.get("filename", "")
-                        annotation = f'Line {thingy_usage.get("row", "Row")}, Column {thingy_usage.get("col", "Col")}'
+
+                        trigger = f'{trigger} {thingy_usage.get("row", "-")}:{thingy_usage.get("col", "-")}'
 
                         # It's a nice experience to open the panel
                         # with the thingy under the cursor as the selected index.
                         if thingy_usage == thingy_data:
                             selected_index = index
 
-                        quick_panel_items.append(
-                            sublime.QuickPanelItem(
-                                trigger,
-                                details,
-                                annotation,
-                            )
-                        )
+                        quick_panel_items.append(sublime.QuickPanelItem(trigger))
 
                     def on_done(index, _):
                         if index == -1:
