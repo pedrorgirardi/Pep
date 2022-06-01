@@ -3004,27 +3004,22 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 thingy_usages = find_keyword_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_LOCAL_BINDING:
-                thingy_usages = [thingy_data]
-                thingy_usages.extend(find_local_usages(analysis_, thingy_data))
+                thingy_usages = find_local_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_LOCAL_USAGE:
-                thingy_usages = [find_local_binding(analysis_, thingy_data)]
-                thingy_usages.extend(find_local_usages(analysis_, thingy_data))
+                thingy_usages = find_local_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_VAR_DEFINITION:
-                thingy_usages = [thingy_data]
-                thingy_usages.extend(find_var_usages(analysis_, thingy_data))
+                thingy_usages = find_var_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_VAR_USAGE:
-                thingy_usages = [find_var_definition(analysis_, thingy_data)]
-                thingy_usages.extend(find_var_usages(analysis_, thingy_data))
+                thingy_usages = find_var_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_JAVA_CLASS_USAGE:
                 thingy_usages = find_java_class_usages(analysis_, thingy_data)
 
             elif thingy_type == TT_NAMESPACE_DEFINITION:
-                thingy_usages = [thingy_data]
-                thingy_usages.extend(find_namespace_usages(analysis_, thingy_data))
+                thingy_usages = find_namespace_usages(analysis_, thingy_data)
 
             elif (
                 thingy_type == TT_NAMESPACE_USAGE
