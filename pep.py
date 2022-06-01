@@ -895,7 +895,9 @@ def var_goto_items(analysis, namespace_visible=True):
             {
                 "thingy_type": TT_VAR_DEFINITION,
                 "thingy_data": var_definition,
-                "quick_panel_item": var_quick_panel_item(var_definition, namespace_visible),
+                "quick_panel_item": var_quick_panel_item(
+                    var_definition, namespace_visible
+                ),
             }
         )
 
@@ -1059,7 +1061,10 @@ def project_classpath(window):
         classpath = classpath if isinstance(classpath, list) else shlex.split(classpath)
 
         classpath_completed_process = subprocess.run(
-            classpath, cwd=project_path(window), text=True, capture_output=True
+            classpath,
+            cwd=project_path(window),
+            text=True,
+            capture_output=True,
         )
 
         classpath_completed_process.check_returncode()
