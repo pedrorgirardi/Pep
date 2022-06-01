@@ -845,12 +845,12 @@ def namespace_quick_panel_item(thingy_data):
     )
 
 
-def var_quick_panel_item(thingy_data):
+def var_quick_panel_item(thingy_data, namespace_visible=True):
     var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
     var_name = thingy_data.get("name", "")
     var_arglist = thingy_data.get("arglist-strs", [])
 
-    trigger = f"{var_namespace}/{var_name}"
+    trigger = f"{var_namespace}/{var_name}" if namespace_visible else var_name
 
     annotation = thingy_quick_panel_item_annotation(thingy_data)
 
@@ -886,7 +886,7 @@ def keyword_quick_panel_item(thingy_data):
     )
 
 
-def var_goto_items(analysis):
+def var_goto_items(analysis, namespace_visible=True):
     items_ = []
 
     for var_definition in var_definitions(analysis):
@@ -894,7 +894,7 @@ def var_goto_items(analysis):
             {
                 "thingy_type": TT_VAR_DEFINITION,
                 "thingy_data": var_definition,
-                "quick_panel_item": var_quick_panel_item(var_definition),
+                "quick_panel_item": var_quick_panel_item(var_definition, namespace_visible),
             }
         )
 
@@ -2217,6 +2217,23 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
         ]
 
         show_goto_thingy_quick_panel(self.window, items_)
+
+
+class PgPepOutlineCommand(sublime_plugin.TextCommand):
+    """
+    Outline thingies in view.
+    """
+
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        items_ = [
+            *namespace_goto_items(view_analysis_),
+            *var_goto_items(view_analysis_, namespace_visible=False),
+            *keyword_goto_items(view_analysis_),
+        ]
+
+        show_goto_thingy_quick_panel(self.view.window(), items_)
 
 
 class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
