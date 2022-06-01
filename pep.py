@@ -841,6 +841,7 @@ def namespace_quick_panel_item(thingy_data):
     return sublime.QuickPanelItem(
         namespace_name,
         kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
+        details=thingy_data.get("doc", ""),
         annotation=thingy_quick_panel_item_annotation(thingy_data),
     )
 
