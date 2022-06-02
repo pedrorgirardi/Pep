@@ -24,6 +24,10 @@
         "command": "pg_pep_toggle_highlight"
     },
     {
+        "caption": "Pep: Outline",
+        "command": "pg_pep_outline"
+    },
+    {
         "caption": "Pep: Goto Namespace in Paths",
         "command": "pg_pep_goto_namespace"
     },
