@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.6 - Unreleased
+- New command **Pep: Outline**
 - Added command **Pep: Settings** to Command Palette
 - Added command **Pep: Show Documentation** to Command Palette
 - Added command **Pep: Show Documentation Side by Side** to Command Palette
@@ -14,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - Fixes [#58](https://github.com/pedrorgirardi/Pep/issues/58)
 - Improve paths analysis performance
 	- Use `:var-definitions {:shallow true}` config
+- Show namespace docstring in QuickPanel
 
 ## 0.5 - 2022-04-08
 - Revert scratch change
