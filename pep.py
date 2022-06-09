@@ -54,7 +54,7 @@ HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 
 # Status bar key used to show documentation.
-STATUS_DOC_KEY = "pep_doc"
+STATUS_BAR_DOC_KEY = "pep_doc"
 
 _view_analysis_ = {}
 
@@ -2525,7 +2525,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             elif show == "status_bar":
                 self.view.set_status(
-                    STATUS_DOC_KEY, f"{qualified_name} {' '.join(arglists)}"
+                    STATUS_BAR_DOC_KEY, f"{qualified_name} {' '.join(arglists)}"
                 )
 
         else:
@@ -2533,7 +2533,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             # Status bar documentation must be cleared when a definition is not found.
 
             if show == "status_bar":
-                self.view.set_status(STATUS_DOC_KEY, "")
+                self.view.set_status(STATUS_BAR_DOC_KEY, "")
 
 
 class PgPepJumpCommand(sublime_plugin.TextCommand):
@@ -3454,7 +3454,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             )
         else:
             # Clear status bar doc whenever the selection changes.
-            self.view.set_status(STATUS_DOC_KEY, "")
+            self.view.set_status(STATUS_BAR_DOC_KEY, "")
 
         if self.modified_time:
             # Don't analyze when the programmer is editing the view.
