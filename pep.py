@@ -53,6 +53,9 @@ HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 # Setting used to override the clj-kondo config for a view analysis.
 S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 
+# Status bar key used to show documentation.
+STATUS_DOC_KEY = "pep_doc"
+
 _view_analysis_ = {}
 
 _paths_analysis_ = {}
@@ -2521,7 +2524,16 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
             elif show == "status_bar":
-                self.view.set_status("pep_doc", f"{qualified_name} {' '.join(arglists)}")
+                self.view.set_status(
+                    STATUS_DOC_KEY, f"{qualified_name} {' '.join(arglists)}"
+                )
+
+        else:
+
+            # Status bar documentation must be cleared when a definition is not found.
+
+            if show == "status_bar":
+                self.view.set_status(STATUS_DOC_KEY, "")
 
 
 class PgPepJumpCommand(sublime_plugin.TextCommand):
@@ -3425,8 +3437,13 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if automatically_highlight(self.view.window()):
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
-        # Clear status bar doc whenever the selection changes.
-        self.view.set_status("pep_doc", "")
+        # Show documentation of symbol under cursor in the status bar,
+        # or clear documentation if the setting is disabled.
+        #
+        # Note:
+        # Status bar is not cleared by default when a selection is modified,
+        # because that would cause a 'flickering' of the text in the status bar.
+        # Let the command take care of clearing the status bar if a definition is not found.
 
         if view_status_show_doc(self.view.window()):
             sublime.set_timeout(
@@ -3435,6 +3452,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
                 ),
                 0,
             )
+        else:
+            # Clear status bar doc whenever the selection changes.
+            self.view.set_status(STATUS_DOC_KEY, "")
 
         if self.modified_time:
             # Don't analyze when the programmer is editing the view.
