@@ -2521,7 +2521,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
             elif show == "status_bar":
-                self.view.set_status("pep_doc", f"{name} {' '.join(arglists)}")
+                self.view.set_status("pep_doc", f"{qualified_name} {' '.join(arglists)}")
 
 
 class PgPepJumpCommand(sublime_plugin.TextCommand):
