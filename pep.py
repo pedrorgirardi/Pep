@@ -140,6 +140,10 @@ def view_status_show_highlighted_suffix(window):
     return setting(window, "view_status_show_highlighted_suffix", "")
 
 
+def view_status_show_doc(window):
+    return setting(window, "view_status_show_doc", False)
+
+
 def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
@@ -2396,7 +2400,7 @@ class PgPepShowNameCommand(sublime_plugin.TextCommand):
 
 
 class PgPepShowDocCommand(sublime_plugin.TextCommand):
-    def run(self, edit, side_by_side=False):
+    def run(self, edit, show="popup"):
         view_analysis_ = view_analysis(self.view.id())
 
         region = self.view.sel()[0]
@@ -2500,7 +2504,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             </body>
             """
 
-            if side_by_side:
+            if show == "popup":
+                self.view.show_popup(
+                    content,
+                    location=-1,
+                    max_width=500,
+                )
+
+            elif show == "side_by_side":
                 sheet = self.view.window().new_html_sheet(
                     qualified_name,
                     content,
@@ -2509,12 +2520,8 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
                 self.view.window().focus_sheet(sheet)
 
-            else:
-                self.view.show_popup(
-                    content,
-                    location=-1,
-                    max_width=500,
-                )
+            elif show == "status_bar":
+                self.view.set_status("pep_doc", f"{name} {' '.join(arglists)}")
 
 
 class PgPepJumpCommand(sublime_plugin.TextCommand):
@@ -3417,6 +3424,17 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         """
         if automatically_highlight(self.view.window()):
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
+
+        # Clear status bar doc whenever the selection changes.
+        self.view.set_status("pep_doc", "")
+
+        if view_status_show_doc(self.view.window()):
+            sublime.set_timeout(
+                lambda: self.view.run_command(
+                    "pg_pep_show_doc", {"show": "status_bar"}
+                ),
+                0,
+            )
 
         if self.modified_time:
             # Don't analyze when the programmer is editing the view.
