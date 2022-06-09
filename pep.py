@@ -2410,10 +2410,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         thingy = thingy_in_region(self.view, view_analysis_, region)
 
-        if thingy is None:
-            return
-
-        thingy_type, _, thingy_data = thingy
+        thingy_type, _, thingy_data = thingy or (None, None, None)
 
         definition = None
 
@@ -3452,12 +3449,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         # Let the command take care of clearing the status bar if a definition is not found.
 
         if view_status_show_doc(self.view.window()):
-            sublime.set_timeout(
-                lambda: self.view.run_command(
-                    "pg_pep_show_doc", {"show": "status_bar"}
-                ),
-                0,
-            )
+            self.view.run_command("pg_pep_show_doc", {"show": "status_bar"})
         else:
             # Clear status bar doc whenever the selection changes.
             self.view.set_status(STATUS_BAR_DOC_KEY, "")
