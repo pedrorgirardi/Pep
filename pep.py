@@ -2468,7 +2468,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             # Arglists
             # ---
 
-            arglists = definition.get("arglist-strs")
+            arglists = definition.get("arglist-strs", [])
 
             arglists_minihtml = ""
 
