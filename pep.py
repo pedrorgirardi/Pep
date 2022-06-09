@@ -2524,6 +2524,12 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
             elif show == "status_bar":
+                name = definition.get("name", "")
+
+                ns = definition.get("ns", "")
+
+                qualified_name = f"{ns}/{name}" if ns else name
+
                 self.view.set_status(
                     STATUS_BAR_DOC_KEY, f"{qualified_name} {' '.join(arglists)}"
                 )
