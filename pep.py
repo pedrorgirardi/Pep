@@ -2461,7 +2461,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             name_minihtml = f"""
             <p class="name">
-                <a href="{goto_command_url}">{qualified_name}</a>
+                <a href="{goto_command_url}"><b>{qualified_name}</b></a>
             </p>
             """
 
