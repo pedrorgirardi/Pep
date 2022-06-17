@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.6 - Unreleased
+## 0.6.0 - 2022-06-17
 - New command **Pep: Outline**
 - Added command **Pep: Settings** to Command Palette
 - Added command **Pep: Show Documentation** to Command Palette
