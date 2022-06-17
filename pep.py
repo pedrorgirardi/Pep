@@ -143,10 +143,6 @@ def view_status_show_highlighted_suffix(window):
     return setting(window, "view_status_show_highlighted_suffix", "")
 
 
-def view_status_show_doc(window):
-    return setting(window, "view_status_show_doc", False)
-
-
 def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
@@ -3440,19 +3436,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if automatically_highlight(self.view.window()):
             sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
 
-        # Show documentation of symbol under cursor in the status bar,
-        # or clear documentation if the setting is disabled.
-        #
-        # Note:
-        # Status bar is not cleared by default when a selection is modified,
-        # because that would cause a 'flickering' of the text in the status bar.
-        # Let the command take care of clearing the status bar if a definition is not found.
-
-        if view_status_show_doc(self.view.window()):
-            self.view.run_command("pg_pep_show_doc", {"show": "status_bar"})
-        else:
-            # Clear status bar doc whenever the selection changes.
-            self.view.set_status(STATUS_BAR_DOC_KEY, "")
 
         if self.modified_time:
             # Don't analyze when the programmer is editing the view.

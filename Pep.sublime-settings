@@ -33,9 +33,6 @@
     // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
     "view_status_show_highlighted_suffix": "",
 
-    // True if you would like show documentation for the symbol under the cursor in the status bar.
-    "view_status_show_doc": false,
-
     // It's unlikely to need to analyze scratch views,
     // but you can run the command to analyze a view if you really need it.
     "analyze_scratch_view": false,
