@@ -1,7 +1,5 @@
 # Pep
 
-> I'm currently working to improve the documentation.
-
 Status: in development
 
 **Pep** leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis.
