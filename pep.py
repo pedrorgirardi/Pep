@@ -2058,6 +2058,43 @@ def highlight_regions(view, selection, regions):
             else sublime.HIDDEN,
         )
 
+def highlight_thingy(view):
+    """
+    Highlight regions of thingy under cursor.
+    """
+    analysis = view_analysis(view.id())
+
+    region = thingy_sel_region(view)
+
+    thingy = thingy_in_region(view, analysis, region)
+
+    view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
+
+    status_message = ""
+
+    # We can't highlight if view was modified,
+    # because regions might be different.
+    if thingy and not staled_analysis(view):
+        if regions := find_thingy_regions(view, analysis, thingy):
+
+            window = view.window()
+
+            if not setting(window, "highlight_self", None):
+                regions = [
+                    region_ for region_ in regions if not region_.contains(region)
+                ]
+
+            highlight_regions(view, view.sel(), regions)
+
+            if view_status_show_highlighted(window):
+                prefix = view_status_show_highlighted_prefix(window)
+
+                suffix = view_status_show_highlighted_suffix(window)
+
+                status_message = f"{prefix}{len(regions)}{suffix}"
+
+    view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
+
 
 def find_thingy_regions(view, analysis, thingy):
     thingy_type, _, thingy_data = thingy
@@ -3174,41 +3211,9 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
             self.view.sel().clear()
             self.view.sel().add_all(regions)
 
-
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        analysis = view_analysis(self.view.id())
-
-        region = thingy_sel_region(self.view)
-
-        thingy = thingy_in_region(self.view, analysis, region)
-
-        self.view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
-
-        status_message = ""
-
-        # We can't highlight if view was modified,
-        # because regions might be different.
-        if thingy and not staled_analysis(self.view):
-            if regions := find_thingy_regions(self.view, analysis, thingy):
-
-                window = self.view.window()
-
-                if not setting(window, "highlight_self", None):
-                    regions = [
-                        region_ for region_ in regions if not region_.contains(region)
-                    ]
-
-                highlight_regions(self.view, self.view.sel(), regions)
-
-                if view_status_show_highlighted(window):
-                    prefix = view_status_show_highlighted_prefix(window)
-
-                    suffix = view_status_show_highlighted_suffix(window)
-
-                    status_message = f"{prefix}{len(regions)}{suffix}"
-
-        self.view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
+        highlight_thingy(self.view)
 
 
 class PgPepClearHighlightedCommand(sublime_plugin.TextCommand):
@@ -3434,7 +3439,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         and it passes a threshold (in seconds) of the last time the view was modified.
         """
         if automatically_highlight(self.view.window()):
-            sublime.set_timeout(lambda: self.view.run_command("pg_pep_highlight"), 0)
+            highlight_thingy(self.view)
 
 
         if self.modified_time:

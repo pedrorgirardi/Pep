@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.7.0 - Unreleases
+- Don't trigger command to highlight region on selection modified
+
 ## 0.6.0 - 2022-06-17
 - New command **Pep: Outline**
 - Added command **Pep: Settings** to Command Palette
