@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.7.0 - Unreleases
+## 0.7.0 - Unreleased
 - Don't trigger command to highlight region on selection modified
 
 ## 0.6.0 - 2022-06-17
