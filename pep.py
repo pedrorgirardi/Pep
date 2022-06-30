@@ -1013,27 +1013,56 @@ def preview_thingy(window, thingy_type, thingy_data):
 
 
 def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
-    def goto_location(index):
-        if index != -1:
+    # Active view, if there's one, when the QuickPanel UI is shown.
+    initial_view = window.active_view()
+
+    # Set of views opened by the QuickPanel UI.
+    goto_views = set()
+
+    def on_highlight(index):
+        thingy_data_ = items[index]["thingy_data"]
+
+        location = thingy_location(thingy_data_)
+
+        goto(window, location)
+
+        # Book-keeping of opened views - initial view is not considered:
+
+        goto_view = window.active_view()
+
+        if not initial_view == goto_view:
+            goto_views.add(goto_view)
+
+    def on_select(index):
+        if index == -1:
+            # Close opened views and restore focus to initial view:
+
+            for goto_view in goto_views:
+                goto_view.close()
+
+            if initial_view:
+                window.focus_view(initial_view)
+        else:
             thingy_data_ = items[index]["thingy_data"]
 
             location = thingy_location(thingy_data_)
 
             goto(window, location)
 
+            to_be_closed = goto_views.difference({window.active_view()})
+
+            # Close opened views - during goto highlight:
+            for goto_view in to_be_closed:
+                goto_view.close()
+
+
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
-    if goto_on_highlight:
-        window.show_quick_panel(
-            quick_panel_items,
-            goto_location,
-            on_highlight=goto_location,
-        )
-    else:
-        window.show_quick_panel(
-            quick_panel_items,
-            goto_location,
-        )
+    window.show_quick_panel(
+        quick_panel_items,
+        on_select,
+        on_highlight=on_highlight if goto_on_highlight else None,
+    )
 
 
 ## ---
