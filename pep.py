@@ -1208,7 +1208,7 @@ def analyze_view(view, on_completed=None):
         **var_index_,
         **java_class_index_,
         "view_change_count": view_change_count,
-        "findings": clj_kondo_data.get("findings", {}),
+        "findings": clj_kondo_data.get("findings", []),
         "summary": clj_kondo_data.get("summary", {}),
         "kindex": kindex,
         "krn": krn,
@@ -1411,6 +1411,7 @@ def analyze_paths(window):
                 **namespace_index_,
                 **var_index_,
                 **java_class_index_,
+                "findings": output.get("findings", []),
             },
         )
 
@@ -2941,6 +2942,57 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 print("(Pep) Unable to find definition")
 
 
+class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
+    def run(self, scope="view"):
+        try:
+
+            project_path_ = project_path(self.window)
+
+            active_view = self.window.active_view()
+
+            # Goto is a window command, so it's possible
+            # that there isn't an active view.
+            # In that case, an empty analysis dict is used.
+
+            view_analysis_ = view_analysis(active_view.id()) if active_view else {}
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            findings = analysis_findings(view_analysis_ if scope == "view" else paths_analysis_)
+
+            items = []
+
+            for finding in findings:
+
+                item_kind = (
+                    (sublime.KindId.COLOR_REDISH, "e", "e")
+                    if finding["level"] == "error"
+                    else (sublime.KindId.COLOR_ORANGISH, "w", "w")
+                )
+
+                items.append(
+                    {
+                        "thingy_type": TT_FINDING,
+                        "thingy_data": finding,
+                        "quick_panel_item": sublime.QuickPanelItem(
+                            finding["message"],
+                            details=finding["filename"],
+                            kind=item_kind,
+                            annotation=finding["type"],
+                        ),
+                    }
+                )
+
+            show_goto_thingy_quick_panel(
+                self.window,
+                items,
+                goto_on_highlight=True,
+            )
+
+        except Exception as e:
+            print(f"(Pep) Goto Analysis Finding failed.", traceback.format_exc())
+
+
 class PgPepTraceUsages(sublime_plugin.TextCommand):
     """
     Command to trace usages of a var or namespace.
@@ -3389,49 +3441,6 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
 
         except Exception as e:
             print(f"(Pep) Annotate failed.", traceback.format_exc())
-
-
-class PgPepGotoAnalysisFindingCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        try:
-
-            analysis = view_analysis(self.view.id())
-
-            findings = analysis_findings(analysis)
-
-            items = []
-
-            for finding in findings:
-
-                item_kind = (
-                    (sublime.KindId.COLOR_REDISH, "e", "e")
-                    if finding["level"] == "error"
-                    else (sublime.KindId.COLOR_ORANGISH, "w", "w")
-                )
-
-                item_annotation = "Error" if finding["level"] == "error" else "Warning"
-
-                items.append(
-                    {
-                        "thingy_type": TT_FINDING,
-                        "thingy_data": finding,
-                        "quick_panel_item": sublime.QuickPanelItem(
-                            finding["message"],
-                            details=finding["type"],
-                            kind=item_kind,
-                            annotation=item_annotation,
-                        ),
-                    }
-                )
-
-            show_goto_thingy_quick_panel(
-                self.view.window(),
-                items,
-                goto_on_highlight=True,
-            )
-
-        except Exception as e:
-            print(f"(Pep) Goto Analysis Finding failed.", traceback.format_exc())
 
 
 class PgPepViewListener(sublime_plugin.ViewEventListener):

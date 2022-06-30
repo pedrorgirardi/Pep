@@ -82,8 +82,17 @@
         "args": {"side_by_side": "true"},
     },
     {
-        "caption": "Pep: Goto Analysis Finding",
+        "caption": "Pep: Goto Analysis Finding in View",
         "command": "pg_pep_goto_analysis_finding",
+        "args": {"scope": "view"},
+        "context": [{"key": "selector",
+                     "operator": "equal",
+                     "operand": "source.clojure"}]
+    },
+    {
+        "caption": "Pep: Goto Analysis Finding in Paths",
+        "command": "pg_pep_goto_analysis_finding",
+        "args": {"scope": "paths"},
         "context": [{"key": "selector",
                      "operator": "equal",
                      "operand": "source.clojure"}]
