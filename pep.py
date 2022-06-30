@@ -3393,6 +3393,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     @classmethod
     def is_applicable(_, settings):
         return settings.get("syntax") in {
+            "Packages/Tutkain/EDN (Tutkain).sublime-syntax",
             "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
             "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
             "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
