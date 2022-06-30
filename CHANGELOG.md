@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## 0.7.0 - Unreleased
 - Don't trigger command to highlight region on selection modified
 - [Goto Analysis Finding #55](https://github.com/pedrorgirardi/Pep/issues/55)
+- Fix paths analysis on Windows
+	- On Windows, path separator is `;`
+	- On Linux and Mac is `:`
 
 ## 0.6.0 - 2022-06-17
 - New command **Pep: Outline**
