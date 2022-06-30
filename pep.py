@@ -34,6 +34,7 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 
 # Thingy types
 
+TT_FINDING = "finding"
 TT_KEYWORD = "keyword"
 TT_LOCAL_BINDING = "local_binding"
 TT_LOCAL_USAGE = "local_usage"
@@ -1011,8 +1012,8 @@ def preview_thingy(window, thingy_type, thingy_data):
     show_output_panel(window)
 
 
-def show_goto_thingy_quick_panel(window, items):
-    def on_done(index):
+def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
+    def goto_location(index):
         if index != -1:
             thingy_data_ = items[index]["thingy_data"]
 
@@ -1022,10 +1023,17 @@ def show_goto_thingy_quick_panel(window, items):
 
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
-    window.show_quick_panel(
-        quick_panel_items,
-        on_done,
-    )
+    if goto_on_highlight:
+        window.show_quick_panel(
+            quick_panel_items,
+            goto_location,
+            on_highlight=goto_location,
+        )
+    else:
+        window.show_quick_panel(
+            quick_panel_items,
+            goto_location,
+        )
 
 
 ## ---
@@ -2057,6 +2065,7 @@ def highlight_regions(view, selection, regions):
             if setting(view.window(), "highlight_region", None)
             else sublime.HIDDEN,
         )
+
 
 def highlight_thingy(view):
     """
@@ -3211,6 +3220,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
             self.view.sel().clear()
             self.view.sel().add_all(regions)
 
+
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         highlight_thingy(self.view)
@@ -3381,6 +3391,49 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
             print(f"(Pep) Annotate failed.", traceback.format_exc())
 
 
+class PgPepGotoAnalysisFindingCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        try:
+
+            analysis = view_analysis(self.view.id())
+
+            findings = analysis_findings(analysis)
+
+            items = []
+
+            for finding in findings:
+
+                item_kind = (
+                    (sublime.KindId.COLOR_REDISH, "e", "e")
+                    if finding["level"] == "error"
+                    else (sublime.KindId.COLOR_ORANGISH, "w", "w")
+                )
+
+                item_annotation = "Error" if finding["level"] == "error" else "Warning"
+
+                items.append(
+                    {
+                        "thingy_type": TT_FINDING,
+                        "thingy_data": finding,
+                        "quick_panel_item": sublime.QuickPanelItem(
+                            finding["message"],
+                            details=finding["type"],
+                            kind=item_kind,
+                            annotation=item_annotation,
+                        ),
+                    }
+                )
+
+            show_goto_thingy_quick_panel(
+                self.view.window(),
+                items,
+                goto_on_highlight=True,
+            )
+
+        except Exception as e:
+            print(f"(Pep) Goto Analysis Finding failed.", traceback.format_exc())
+
+
 class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
     These 'actions' are configured via settings.
@@ -3441,7 +3494,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         """
         if automatically_highlight(self.view.window()):
             highlight_thingy(self.view)
-
 
         if self.modified_time:
             # Don't analyze when the programmer is editing the view.

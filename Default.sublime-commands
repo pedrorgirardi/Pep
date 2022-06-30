@@ -82,6 +82,13 @@
         "args": {"side_by_side": "true"},
     },
     {
+        "caption": "Pep: Goto Analysis Finding",
+        "command": "pg_pep_goto_analysis_finding",
+        "context": [{"key": "selector",
+                     "operator": "equal",
+                     "operand": "source.clojure"}]
+    },
+    {
         "caption": "Pep: Clear Cache",
         "command": "pg_pep_clear_cache"
     },
