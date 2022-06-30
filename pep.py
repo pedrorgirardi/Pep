@@ -1363,7 +1363,9 @@ def analyze_paths(window):
     if paths := project_data_paths(window):
         t0 = time.time()
 
-        classpath = ":".join(paths)
+        path_separator = ";" if os.name == "nt" else ":"
+
+        classpath = path_separator.join(paths)
 
         if is_debug(window):
             print(
