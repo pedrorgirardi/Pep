@@ -2286,7 +2286,11 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
     Scope is one of: 'view', 'paths' or 'classpath'.
     """
 
-    def run(self, scope="view"):
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
+
+    def run(self, scope):
         project_path_ = project_path(self.window)
 
         active_view = self.window.active_view()
@@ -2343,21 +2347,28 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     Scope is either 'classpath' or 'paths'.
     """
 
-    def run(self, scope="paths"):
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"paths", "classpath"})
+
+    def run(self, scope):
         project_path_ = project_path(self.window)
 
-        analysis_ = (
-            paths_analysis(project_path_)
-            if scope == "paths"
-            else classpath_analysis(project_path_)
-        )
 
-        items_ = namespace_goto_items(analysis_)
+        analysis_ = None
 
-        # Sort by namespace name.
-        items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
+        if scope == "paths":
+            analysis_ = paths_analysis(project_path_)
+        elif scope == "classpath":
+            analysis_ = classpath_analysis(project_path_)
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        if analysis_:
+            items_ = namespace_goto_items(analysis_)
+
+            # Sort by namespace name.
+            items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
+
+            show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
@@ -2367,66 +2378,86 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
     Scope is either 'classpath' or 'paths'.
     """
 
-    def run(self, scope="paths"):
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
+
+    def run(self, scope):
         project_path_ = project_path(self.window)
 
-        analysis_ = (
-            paths_analysis(project_path_)
-            if scope == "paths"
-            else classpath_analysis(project_path_)
-        )
+        analysis_ = None
 
-        items_ = var_goto_items(analysis_)
+        if scope == "view":
+            analysis_ = view_analysis(self.window.active_view().id())
+        elif scope == "paths":
+            analysis_ = paths_analysis(project_path_)
+        elif scope == "classpath":
+            analysis_ = classpath_analysis(project_path_)
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        if analysis_:
+            items_ = var_goto_items(analysis_)
+
+            show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
     """
     Goto keyword in scope.
-
-    Scope is either 'classpath' or 'paths'.
     """
+
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
 
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = (
-            paths_analysis(project_path_)
-            if scope == "paths"
-            else classpath_analysis(project_path_)
-        )
+        analysis_ = None
 
-        items_ = keyword_goto_items(analysis_)
+        if scope == "view":
+            analysis_ = view_analysis(self.window.active_view().id())
+        elif scope == "paths":
+            analysis_ = paths_analysis(project_path_)
+        elif scope == "classpath":
+            analysis_ = classpath_analysis(project_path_)
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        if analysis_:
+            items_ = keyword_goto_items(analysis_)
+
+            show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
     """
     Goto keyword defined by Clojure Spec in scope.
-
-    Scope is either 'classpath' or 'paths'.
     """
+
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
 
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = (
-            paths_analysis(project_path_)
-            if scope == "paths"
-            else classpath_analysis(project_path_)
-        )
+        analysis_ = None
 
-        items_ = keyword_goto_items(analysis_)
+        if scope == "view":
+            analysis_ = view_analysis(self.window.active_view().id())
+        elif scope == "paths":
+            analysis_ = paths_analysis(project_path_)
+        elif scope == "classpath":
+            analysis_ = classpath_analysis(project_path_)
 
-        items_ = [
-            item_
-            for item_ in items_
-            if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
-        ]
+        if analysis_:
+            items_ = keyword_goto_items(analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_)
+            items_ = [
+                item_
+                for item_ in items_
+                if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
+            ]
+
+            show_goto_thingy_quick_panel(self.window, items_)
 
 
 def thingy_name(thingy):

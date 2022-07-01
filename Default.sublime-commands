@@ -28,43 +28,24 @@
         "command": "pg_pep_outline"
     },
     {
-        "caption": "Pep: Goto Namespace in Paths",
+        "caption": "Pep: Goto Namespace",
         "command": "pg_pep_goto_namespace"
     },
     {
-        "caption": "Pep: Goto Var in Paths",
-        "command": "pg_pep_goto_var",
-        "args": {"scope": "paths"}
+        "caption": "Pep: Goto Var",
+        "command": "pg_pep_goto_var"
     },
     {
-        "caption": "Pep: Goto Keyword in View",
-        "command": "pg_pep_goto_keyword",
-        "args": {"scope": "view"}
+        "caption": "Pep: Goto Keyword",
+        "command": "pg_pep_goto_keyword"
     },
     {
-        "caption": "Pep: Goto Keyword in Paths",
-        "command": "pg_pep_goto_keyword",
-        "args": {"scope": "paths"}
+        "caption": "Pep: Goto Spec",
+        "command": "pg_pep_goto_spec"
     },
     {
-        "caption": "Pep: Goto Spec in View",
-        "command": "pg_pep_goto_spec",
-        "args": {"scope": "view"}
-    },
-    {
-        "caption": "Pep: Goto Spec in Paths",
-        "command": "pg_pep_goto_spec",
-        "args": {"scope": "paths"}
-    },
-    {
-        "caption": "Pep: Goto Anything in View",
-        "command": "pg_pep_goto_anything",
-        "args": {"scope": "view"}
-    },
-    {
-        "caption": "Pep: Goto Anything in Paths",
-        "command": "pg_pep_goto_anything",
-        "args": {"scope": "paths"}
+        "caption": "Pep: Goto Anything",
+        "command": "pg_pep_goto_anything"
     },
     {
         "caption": "Pep: Goto Definition",
