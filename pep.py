@@ -3196,7 +3196,11 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-    def run(self, edit, scope="view"):
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"view", "paths"})
+
+    def run(self, edit, scope):
         view_analysis_ = view_analysis(self.view.id())
 
         viewport_position = self.view.viewport_position()
@@ -3207,14 +3211,18 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_type, thingy_region, thingy_data = thingy
 
-            project_path_ = project_path(self.view.window())
-
-            paths_analysis_ = paths_analysis(project_path_)
-
             thingy_usages = None
 
-            # The analysis used is based on the scope parameter:
-            analysis_ = view_analysis_ if scope == "view" else paths_analysis_
+            analysis_ = None
+
+            if scope == "view":
+                analysis_ = view_analysis_
+            elif scope == "paths":
+                project_path_ = project_path(self.view.window())
+
+                analysis_ = paths_analysis(project_path_)
+            else:
+                analysis_ = {}
 
             if thingy_type == TT_KEYWORD:
                 # To be considered:

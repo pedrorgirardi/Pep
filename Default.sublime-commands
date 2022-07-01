@@ -71,7 +71,7 @@
         "command": "pg_pep_clear_cache"
     },
     {
-        "caption": "Pep: Find Usages in View",
+        "caption": "Pep: Find Usages",
         "command": "pg_pep_find_usages",
         "context": [
             {
@@ -80,19 +80,6 @@
                 "operand": "source.clojure"
             }
         ],
-        "args": {"scope": "view"}
-    },
-    {
-        "caption": "Pep: Find Usages in Paths",
-        "command": "pg_pep_find_usages",
-        "context": [
-            {
-                "key": "selector",
-                "operator": "equal",
-                "operand": "source.clojure"
-            }
-        ],
-        "args": {"scope": "paths"}
     },
     {
         "caption": "Pep: Trace Usages in Paths",
