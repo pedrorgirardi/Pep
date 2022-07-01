@@ -3118,7 +3118,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-            def tree_branches(trace, level=1):
+            def tree_branches(trace):
                 thingy_data = trace.get("thingy_data", {})
 
                 from_namespace = thingy_data.get("from")
@@ -3126,26 +3126,24 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                 from_var = thingy_data.get("from-var")
                 from_var = "/" + from_var if from_var else ""
 
-                filename = thingy_data.get("filename", "")
-                row = thingy_data.get("row", "")
-                col = thingy_data.get("col", "")
+                goto_location = thingy_location(thingy_data)
 
-                s = ""
+                goto_command_url = sublime.command_url("pg_pep_goto", {"location": goto_location})
 
-                # It doesn't seem useful to show a refered var usage, so it's ignored.
-                # There might be other cases that should be ignored too.
+                goto_text = f"{from_namespace}{from_var}:{goto_location['line']}:{goto_location['column']}"
 
-                is_ignored = thingy_data.get("refer", False)
+                s = f"<li><a href='{goto_command_url}'>{goto_text}</a></li>"
 
-                if not is_ignored:
-                    s = "\n " + ("\t" * level) + "-"
-                    s = (
-                        s
-                        + f" {from_namespace}{from_var} (File: {filename}:{row}:{col})"
-                    )
+                thingy_traces = trace["thingy_traces"]
 
-                for trace in trace["thingy_traces"]:
-                    s = s + tree_branches(trace, level=level + 1)
+                if thingy_traces:
+                    s += "<ul>"
+
+                for trace in thingy_traces:
+                    s += tree_branches(trace)
+
+                if thingy_traces:
+                    s += "</ul>"
 
                 return s
 
@@ -3157,10 +3155,16 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 thingy_traces = trace["thingy_traces"]
 
-                s = f"- {namespace}/{name} (Usages: {len(thingy_traces)})"
+                s = f"<b>{namespace}/{name} (Usages: {len(thingy_traces)})</b>"
+
+                if thingy_traces:
+                    s += "<ul>"
 
                 for trace in thingy_traces:
-                    s = s + tree_branches(trace)
+                    s += tree_branches(trace)
+
+                if thingy_traces:
+                    s += "</ul>"
 
                 return s
 
@@ -3174,30 +3178,14 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                     ],
                 }
 
-                window = self.view.window()
 
-                output_view_ = output_panel(window)
-                output_view_.set_read_only(False)
-                output_view_.settings().set("line_numbers", False)
-                output_view_.settings().set("gutter", False)
-                output_view_.settings().set("is_widget", True)
-                output_view_.settings().set("word_wrap", False)
-                output_view_.settings().set("line_padding_top", 0)
-                output_view_.settings().set("line_padding_bottom", 0)
-                output_view_.settings().set(
-                    "result_file_regex", r"\(File: ([^\"]+):(\d+):(\d+)\)"
+                sheet = self.view.window().new_html_sheet(
+                    "Trace Usages",
+                    tree(trace),
+                    sublime.NewFileFlags.SEMI_TRANSIENT,
                 )
-                output_view_.run_command("select_all")
-                output_view_.run_command("right_delete")
-                output_view_.run_command(
-                    "append",
-                    {
-                        "characters": tree(trace),
-                    },
-                )
-                output_view_.set_read_only(True)
 
-                show_output_panel(window)
+                self.view.window().focus_sheet(sheet)
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
