@@ -82,7 +82,7 @@
         ],
     },
     {
-        "caption": "Pep: Trace Usages in Paths",
+        "caption": "Pep: Trace Usages",
         "command": "pg_pep_trace_usages",
         "context": [
             {
