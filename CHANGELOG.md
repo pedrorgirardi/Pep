@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - Fix paths analysis on Windows
 	- On Windows, path separator is `;`
 	- On Linux and Mac is `:`
+- Rework commands to prompt for scope
 
 ## 0.6.0 - 2022-06-17
 - New command **Pep: Outline**
