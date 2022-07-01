@@ -3353,6 +3353,24 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
             self.view.sel().add_all(regions)
 
 
+class PgPepRenameCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        region = thingy_sel_region(self.view)
+
+        thingy = thingy_in_region(self.view, view_analysis_, region)
+
+        if thingy:
+            thingy_text = self.view.substr(region)
+
+            def rename(name):
+                for region in find_thingy_regions(self.view, view_analysis_, thingy):
+                    self.view.replace(edit, region, name)
+
+            self.view.window().show_input_panel("Rename:", thingy_text, on_done=rename)
+
+
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         highlight_thingy(self.view)
