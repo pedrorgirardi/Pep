@@ -2355,20 +2355,19 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         project_path_ = project_path(self.window)
 
 
-        analysis_ = None
+        analysis_ = {}
 
         if scope == "paths":
             analysis_ = paths_analysis(project_path_)
         elif scope == "classpath":
             analysis_ = classpath_analysis(project_path_)
 
-        if analysis_:
-            items_ = namespace_goto_items(analysis_)
+        items_ = namespace_goto_items(analysis_)
 
-            # Sort by namespace name.
-            items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
+        # Sort by namespace name.
+        items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
 
-            show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
@@ -2385,7 +2384,7 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
     def run(self, scope):
         project_path_ = project_path(self.window)
 
-        analysis_ = None
+        analysis_ = {}
 
         if scope == "view":
             analysis_ = view_analysis(self.window.active_view().id())
@@ -2394,10 +2393,9 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
         elif scope == "classpath":
             analysis_ = classpath_analysis(project_path_)
 
-        if analysis_:
-            items_ = var_goto_items(analysis_)
+        items_ = var_goto_items(analysis_)
 
-            show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
@@ -2412,7 +2410,7 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = None
+        analysis_ = {}
 
         if scope == "view":
             analysis_ = view_analysis(self.window.active_view().id())
@@ -2421,10 +2419,9 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
         elif scope == "classpath":
             analysis_ = classpath_analysis(project_path_)
 
-        if analysis_:
-            items_ = keyword_goto_items(analysis_)
+        items_ = keyword_goto_items(analysis_)
 
-            show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
@@ -2439,7 +2436,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
 
-        analysis_ = None
+        analysis_ = {}
 
         if scope == "view":
             analysis_ = view_analysis(self.window.active_view().id())
@@ -2448,16 +2445,15 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         elif scope == "classpath":
             analysis_ = classpath_analysis(project_path_)
 
-        if analysis_:
-            items_ = keyword_goto_items(analysis_)
+        items_ = keyword_goto_items(analysis_)
 
-            items_ = [
-                item_
-                for item_ in items_
-                if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
-            ]
+        items_ = [
+            item_
+            for item_ in items_
+            if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
+        ]
 
-            show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(self.window, items_)
 
 
 def thingy_name(thingy):
@@ -3213,7 +3209,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_usages = None
 
-            analysis_ = None
+            analysis_ = {}
 
             if scope == "view":
                 analysis_ = view_analysis_
@@ -3221,8 +3217,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 project_path_ = project_path(self.view.window())
 
                 analysis_ = paths_analysis(project_path_)
-            else:
-                analysis_ = {}
 
             if thingy_type == TT_KEYWORD:
                 # To be considered:
