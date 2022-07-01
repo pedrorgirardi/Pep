@@ -1055,7 +1055,6 @@ def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
             for goto_view in to_be_closed:
                 goto_view.close()
 
-
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
     window.show_quick_panel(
@@ -2238,6 +2237,20 @@ def find_thingy_regions(view, analysis, thingy):
 # ---
 
 
+class GotoScopeInputHandler(sublime_plugin.ListInputHandler):
+    def __init__(self, scopes):
+        self.scopes = scopes
+
+    def name(self):
+        return "scope"
+
+    def list_items(self):
+        return [(scope.capitalize(), scope) for scope in self.scopes]
+
+    def placeholder(self):
+        return "Scope"
+
+
 class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
@@ -2974,7 +2987,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
-    def run(self, scope="view"):
+    def input(self, args):
+        if "scope" not in args:
+            return GotoScopeInputHandler(scopes={"view", "paths"})
+
+    def run(self, scope):
         try:
 
             project_path_ = project_path(self.window)
@@ -2989,7 +3006,9 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
 
             paths_analysis_ = paths_analysis(project_path_)
 
-            findings = analysis_findings(view_analysis_ if scope == "view" else paths_analysis_)
+            findings = analysis_findings(
+                view_analysis_ if scope == "view" else paths_analysis_
+            )
 
             items = []
 
