@@ -2251,6 +2251,17 @@ class GotoScopeInputHandler(sublime_plugin.ListInputHandler):
         return "Scope"
 
 
+class RenameInputHandler(sublime_plugin.TextInputHandler):
+    def __init__(self, ident):
+        self.ident = ident
+
+    def name(self):
+        return "new_ident"
+
+    def initial_text(self):
+        return self.ident
+
+
 class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
@@ -2353,7 +2364,6 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
     def run(self, scope):
         project_path_ = project_path(self.window)
-
 
         analysis_ = {}
 
@@ -3128,7 +3138,9 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 goto_location = thingy_location(thingy_data)
 
-                goto_command_url = sublime.command_url("pg_pep_goto", {"location": goto_location})
+                goto_command_url = sublime.command_url(
+                    "pg_pep_goto", {"location": goto_location}
+                )
 
                 goto_text = f"{from_namespace}{from_var}:{goto_location['line']}:{goto_location['column']}"
 
@@ -3177,7 +3189,6 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                         if not recursive_usage(thingy_usage)
                     ],
                 }
-
 
                 sheet = self.view.window().new_html_sheet(
                     "Trace Usages",
@@ -3354,21 +3365,29 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
 
 class PgPepRenameCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def input(self, args):
+        if "new_ident" not in args:
+            view_analysis_ = view_analysis(self.view.id())
+
+            region = thingy_sel_region(self.view)
+
+            if thingy := thingy_in_region(self.view, view_analysis_, region):
+
+                regions = find_thingy_regions(self.view, view_analysis_, thingy)
+
+                ident = self.view.substr(regions[0])
+
+                return RenameInputHandler(ident=ident)
+
+    def run(self, edit, new_ident):
         view_analysis_ = view_analysis(self.view.id())
 
         region = thingy_sel_region(self.view)
 
-        thingy = thingy_in_region(self.view, view_analysis_, region)
+        if thingy := thingy_in_region(self.view, view_analysis_, region):
 
-        if thingy:
-            thingy_text = self.view.substr(region)
-
-            def rename(name):
-                for region in find_thingy_regions(self.view, view_analysis_, thingy):
-                    self.view.replace(edit, region, name)
-
-            self.view.window().show_input_panel("Rename:", thingy_text, on_done=rename)
+            for region in find_thingy_regions(self.view, view_analysis_, thingy):
+                    self.view.replace(edit, region, new_ident)
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
