@@ -2146,7 +2146,7 @@ def thingy_region(view, thingy):
         return local_binding_region(view, thingy_data)
 
     elif thingy_type == TT_LOCAL_USAGE:
-        return local_binding_region(view, local_binding)
+        return local_binding_region(view, thingy_data)
 
     elif thingy_type == TT_VAR_DEFINITION:
         return var_definition_region(view, thingy_data)
