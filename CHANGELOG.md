@@ -2,13 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.7.0 - Unreleased
+## 0.7.0 - 2022-07-04
 - Don't trigger command to highlight region on selection modified
+	- Call function directly instead of invoking command
 - [Goto Analysis Finding #55](https://github.com/pedrorgirardi/Pep/issues/55)
 - Fix paths analysis on Windows
 	- On Windows, path separator is `;`
 	- On Linux and Mac is `:`
 - Rework commands to prompt for scope
+- New command `pg_pep_rename` to rename in view
 
 ## 0.6.0 - 2022-06-17
 - New command **Pep: Outline**
