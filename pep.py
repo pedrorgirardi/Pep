@@ -3387,17 +3387,21 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        view_analysis_ = view_analysis(self.view.id())
+        try:
+            view_analysis_ = view_analysis(self.view.id())
 
-        region = self.view.sel()[0]
+            region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, view_analysis_, region)
+            thingy = thingy_in_region(self.view, view_analysis_, region)
 
-        if thingy:
-            regions = find_thingy_regions(self.view, view_analysis_, thingy)
+            if thingy:
+                regions = find_thingy_regions(self.view, view_analysis_, thingy)
 
-            self.view.sel().clear()
-            self.view.sel().add_all(regions)
+                self.view.sel().clear()
+                self.view.sel().add_all(regions)
+
+        except Exception as e:
+            print(f"(Pep) Error: PgPepSelectCommand", traceback.format_exc())
 
 
 class PgPepRenameCommand(sublime_plugin.TextCommand):
