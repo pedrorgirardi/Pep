@@ -3420,6 +3420,7 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
 
                 thingy_regions = find_thingy_regions(self.view, view_analysis_, cursor_thingy)
 
+                # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
                 thingy_regions.sort()
 
                 tregion, *tregion_more = thingy_regions
@@ -3427,8 +3428,13 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
                 # Replace first region without shifting:
                 self.view.replace(edit, tregion, new_ident)
 
+
+                # Subsequent regions possibly needs shifting its position.
+                # Regions might need to be left or right shifted - it depends on the new ident.
+
                 ident_diff = len(new_ident) - len(thingy_text(self.view, cursor_thingy))
 
+                # Initially, shift is the same as the difference.
                 shift_count = ident_diff
 
                 # Shift & replace regions:
@@ -3439,6 +3445,8 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
 
                     self.view.replace(edit, region_shifted, new_ident)
 
+                    # Shift is recursive
+                    # E.g. 2nd region shifts n, 3rd region shifts n + n, 4th region shifts n + n + n.
                     shift_count += ident_diff
 
         except Exception as e:
