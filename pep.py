@@ -3380,14 +3380,28 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
                 return RenameInputHandler(ident=ident)
 
     def run(self, edit, new_ident):
-        view_analysis_ = view_analysis(self.view.id())
+        try:
+            view_analysis_ = view_analysis(self.view.id())
 
-        region = thingy_sel_region(self.view)
+            tregion = thingy_sel_region(self.view)
 
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
+            cursor_region = None
 
-            for region in find_thingy_regions(self.view, view_analysis_, thingy):
+            if thingy := thingy_in_region(self.view, view_analysis_, tregion):
+
+                for region in find_thingy_regions(self.view, view_analysis_, thingy):
+
+                    if region.contains(tregion.a) and region.contains(tregion.b):
+                        cursor_region = region
+
                     self.view.replace(edit, region, new_ident)
+
+                if cursor_region:
+                    self.view.sel().clear()
+                    self.view.sel().add(cursor_region.begin())
+                    
+        except Exception as e:
+            print(f"(Pep) Error: PgPepRenameCommand", traceback.format_exc())
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
