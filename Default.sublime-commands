@@ -82,6 +82,17 @@
         ],
     },
     {
+        "caption": "Pep: Rename",
+        "command": "pg_pep_rename",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ],
+    },
+    {
         "caption": "Pep: Trace Usages",
         "command": "pg_pep_trace_usages",
         "context": [

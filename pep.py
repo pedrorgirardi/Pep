@@ -2136,6 +2136,42 @@ def highlight_thingy(view):
     view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
 
 
+def thingy_region(view, thingy):
+    thingy_type, _, thingy_data = thingy
+
+    if thingy_type == TT_KEYWORD:
+        return keyword_region(view, thingy_data)
+
+    elif thingy_type == TT_LOCAL_BINDING:
+        return local_binding_region(view, thingy_data)
+
+    elif thingy_type == TT_LOCAL_USAGE:
+        return local_binding_region(view, thingy_data)
+
+    elif thingy_type == TT_VAR_DEFINITION:
+        return var_definition_region(view, thingy_data)
+
+    elif thingy_type == TT_VAR_USAGE:
+        return var_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_JAVA_CLASS_USAGE:
+        return java_class_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_DEFINITION:
+        return namespace_definition_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE:
+        return namespace_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
+        return namespace_usage_alias_region(view, thingy_data)
+
+
+def thingy_text(view, thingy):
+    if tregion := thingy_region(view, thingy):
+        return view.substr(tregion)
+
+
 def find_thingy_regions(view, analysis, thingy):
     thingy_type, _, thingy_data = thingy
 
@@ -2251,6 +2287,17 @@ class GotoScopeInputHandler(sublime_plugin.ListInputHandler):
         return "Scope"
 
 
+class RenameInputHandler(sublime_plugin.TextInputHandler):
+    def __init__(self, ident):
+        self.ident = ident
+
+    def name(self):
+        return "new_ident"
+
+    def initial_text(self):
+        return self.ident
+
+
 class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
@@ -2353,7 +2400,6 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
     def run(self, scope):
         project_path_ = project_path(self.window)
-
 
         analysis_ = {}
 
@@ -3128,7 +3174,9 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
                 goto_location = thingy_location(thingy_data)
 
-                goto_command_url = sublime.command_url("pg_pep_goto", {"location": goto_location})
+                goto_command_url = sublime.command_url(
+                    "pg_pep_goto", {"location": goto_location}
+                )
 
                 goto_text = f"{from_namespace}{from_var}:{goto_location['line']}:{goto_location['column']}"
 
@@ -3177,7 +3225,6 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
                         if not recursive_usage(thingy_usage)
                     ],
                 }
-
 
                 sheet = self.view.window().new_html_sheet(
                     "Trace Usages",
@@ -3354,21 +3401,48 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
 
 class PgPepRenameCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        view_analysis_ = view_analysis(self.view.id())
+    def input(self, args):
+        if "new_ident" not in args:
+            view_analysis_ = view_analysis(self.view.id())
 
-        region = thingy_sel_region(self.view)
+            cursor_region = self.view.sel()[0]
 
-        thingy = thingy_in_region(self.view, view_analysis_, region)
+            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
+                return RenameInputHandler(ident=thingy_text(self.view, cursor_thingy))
 
-        if thingy:
-            thingy_text = self.view.substr(region)
+    def run(self, edit, new_ident):
+        try:
+            view_analysis_ = view_analysis(self.view.id())
 
-            def rename(name):
-                for region in find_thingy_regions(self.view, view_analysis_, thingy):
-                    self.view.replace(edit, region, name)
+            cursor_region = self.view.sel()[0]
 
-            self.view.window().show_input_panel("Rename:", thingy_text, on_done=rename)
+            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
+
+                thingy_regions = find_thingy_regions(self.view, view_analysis_, cursor_thingy)
+
+                thingy_regions.sort()
+
+                tregion, *tregion_more = thingy_regions
+
+                # Replace first region without shifting:
+                self.view.replace(edit, tregion, new_ident)
+
+                ident_diff = len(new_ident) - len(thingy_text(self.view, cursor_thingy))
+
+                shift_count = ident_diff
+
+                # Shift & replace regions:
+                for region in tregion_more:
+                    region_begin_shifted = region.begin() + shift_count
+                    region_end_shifted = region.end() + shift_count
+                    region_shifted = sublime.Region(region_begin_shifted, region_end_shifted)
+
+                    self.view.replace(edit, region_shifted, new_ident)
+
+                    shift_count += ident_diff
+
+        except Exception as e:
+            print(f"(Pep) Error: PgPepRenameCommand", traceback.format_exc())
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
