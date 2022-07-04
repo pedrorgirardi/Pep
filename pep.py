@@ -2136,6 +2136,42 @@ def highlight_thingy(view):
     view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
 
 
+def thingy_region(view, thingy):
+    thingy_type, _, thingy_data = thingy
+
+    if thingy_type == TT_KEYWORD:
+        return keyword_region(view, thingy_data)
+
+    elif thingy_type == TT_LOCAL_BINDING:
+        return local_binding_region(view, thingy_data)
+
+    elif thingy_type == TT_LOCAL_USAGE:
+        return local_binding_region(view, local_binding)
+
+    elif thingy_type == TT_VAR_DEFINITION:
+        return var_definition_region(view, thingy_data)
+
+    elif thingy_type == TT_VAR_USAGE:
+        return var_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_JAVA_CLASS_USAGE:
+        return java_class_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_DEFINITION:
+        return namespace_definition_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE:
+        return namespace_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
+        return namespace_usage_alias_region(view, thingy_data)
+
+
+def thingy_text(view, thingy):
+    if tregion := thingy_region(view, thingy):
+        return view.substr(tregion)
+
+
 def find_thingy_regions(view, analysis, thingy):
     thingy_type, _, thingy_data = thingy
 
@@ -3369,37 +3405,42 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
         if "new_ident" not in args:
             view_analysis_ = view_analysis(self.view.id())
 
-            region = thingy_sel_region(self.view)
+            cursor_region = self.view.sel()[0]
 
-            if thingy := thingy_in_region(self.view, view_analysis_, region):
-
-                regions = find_thingy_regions(self.view, view_analysis_, thingy)
-
-                ident = self.view.substr(regions[0])
-
-                return RenameInputHandler(ident=ident)
+            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
+                return RenameInputHandler(ident=thingy_text(self.view, cursor_thingy))
 
     def run(self, edit, new_ident):
         try:
             view_analysis_ = view_analysis(self.view.id())
 
-            tregion = thingy_sel_region(self.view)
+            cursor_region = self.view.sel()[0]
 
-            cursor_region = None
+            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
 
-            if thingy := thingy_in_region(self.view, view_analysis_, tregion):
+                thingy_regions = find_thingy_regions(self.view, view_analysis_, cursor_thingy)
 
-                for region in find_thingy_regions(self.view, view_analysis_, thingy):
+                thingy_regions.sort()
 
-                    if region.contains(tregion.a) and region.contains(tregion.b):
-                        cursor_region = region
+                tregion, *tregion_more = thingy_regions
 
-                    self.view.replace(edit, region, new_ident)
+                # Replace first region without shifting:
+                self.view.replace(edit, tregion, new_ident)
 
-                if cursor_region:
-                    self.view.sel().clear()
-                    self.view.sel().add(cursor_region.begin())
-                    
+                ident_diff = len(new_ident) - len(thingy_text(self.view, cursor_thingy))
+
+                shift_count = ident_diff
+
+                # Shift & replace regions:
+                for region in tregion_more:
+                    region_begin_shifted = region.begin() + shift_count
+                    region_end_shifted = region.end() + shift_count
+                    region_shifted = sublime.Region(region_begin_shifted, region_end_shifted)
+
+                    self.view.replace(edit, region_shifted, new_ident)
+
+                    shift_count += ident_diff
+
         except Exception as e:
             print(f"(Pep) Error: PgPepRenameCommand", traceback.format_exc())
 

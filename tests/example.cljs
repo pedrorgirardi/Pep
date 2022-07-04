@@ -1,8 +1,12 @@
 (ns example)
 
-(defn f1 [x]
+(defn f [x]
   nil)
 
-(f1 1)
+(f 1)
 
-(f1 2)
+(f 2)
+
+(f 3)
+
+(f 4)
