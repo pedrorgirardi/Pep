@@ -728,18 +728,6 @@ def htmlify(text):
         return ""
 
 
-def thingy_location(thingy_data):
-    """
-    Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
-    """
-    if thingy_data and (filename := thingy_data.get("filename")):
-        return {
-            "filename": filename,
-            "line": thingy_data.get("name-row") or thingy_data.get("row"),
-            "column": thingy_data.get("name-col") or thingy_data.get("col"),
-        }
-
-
 def open_jar(filename, f):
     """
     Open JAR `filename` and call `f` with filename and a file-like object (ZipExtFile).
@@ -1693,6 +1681,18 @@ def java_class_usage_in_region(view, jrn_usages, region):
 def thingy_text(view, thingy):
     if tregion := thingy_region(view, thingy):
         return view.substr(tregion)
+
+
+def thingy_location(thingy_data):
+    """
+    Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
+    """
+    if thingy_data and (filename := thingy_data.get("filename")):
+        return {
+            "filename": filename,
+            "line": thingy_data.get("name-row") or thingy_data.get("row"),
+            "column": thingy_data.get("name-col") or thingy_data.get("col"),
+        }
 
 
 def thingy_file_extensions(thingy_data):
