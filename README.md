@@ -28,7 +28,9 @@ Pep is part of my Clojure(Script) development setup, combined with [Tutkain](htt
 
 You're welcome to try it, and I would be happy to hear if it works for you. In case it doesn't work for you, I ask you to please create an issue, and I will do my best to address it.
 
-Pep is not available on Package Control yet, so you need to install it manually. (Clone this repo on your packages directory.)
+## Installation
+
+Pep is available on [PackageControl](https://packagecontrol.io/packages/Pep).
 
 
 ## Annotate (Lint)
