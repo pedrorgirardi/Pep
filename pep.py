@@ -1734,7 +1734,9 @@ def thingy_file_extensions(thingy_data):
 
 def thingy_kind(thingy_type, thingy_data):
     """
-    Mapping of thingy type to kind.
+    Mapping of Thingy Type to Sublime KindId.
+
+    https://www.sublimetext.com/docs/api_reference.html#sublime.KindId
     """
 
     if thingy_type == TT_KEYWORD:
