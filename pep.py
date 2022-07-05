@@ -1294,16 +1294,6 @@ def analyze_paths(window):
 
         analysis = output.get("analysis", {})
 
-        # Keywords indexed by name - tuple of namespace and name.
-        kindex = {}
-
-        for keyword in analysis.get("keywords", []):
-            ns = keyword.get("ns")
-            name = keyword.get("name")
-            row = keyword.get("row")
-
-            kindex.setdefault((ns, name), []).append(keyword)
-
         keyword_index_ = keyword_index(analysis)
 
         namespace_index_ = namespace_index(
