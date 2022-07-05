@@ -530,20 +530,29 @@ def namespace_index(
 def keyword_index(
     analysis,
     kindex=True,
+    krn=True,
 ):
     # Keywords indexed by name - tuple of namespace and name.
     kindex_ = {}
 
-    if kindex:
+    # Keywords indexed by row.
+    krn_ = {}
+
+    if kindex or krn:
         for keyword in analysis.get("keywords", []):
             ns = keyword.get("ns")
             name = keyword.get("name")
             row = keyword.get("row")
 
-            kindex_.setdefault((ns, name), []).append(keyword)
+            if kindex:
+                kindex_.setdefault((ns, name), []).append(keyword)
+
+            if krn:
+                krn_.setdefault(row, []).append(keyword)
 
     return {
         "kindex": kindex_,
+        "krn": krn_,
     }
 
 
@@ -1071,21 +1080,6 @@ def analyze_view(view, on_completed=None):
 
     analysis = clj_kondo_data.get("analysis", {})
 
-    # Keywords indexed by row.
-    krn = {}
-
-    # Keywords indexed by name - tuple of namespace and name.
-    kindex = {}
-
-    for keyword in analysis.get("keywords", []):
-        ns = keyword.get("ns")
-        name = keyword.get("name")
-        row = keyword.get("row")
-
-        krn.setdefault(row, []).append(keyword)
-
-        kindex.setdefault((ns, name), []).append(keyword)
-
     # Locals indexed by row.
     lrn = {}
 
@@ -1120,15 +1114,16 @@ def analyze_view(view, on_completed=None):
 
     java_class_index_ = java_class_index(analysis)
 
+    keyword_index_ = keyword_index(analysis)
+
     view_analysis_ = {
         **namespace_index_,
         **var_index_,
         **java_class_index_,
+        **keyword_index_,
         "view_change_count": view_change_count,
         "findings": clj_kondo_data.get("findings", []),
         "summary": clj_kondo_data.get("summary", {}),
-        "kindex": kindex,
-        "krn": krn,
         "lindex": lindex,
         "lindex_usages": lindex_usages,
         "lrn": lrn,
@@ -1194,7 +1189,10 @@ def analyze_classpath(window):
 
         analysis = output.get("analysis", {})
 
-        keyword_index_ = keyword_index(analysis)
+        keyword_index_ = keyword_index(
+            analysis,
+            krn=False,
+        )
 
         # There's no need to index namespace usages in the classpath.
         namespace_index_ = namespace_index(
@@ -3006,7 +3004,9 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
             )
 
         except Exception as e:
-            print(f"(Pep) Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc())
+            print(
+                f"(Pep) Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
+            )
 
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
@@ -3437,7 +3437,9 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             self.view.set_status("pg_pep_view_namespace", view_namespace)
 
         except Exception as e:
-            print(f"(Pep) Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
+            print(
+                f"(Pep) Error: PgPepViewNamespaceStatusCommand", traceback.format_exc()
+            )
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
