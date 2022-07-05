@@ -1683,6 +1683,24 @@ def thingy_text(view, thingy):
         return view.substr(tregion)
 
 
+def thingy_name(thingy):
+    thingy_type, _, thingy_data = thingy
+
+    thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
+
+    thingy_name = thingy_data.get("name")
+
+    thingy_qualified_name = (
+        f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+    )
+
+    # Prefix ':' to a Keyword Thingy.
+    if thingy_type == TT_KEYWORD:
+        thingy_qualified_name = ":" + thingy_qualified_name
+
+    return thingy_qualified_name
+
+
 def thingy_location(thingy_data):
     """
     Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
@@ -2403,24 +2421,6 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         show_goto_thingy_quick_panel(self.window, items_)
 
 
-def thingy_name(thingy):
-    thingy_type, _, thingy_data = thingy
-
-    thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
-
-    thingy_name = thingy_data.get("name")
-
-    thingy_qualified_name = (
-        f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
-    )
-
-    # Prefix ':' to a Keyword Thingy.
-    if thingy_type == TT_KEYWORD:
-        thingy_qualified_name = ":" + thingy_qualified_name
-
-    return thingy_qualified_name
-
-
 class PgPepCopyNameCommand(sublime_plugin.TextCommand):
     """
     Copy a Thingy's name to the clipboard.
@@ -2864,7 +2864,7 @@ class PgPepGotoCommand(sublime_plugin.WindowCommand):
             goto(self.window, location, flags)
 
         else:
-            print("(Pep) Can't goto without a location")
+            print("(Pep) Goto missing location arg")
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
@@ -3014,7 +3014,7 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
             )
 
         except Exception as e:
-            print(f"(Pep) Goto Analysis Finding failed.", traceback.format_exc())
+            print(f"(Pep) Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc())
 
 
 class PgPepTraceUsages(sublime_plugin.TextCommand):
@@ -3417,7 +3417,7 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             self.view.set_status("pg_pep_view_summary", status_message)
 
         except Exception as e:
-            print(f"(Pep) View summary status failed.", traceback.format_exc())
+            print(f"(Pep) Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
 class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
@@ -3445,7 +3445,7 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             self.view.set_status("pg_pep_view_namespace", view_namespace)
 
         except Exception as e:
-            print(f"(Pep) Show view namespace status failed.", traceback.format_exc())
+            print(f"(Pep) Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
@@ -3532,7 +3532,10 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
             )
 
         except Exception as e:
-            print(f"(Pep) Annotate failed.", traceback.format_exc())
+            print(f"(Pep) Error: PgPepAnnotateCommand", traceback.format_exc())
+
+
+# ---
 
 
 class PgPepViewListener(sublime_plugin.ViewEventListener):
