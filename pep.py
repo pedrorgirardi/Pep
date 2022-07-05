@@ -1649,6 +1649,37 @@ def var_usage_namespace_region(view, var_usage):
         return None
 
 
+def thingy_region(view, thingy):
+    thingy_type, _, thingy_data = thingy
+
+    if thingy_type == TT_KEYWORD:
+        return keyword_region(view, thingy_data)
+
+    elif thingy_type == TT_LOCAL_BINDING:
+        return local_binding_region(view, thingy_data)
+
+    elif thingy_type == TT_LOCAL_USAGE:
+        return local_binding_region(view, thingy_data)
+
+    elif thingy_type == TT_VAR_DEFINITION:
+        return var_definition_region(view, thingy_data)
+
+    elif thingy_type == TT_VAR_USAGE:
+        return var_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_JAVA_CLASS_USAGE:
+        return java_class_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_DEFINITION:
+        return namespace_definition_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE:
+        return namespace_usage_region(view, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
+        return namespace_usage_alias_region(view, thingy_data)
+
+
 # ---
 
 
@@ -1756,6 +1787,11 @@ def java_class_usage_in_region(view, jrn_usages, region):
 
 
 # ---
+
+
+def thingy_text(view, thingy):
+    if tregion := thingy_region(view, thingy):
+        return view.substr(tregion)
 
 
 def thingy_file_extensions(thingy_data):
@@ -2134,42 +2170,6 @@ def highlight_thingy(view):
                 status_message = f"{prefix}{len(regions)}{suffix}"
 
     view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
-
-
-def thingy_region(view, thingy):
-    thingy_type, _, thingy_data = thingy
-
-    if thingy_type == TT_KEYWORD:
-        return keyword_region(view, thingy_data)
-
-    elif thingy_type == TT_LOCAL_BINDING:
-        return local_binding_region(view, thingy_data)
-
-    elif thingy_type == TT_LOCAL_USAGE:
-        return local_binding_region(view, thingy_data)
-
-    elif thingy_type == TT_VAR_DEFINITION:
-        return var_definition_region(view, thingy_data)
-
-    elif thingy_type == TT_VAR_USAGE:
-        return var_usage_region(view, thingy_data)
-
-    elif thingy_type == TT_JAVA_CLASS_USAGE:
-        return java_class_usage_region(view, thingy_data)
-
-    elif thingy_type == TT_NAMESPACE_DEFINITION:
-        return namespace_definition_region(view, thingy_data)
-
-    elif thingy_type == TT_NAMESPACE_USAGE:
-        return namespace_usage_region(view, thingy_data)
-
-    elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
-        return namespace_usage_alias_region(view, thingy_data)
-
-
-def thingy_text(view, thingy):
-    if tregion := thingy_region(view, thingy):
-        return view.substr(tregion)
 
 
 def find_thingy_regions(view, analysis, thingy):
@@ -3411,7 +3411,9 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
                 return RenameInputHandler(ident=thingy_text(self.view, cursor_thingy))
 
     def run(self, edit, new_ident):
@@ -3420,9 +3422,13 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
 
-                thingy_regions = find_thingy_regions(self.view, view_analysis_, cursor_thingy)
+                thingy_regions = find_thingy_regions(
+                    self.view, view_analysis_, cursor_thingy
+                )
 
                 # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
                 thingy_regions.sort()
@@ -3431,7 +3437,6 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
 
                 # Replace first region without shifting:
                 self.view.replace(edit, tregion, new_ident)
-
 
                 # Subsequent regions possibly needs shifting its position.
                 # Regions might need to be left or right shifted - it depends on the new ident.
@@ -3445,7 +3450,9 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
                 for region in tregion_more:
                     region_begin_shifted = region.begin() + shift_count
                     region_end_shifted = region.end() + shift_count
-                    region_shifted = sublime.Region(region_begin_shifted, region_end_shifted)
+                    region_shifted = sublime.Region(
+                        region_begin_shifted, region_end_shifted
+                    )
 
                     self.view.replace(edit, region_shifted, new_ident)
 
