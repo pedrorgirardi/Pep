@@ -20,8 +20,8 @@
 | `pg_pep_select` | Stable | Select occurrences of symbol or keyword |
 | `pg_pep_highlight` | Stable | Highlight occurrences of symbol or keyword |
 | `pg_pep_annotate` | Stable | Annotate view (or lint view) |
-| `pg_pep_copy_name` | In development | Copy name of keyword or symbol to the clipboard |
-| `pg_pep_show_name` | In development | Show name of keyword or symbol in a popup |
+| `pg_pep_copy_name` | Stable | Copy name of keyword or symbol to the clipboard |
+| `pg_pep_show_name` | Stable | Show name of keyword or symbol in a popup |
 
 I have been working on Pep for over a year, but I still consider it alpha.
 Pep is part of my Clojure(Script) development setup, combined with [Tutkain](https://github.com/eerohele/Tutkain), so I think it's developed enough to be useful.
