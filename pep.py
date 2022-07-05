@@ -527,6 +527,63 @@ def namespace_index(
     }
 
 
+def local_index(
+    analysis,
+    lindex=True,
+    lindex_usages=True,
+    lrn=True,
+    lrn_usages=True,
+):
+    """
+    Index local definitions and usages.
+
+    Definitions and usages are indexed by id.
+
+    Returns dict with keys 'lindex', 'lindex_usages', 'lrn', 'lrn_usages'.
+    """
+
+    # Locals indexed by row.
+    lrn_ = {}
+
+    # Locals indexed by ID.
+    lindex_ = {}
+
+    if lindex or lrn:
+        for local_binding in analysis.get("locals", []):
+            id = local_binding.get("id")
+            row = local_binding.get("row")
+
+            if lrn:
+                lrn_.setdefault(row, []).append(local_binding)
+
+            if lindex:
+                lindex_[id] = local_binding
+
+    # Local usages indexed by ID - local binding ID to a set of local usages.
+    lindex_usages_ = {}
+
+    # Local usages indexed by row.
+    lrn_usages_ = {}
+
+    if lindex_usages or lrn_usages:
+        for local_usage in analysis.get("local-usages", []):
+            id = local_usage.get("id")
+            name_row = local_usage.get("name-row")
+
+            if lindex_usages:
+                lindex_usages_.setdefault(id, []).append(local_usage)
+
+            if lrn_usages:
+                lrn_usages_.setdefault(name_row, []).append(local_usage)
+
+    return {
+        "lindex": lindex_,
+        "lindex_usages": lindex_usages_,
+        "lrn": lrn_,
+        "lrn_usages": lrn_usages_,
+    }
+
+
 def keyword_index(
     analysis,
     kindex=True,
@@ -1080,34 +1137,6 @@ def analyze_view(view, on_completed=None):
 
     analysis = clj_kondo_data.get("analysis", {})
 
-    # Locals indexed by row.
-    lrn = {}
-
-    # Locals indexed by ID.
-    lindex = {}
-
-    for local_binding in analysis.get("locals", []):
-        id = local_binding.get("id")
-        row = local_binding.get("row")
-
-        lrn.setdefault(row, []).append(local_binding)
-
-        lindex[id] = local_binding
-
-    # Local usages indexed by ID - local binding ID to a set of local usages.
-    lindex_usages = {}
-
-    # Local usages indexed by row.
-    lrn_usages = {}
-
-    for local_usage in analysis.get("local-usages", []):
-        id = local_usage.get("id")
-        name_row = local_usage.get("name-row")
-
-        lindex_usages.setdefault(id, []).append(local_usage)
-
-        lrn_usages.setdefault(name_row, []).append(local_usage)
-
     namespace_index_ = namespace_index(analysis)
 
     var_index_ = var_index(analysis)
@@ -1116,18 +1145,17 @@ def analyze_view(view, on_completed=None):
 
     keyword_index_ = keyword_index(analysis)
 
+    local_index_ = local_index(analysis)
+
     view_analysis_ = {
         **namespace_index_,
         **var_index_,
         **java_class_index_,
         **keyword_index_,
+        **local_index_,
         "view_change_count": view_change_count,
         "findings": clj_kondo_data.get("findings", []),
         "summary": clj_kondo_data.get("summary", {}),
-        "lindex": lindex,
-        "lindex_usages": lindex_usages,
-        "lrn": lrn,
-        "lrn_usages": lrn_usages,
     }
 
     set_view_analysis(view.id(), view_analysis_)
