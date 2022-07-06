@@ -968,8 +968,15 @@ def namespace_goto_items(analysis):
 
 
 def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
-    # Active view, if there's one, when the QuickPanel UI is shown.
+    # Restore active view, its selection, and viewport position - if there's an active view.
+
     initial_view = window.active_view()
+
+    initial_regions = [region for region in initial_view.sel()] if initial_view else []
+
+    initial_viewport_position = (
+        initial_view.viewport_position() if initial_view else None
+    )
 
     def location(index):
         thingy_data_ = items[index]["thingy_data"]
@@ -986,7 +993,14 @@ def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
     def on_select(index):
         if index == -1:
             if initial_view:
+                initial_view.sel().clear()
+
+                for region in initial_regions:
+                    initial_view.sel().add(region)
+
                 window.focus_view(initial_view)
+
+                initial_view.set_viewport_position(initial_viewport_position, True)
         else:
             goto(window, location(index))
 
