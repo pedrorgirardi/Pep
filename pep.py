@@ -3238,25 +3238,44 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     goto(self.view.window(), location)
 
                 else:
-                    quick_panel_items = []
+                    usage_items_set = set()
 
                     selected_index = 0
 
                     for index, thingy_usage in enumerate(thingy_usages):
-                        trigger = (
+                        usage_trigger = (
                             thingy_usage.get("from")
                             or thingy_usage.get("ns")
                             or os.path.basename(thingy_usage.get("filename"))
                         )
 
-                        trigger = f'{trigger} {thingy_usage.get("row", "-")}:{thingy_usage.get("col", "-")}'
+                        usage_filename = thingy_usage.get("filename", "-")
+                        usage_line = thingy_usage.get("row", "-")
+                        usage_column = thingy_usage.get("col", "-")
 
-                        # It's a nice experience to open the panel
-                        # with the thingy under the cursor as the selected index.
+                        usage_details = f"Line: <b>{usage_line}</b>, Column: <b>{usage_column}</b>"
+
+                        # Open Quick Panel with thingy under the cursor as the selected index.
                         if thingy_usage == thingy_data:
                             selected_index = index
 
-                        quick_panel_items.append(sublime.QuickPanelItem(trigger))
+                        # Add to set to discard duplicates.
+                        usage_items_set.add((usage_trigger,
+                                             usage_details,
+                                             usage_filename,
+                                             usage_line,
+                                             usage_column))
+
+
+                    # Sort items by trigger, filename, line and column.
+                    # (It's not an elegant solution by any means, but it does the trick.)
+                    usage_items_sorted = sorted(list(usage_items_set), key=lambda i: (i[0], i[2], i[3], i[4]))
+
+                    quick_panel_items = []
+
+                    for trigger, details, *_ in usage_items_sorted:
+                        quick_panel_items.append(sublime.QuickPanelItem(trigger, details))
+
 
                     def on_done(index, _):
                         if index == -1:
@@ -3295,6 +3314,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         sym = thingy_data.get("name") or thingy_data.get("class")
 
                         placeholder = f"{sym} is used {len(thingy_usages)} times"
+
 
                     self.view.window().show_quick_panel(
                         quick_panel_items,
