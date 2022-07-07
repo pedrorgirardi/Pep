@@ -74,7 +74,7 @@ def project_index(project_path):
     return _index_.get(project_path, {})
 
 
-def merge_index(project_path, index):
+def update_project_index(project_path, index):
     project_index_ = project_index(project_path)
 
     global _index_
@@ -1168,7 +1168,7 @@ def analyze_view(view, on_completed=None):
 
     # Update index for view - analysis for a single file (view).
     if project_path_ := project_path(window):
-        merge_index(project_path_, index_analysis(analysis))
+        update_project_index(project_path_, index_analysis(analysis))
 
     namespace_index_ = namespace_index(analysis)
 
@@ -1352,7 +1352,7 @@ def analyze_paths(window):
         analysis = output.get("analysis", {})
 
         # Update index for paths - analysis for files in the project.
-        merge_index(
+        update_project_index(
             project_path(window),
             index_analysis(analysis),
         )
