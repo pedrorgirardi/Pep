@@ -68,14 +68,16 @@ _classpath_analysis_ = {}
 
 
 def project_index(project_path):
+    """
+    Mapping of filename to analysis data by semantic, e.g. var-definitions.
+    """
     return _index_.get(project_path, {})
 
 
 def merge_index(project_path, index):
-    global _index_
-
     project_index_ = project_index(project_path)
 
+    global _index_
     _index_[project_path] = {**project_index_, **index}
 
 
@@ -88,6 +90,74 @@ def clear_cache():
 
     global _classpath_analysis_
     _classpath_analysis_ = {}
+
+
+def set_classpath_analysis(project_path, analysis):
+    """
+    Updates analysis for project.
+    """
+    global _classpath_analysis_
+    _classpath_analysis_[project_path] = analysis
+
+
+def classpath_analysis(project_path):
+    """
+    Returns analysis for project.
+    """
+    global _classpath_analysis_
+    return _classpath_analysis_.get(project_path, {})
+
+
+def set_view_analysis(view_id, analysis):
+    """
+    Updates analysis for a particular view.
+    """
+    global _view_analysis_
+    _view_analysis_[view_id] = analysis
+
+
+def view_analysis(view_id):
+    """
+    Returns analysis for a particular view.
+    """
+    global _view_analysis_
+    return _view_analysis_.get(view_id, {})
+
+
+def paths_analysis(project_path):
+    """
+    Returns analysis for paths.
+    """
+
+    project_index_ = project_index(project_path)
+
+    analysis = unify_analysis(project_index_)
+
+    keyword_index_ = keyword_index(analysis)
+
+    namespace_index_ = namespace_index(
+        analysis,
+        nrn=False,
+        nrn_usages=False,
+    )
+
+    var_index_ = var_index(
+        analysis,
+        vrn=False,
+        vrn_usages=False,
+    )
+
+    java_class_index_ = java_class_index(
+        analysis,
+        jrn_usages=False,
+    )
+
+    return {
+        **keyword_index_,
+        **namespace_index_,
+        **var_index_,
+        **java_class_index_,
+    }
 
 
 # -- Settings
@@ -188,77 +258,6 @@ def output_panel(window):
     return window.find_output_panel(OUTPUT_PANEL_NAME) or window.create_output_panel(
         OUTPUT_PANEL_NAME
     )
-
-
-# -- Analysis
-
-
-def paths_analysis(project_path):
-    """
-    Returns analysis for paths.
-    """
-
-    project_index_ = project_index(project_path)
-
-    analysis = unify_analysis(project_index_)
-
-    keyword_index_ = keyword_index(analysis)
-
-    namespace_index_ = namespace_index(
-        analysis,
-        nrn=False,
-        nrn_usages=False,
-    )
-
-    var_index_ = var_index(
-        analysis,
-        vrn=False,
-        vrn_usages=False,
-    )
-
-    java_class_index_ = java_class_index(
-        analysis,
-        jrn_usages=False,
-    )
-
-    return {
-        **keyword_index_,
-        **namespace_index_,
-        **var_index_,
-        **java_class_index_,
-    }
-
-
-def set_classpath_analysis(project_path, analysis):
-    """
-    Updates analysis for project.
-    """
-    global _classpath_analysis_
-    _classpath_analysis_[project_path] = analysis
-
-
-def classpath_analysis(project_path):
-    """
-    Returns analysis for project.
-    """
-    global _classpath_analysis_
-    return _classpath_analysis_.get(project_path, {})
-
-
-def set_view_analysis(view_id, analysis):
-    """
-    Updates analysis for a particular view.
-    """
-    global _view_analysis_
-    _view_analysis_[view_id] = analysis
-
-
-def view_analysis(view_id):
-    """
-    Returns analysis for a particular view.
-    """
-    global _view_analysis_
-    return _view_analysis_.get(view_id, {})
 
 
 # ---
