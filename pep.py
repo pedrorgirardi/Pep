@@ -1103,77 +1103,72 @@ def project_classpath(window):
 ## ---
 
 
-def analyze_view_clj_kondo(view):
-    try:
-
-        window = view.window()
-
-        view_file_name = view.file_name()
-
-        project_file_name = window.project_file_name() if window else None
-
-        # Setting the working directory is important because of clj-kondo's cache.
-        cwd = None
-
-        if project_file_name:
-            cwd = os.path.dirname(project_file_name)
-        elif view_file_name:
-            cwd = os.path.dirname(view_file_name)
-
-        analysis_config = (
-            view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_PATHS_CONFIG
-        )
-
-        # --lint <file>: a file can either be a normal file, directory or classpath.
-        # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
-        # Use - as filename for reading from stdin.
-
-        # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
-
-        analysis_subprocess_args = [
-            clj_kondo_path(view.window()),
-            "--config",
-            analysis_config,
-            "--lint",
-            "-",
-            "--filename",
-            view_file_name or "-",
-        ]
-
-        # Hide the console window on Windows.
-        startupinfo = None
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-        analysis_completed_process = subprocess.run(
-            analysis_subprocess_args,
-            cwd=cwd,
-            text=True,
-            capture_output=True,
-            startupinfo=startupinfo,
-            input=view_text(view),
-        )
-
-        return json.loads(analysis_completed_process.stdout)
-
-    except:
-        # Always return a dict, no matter what.
-        return {}
-
-
 def analyze_view(view, on_completed=None):
 
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
     view_change_count = view.change_count()
 
-    clj_kondo_data = analyze_view_clj_kondo(view)
+    window = view.window()
+
+    view_file_name = view.file_name()
+
+    project_file_name = window.project_file_name() if window else None
+
+    # Setting the working directory is important because of clj-kondo's cache.
+    cwd = None
+
+    if project_file_name:
+        cwd = os.path.dirname(project_file_name)
+    elif view_file_name:
+        cwd = os.path.dirname(view_file_name)
+
+    analysis_config = (
+        view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_PATHS_CONFIG
+    )
+
+    # --lint <file>: a file can either be a normal file, directory or classpath.
+    # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
+    # Use - as filename for reading from stdin.
+
+    # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
+
+    analysis_subprocess_args = [
+        clj_kondo_path(window),
+        "--config",
+        analysis_config,
+        "--lint",
+        "-",
+        "--filename",
+        view_file_name or "-",
+    ]
+
+    # Hide the console window on Windows.
+    startupinfo = None
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+    analysis_completed_process = subprocess.run(
+        analysis_subprocess_args,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        startupinfo=startupinfo,
+        input=view_text(view),
+    )
+
+    clj_kondo_data = None
+
+    try:
+        clj_kondo_data = json.loads(analysis_completed_process.stdout)
+    except:
+        clj_kondo_data = {}
 
     analysis = clj_kondo_data.get("analysis", {})
 
     # Update index for view - analysis for a single file (view).
-    if project_path_ := project_path(view.window()):
+    if project_path_ := project_path(window):
         merge_index(project_path_, index_analysis(analysis))
 
     namespace_index_ = namespace_index(analysis)
