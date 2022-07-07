@@ -1368,51 +1368,6 @@ def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
 
 
-def clj_kondo_lint_paths(window, paths, config):
-
-    path_separator = ";" if os.name == "nt" else ":"
-
-    paths = path_separator.join(paths)
-
-    if is_debug(window):
-        print(f"(Pep) Linting paths... ({paths})")
-
-    process_args = [
-        clj_kondo_path(window),
-        "--config",
-        config,
-        "--parallel",
-        "--lint",
-        paths,
-    ]
-
-    # Hide the console window on Windows.
-    startupinfo = None
-    if os.name == "nt":
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-    t0 = time.time()
-
-    completed_process = subprocess.run(
-        process_args,
-        cwd=project_path(window),
-        text=True,
-        capture_output=True,
-        startupinfo=startupinfo,
-    )
-
-    if is_debug(window):
-        print(
-            f"(Pep) Paths linting is completed ({paths}) [{time.time() - t0:,.2f} seconds]"
-        )
-
-    try:
-        return json.loads(completed_process.stdout)
-    except:
-        return {}
-
-
 def index_analysis(analysis):
     """
     Analyze paths to create indexes for var and namespace definitions, and keywords.
