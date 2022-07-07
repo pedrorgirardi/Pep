@@ -59,22 +59,25 @@ STATUS_BAR_DOC_KEY = "pep_doc"
 
 CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
 
-## Mapping of filename to analysis data, findings and summary.
+## Mapping of filename to analysis data by semantic, e.g. var-definitions.
 _index_ = {}
 
 _view_analysis_ = {}
 
-_paths_analysis_ = {}
-
 _classpath_analysis_ = {}
 
 
+def merge_index(index):
+    global _index_
+    _index_ = {**_index_, **index}
+
+
 def clear_cache():
+    global _index_
+    _index_ = {}
+
     global _view_analysis_
     _view_analysis_ = {}
-
-    global _paths_analysis_
-    _paths_analysis_ = {}
 
     global _classpath_analysis_
     _classpath_analysis_ = {}
@@ -183,14 +186,6 @@ def output_panel(window):
 # -- Analysis
 
 
-def set_paths_analysis(project_path, analysis):
-    """
-    Updates analysis for paths.
-    """
-    global _paths_analysis_
-    _paths_analysis_[project_path] = analysis
-
-
 def paths_analysis(project_path):
     """
     Returns analysis for paths.
@@ -255,11 +250,6 @@ def view_analysis(view_id):
     """
     global _view_analysis_
     return _view_analysis_.get(view_id, {})
-
-
-def set_index(index):
-    global _index_
-    _index_ = {**_index_, **index}
 
 
 # ---
@@ -1173,7 +1163,7 @@ def analyze_view(view, on_completed=None):
     analysis = clj_kondo_data.get("analysis", {})
 
     # Update index for view - analysis for a single file (view).
-    set_index(index_analysis(analysis))
+    merge_index(index_analysis(analysis))
 
     namespace_index_ = namespace_index(analysis)
 
@@ -1357,7 +1347,7 @@ def analyze_paths(window):
         analysis = output.get("analysis", {})
 
         # Update index for paths - analysis for files in the project.
-        set_index(index_analysis(analysis))
+        merge_index(index_analysis(analysis))
 
         if is_debug(window):
             print(
@@ -3730,10 +3720,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         """
         self.modified_time = time.time()
 
-    def on_post_save_async(self):
-        if setting(self.view.window(), "analyze_paths_on_post_save", False):
-            analyze_paths_async(self.view.window())
-
     def on_selection_modified_async(self):
         """
         When the selection is modified, two actions might be triggered:
@@ -3790,7 +3776,6 @@ class PgPepEventListener(sublime_plugin.EventListener):
             if is_debug(window):
                 print(f"(Pep) Clear project cache (Project: {project_path_})")
 
-            set_paths_analysis(project_path_, {})
             set_classpath_analysis(project_path_, {})
 
 
