@@ -231,6 +231,11 @@ def view_analysis(view_id):
     return _view_analysis_.get(view_id, {})
 
 
+def set_index(index):
+    global _index_
+    _index_ = {**_index_, **index}
+
+
 # ---
 
 
@@ -1141,6 +1146,9 @@ def analyze_view(view, on_completed=None):
 
     analysis = clj_kondo_data.get("analysis", {})
 
+    # Update index for view - analysis for a single file (view).
+    set_index(index_analysis(analysis))
+
     namespace_index_ = namespace_index(analysis)
 
     var_index_ = var_index(analysis)
@@ -1285,8 +1293,6 @@ def analyze_paths(window):
 
         classpath = path_separator.join(paths)
 
-        index_paths(window, paths)
-
         if is_debug(window):
             print(
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
@@ -1325,6 +1331,9 @@ def analyze_paths(window):
             output = {}
 
         analysis = output.get("analysis", {})
+
+        # Update index for paths - analysis for files in the project.
+        set_index(index_analysis(analysis))
 
         keyword_index_ = keyword_index(analysis)
 
@@ -1366,24 +1375,19 @@ def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
 
 
-def index_paths(window, paths):
-    """
-    Analyze paths to create indexes for var and namespace definitions, and keywords.
-    """
-
-    t0 = time.time()
+def clj_kondo_lint_paths(window, paths, config):
 
     path_separator = ";" if os.name == "nt" else ":"
 
     paths = path_separator.join(paths)
 
     if is_debug(window):
-        print(f"(Pep) Indexing paths... ({paths})")
+        print(f"(Pep) Linting paths... ({paths})")
 
     process_args = [
         clj_kondo_path(window),
         "--config",
-        CLJ_KONDO_PATHS_CONFIG,
+        config,
         "--parallel",
         "--lint",
         paths,
@@ -1395,6 +1399,8 @@ def index_paths(window, paths):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
+    t0 = time.time()
+
     completed_process = subprocess.run(
         process_args,
         cwd=project_path(window),
@@ -1403,35 +1409,40 @@ def index_paths(window, paths):
         startupinfo=startupinfo,
     )
 
-    output = None
+    if is_debug(window):
+        print(
+            f"(Pep) Paths linting is completed ({paths}) [{time.time() - t0:,.2f} seconds]"
+        )
 
     try:
-        output = json.loads(completed_process.stdout)
+        return json.loads(completed_process.stdout)
     except:
-        output = {}
+        return {}
+
+
+def index_analysis(analysis):
+    """
+    Analyze paths to create indexes for var and namespace definitions, and keywords.
+
+    Semantic is one of:
+      - namespace-definitions
+      - namespace-usages
+      - var-definitions
+      - var-usages
+      - locals
+      - local-usages
+      - keywords
+      - java-class-usages
+    """
 
     index = {}
 
-    # Semantic is one of:
-    #  - namespace-definitions
-    #  - namespace-usages
-    #  - var-definitions
-    #  - var-usages
-    #  - locals
-    #  - local-usages
-    #  - keywords
-    #  - java-class-usages
-    for semantic, thingies in output.get("analysis", {}).items():
+    for semantic, thingies in analysis.items():
 
         for thingy in thingies:
-            filename = thingy.get("filename", "-")
+            filename = thingy["filename"]
 
             index.setdefault(filename, {}).setdefault(semantic, []).append(thingy)
-
-    if is_debug(window):
-        print(
-            f"(Pep) Paths index is completed ({paths}) [{time.time() - t0:,.2f} seconds]"
-        )
 
     return index
 
