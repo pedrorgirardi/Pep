@@ -1111,8 +1111,9 @@ def analyze_view_clj_kondo(view):
         elif view_file_name:
             cwd = os.path.dirname(view_file_name)
 
-        analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }"
-        analysis_config = view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or analysis_config
+        analysis_config = (
+            view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_PATHS_CONFIG
+        )
 
         # --lint <file>: a file can either be a normal file, directory or classpath.
         # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
