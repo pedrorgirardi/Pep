@@ -87,6 +87,11 @@ def project_data(window):
 
 
 def setting(window, k, not_found):
+    """
+    Get setting k from project's data or Pep settings.
+
+    Returns not_found if setting k is is not set.
+    """
     v = project_data(window).get(k)
 
     return v if v is not None else settings().get(k, not_found)
