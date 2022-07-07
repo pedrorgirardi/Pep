@@ -57,6 +57,11 @@ S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 # Status bar key used to show documentation.
 STATUS_BAR_DOC_KEY = "pep_doc"
 
+CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
+
+## Mapping of filename to analysis data, findings and summary.
+_index_ = {}
+
 _view_analysis_ = {}
 
 _paths_analysis_ = {}
@@ -1280,6 +1285,8 @@ def analyze_paths(window):
 
         classpath = path_separator.join(paths)
 
+        index_paths(window, paths)
+
         if is_debug(window):
             print(
                 f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
@@ -1357,6 +1364,76 @@ def analyze_paths(window):
 
 def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
+
+
+def index_paths(window, paths):
+    """
+    Analyze paths to create indexes for var and namespace definitions, and keywords.
+    """
+
+    t0 = time.time()
+
+    path_separator = ";" if os.name == "nt" else ":"
+
+    paths = path_separator.join(paths)
+
+    if is_debug(window):
+        print(f"(Pep) Indexing paths... ({paths})")
+
+    process_args = [
+        clj_kondo_path(window),
+        "--config",
+        CLJ_KONDO_PATHS_CONFIG,
+        "--parallel",
+        "--lint",
+        paths,
+    ]
+
+    # Hide the console window on Windows.
+    startupinfo = None
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+    completed_process = subprocess.run(
+        process_args,
+        cwd=project_path(window),
+        text=True,
+        capture_output=True,
+        startupinfo=startupinfo,
+    )
+
+    output = None
+
+    try:
+        output = json.loads(completed_process.stdout)
+    except:
+        output = {}
+
+    index = {}
+
+    # Semantic is one of:
+    #  - namespace-definitions
+    #  - namespace-usages
+    #  - var-definitions
+    #  - var-usages
+    #  - locals
+    #  - local-usages
+    #  - keywords
+    #  - java-class-usages
+    for semantic, thingies in output.get("analysis", {}).items():
+
+        for thingy in thingies:
+            filename = thingy.get("filename", "-")
+
+            index.setdefault(filename, {}).setdefault(semantic, []).append(thingy)
+
+    if is_debug(window):
+        print(
+            f"(Pep) Paths index is completed ({paths}) [{time.time() - t0:,.2f} seconds]"
+        )
+
+    return index
 
 
 ## ---
