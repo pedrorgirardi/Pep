@@ -67,9 +67,16 @@ _view_analysis_ = {}
 _classpath_analysis_ = {}
 
 
-def merge_index(index):
+def project_index(project_path):
+    return _index_.get(project_path, {})
+
+
+def merge_index(project_path, index):
     global _index_
-    _index_ = {**_index_, **index}
+
+    project_index_ = project_index(project_path)
+
+    _index_[project_path] = {**project_index_, **index}
 
 
 def clear_cache():
@@ -191,7 +198,9 @@ def paths_analysis(project_path):
     Returns analysis for paths.
     """
 
-    analysis = unify_analysis(_index_)
+    project_index_ = project_index(project_path)
+
+    analysis = unify_analysis(project_index_)
 
     keyword_index_ = keyword_index(analysis)
 
@@ -1164,7 +1173,8 @@ def analyze_view(view, on_completed=None):
     analysis = clj_kondo_data.get("analysis", {})
 
     # Update index for view - analysis for a single file (view).
-    merge_index(index_analysis(analysis))
+    if project_path_ := project_path(view.window()):
+        merge_index(project_path_, index_analysis(analysis))
 
     namespace_index_ = namespace_index(analysis)
 
@@ -1348,7 +1358,10 @@ def analyze_paths(window):
         analysis = output.get("analysis", {})
 
         # Update index for paths - analysis for files in the project.
-        merge_index(index_analysis(analysis))
+        merge_index(
+            project_path(window),
+            index_analysis(analysis),
+        )
 
         if is_debug(window):
             print(
