@@ -195,8 +195,34 @@ def paths_analysis(project_path):
     """
     Returns analysis for paths.
     """
-    global _paths_analysis_
-    return _paths_analysis_.get(project_path, {})
+
+    analysis = unify_analysis(_index_)
+
+    keyword_index_ = keyword_index(analysis)
+
+    namespace_index_ = namespace_index(
+        analysis,
+        nrn=False,
+        nrn_usages=False,
+    )
+
+    var_index_ = var_index(
+        analysis,
+        vrn=False,
+        vrn_usages=False,
+    )
+
+    java_class_index_ = java_class_index(
+        analysis,
+        jrn_usages=False,
+    )
+
+    return {
+        **keyword_index_,
+        **namespace_index_,
+        **var_index_,
+        **java_class_index_,
+    }
 
 
 def set_classpath_analysis(project_path, analysis):
@@ -1291,22 +1317,20 @@ def analyze_paths(window):
 
         path_separator = ";" if os.name == "nt" else ":"
 
-        classpath = path_separator.join(paths)
+        paths = path_separator.join(paths)
 
         if is_debug(window):
             print(
-                f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
+                f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths: {paths})"
             )
-
-        analysis_config = "{:skip-lint true :output {:analysis {:var-definitions true :var-usages true :arglists true :keywords true :java-class-usages true :java-class-definitions false} :format :json :canonical-paths true} }"
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
             "--config",
-            analysis_config,
+            CLJ_KONDO_PATHS_CONFIG,
             "--parallel",
             "--lint",
-            classpath,
+            paths,
         ]
 
         # Hide the console window on Windows.
@@ -1335,39 +1359,9 @@ def analyze_paths(window):
         # Update index for paths - analysis for files in the project.
         set_index(index_analysis(analysis))
 
-        keyword_index_ = keyword_index(analysis)
-
-        namespace_index_ = namespace_index(
-            analysis,
-            nrn=False,
-            nrn_usages=False,
-        )
-
-        var_index_ = var_index(
-            analysis,
-            vrn=False,
-            vrn_usages=False,
-        )
-
-        java_class_index_ = java_class_index(
-            analysis,
-            jrn_usages=False,
-        )
-
-        set_paths_analysis(
-            project_path(window),
-            {
-                **keyword_index_,
-                **namespace_index_,
-                **var_index_,
-                **java_class_index_,
-                "findings": output.get("findings", []),
-            },
-        )
-
         if is_debug(window):
             print(
-                f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths}) [{time.time() - t0:,.2f} seconds]"
+                f"(Pep) Paths analysis is completed (Project: {project_path(window)}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
             )
 
 
@@ -1445,6 +1439,17 @@ def index_analysis(analysis):
             index.setdefault(filename, {}).setdefault(semantic, []).append(thingy)
 
     return index
+
+
+def unify_analysis(index):
+    analysis = {}
+
+    for _, analysis_ in index.items():
+
+        for semantic, thingies in analysis_.items():
+            analysis.setdefault(semantic, []).extend(thingies)
+
+    return analysis
 
 
 ## ---
