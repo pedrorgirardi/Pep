@@ -82,6 +82,11 @@ def update_project_index(project_path, index):
     _index_[project_path] = {**project_index_, **index}
 
 
+def clear_project_index(project_path):
+    global _index_
+    _index_.pop(project_path, None)
+
+
 def clear_cache():
     global _index_
     _index_ = {}
@@ -1196,7 +1201,10 @@ def analyze_view(view, on_completed=None):
     # Update index for view - analysis for a single file (view).
     if project_path_ := project_path(window):
         # Don't index non-project files.
-        if pathlib.Path(project_path_) in pathlib.Path(view.buffer().file_name()).parents:
+        if (
+            pathlib.Path(project_path_)
+            in pathlib.Path(view.buffer().file_name()).parents
+        ):
             update_project_index(project_path_, index_analysis(analysis))
 
     if on_completed:
@@ -1278,20 +1286,21 @@ def analyze_classpath(window):
             jrn_usages=False,
         )
 
-        set_classpath_analysis(
-            project_path(window),
-            {
-                **java_class_index_,
-                **keyword_index_,
-                **namespace_index_,
-                **var_index_,
-            },
-        )
-
-        if is_debug(window):
-            print(
-                f"(Pep) Classpath analysis is completed (Project: {project_path(window)}) [{time.time() - t0:,.2f} seconds]"
+        if project_path_ := project_path(window):
+            set_classpath_analysis(
+                project_path_,
+                {
+                    **java_class_index_,
+                    **keyword_index_,
+                    **namespace_index_,
+                    **var_index_,
+                },
             )
+
+            if is_debug(window):
+                print(
+                    f"(Pep) Classpath analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
+                )
 
         return True
 
@@ -1345,16 +1354,17 @@ def analyze_paths(window):
 
         analysis = output.get("analysis", {})
 
-        # Update index for paths - analysis for files in the project.
-        update_project_index(
-            project_path(window),
-            index_analysis(analysis),
-        )
-
-        if is_debug(window):
-            print(
-                f"(Pep) Paths analysis is completed (Project: {project_path(window)}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
+        if project_path_ := project_path(window):
+            # Update index for paths - analysis for files in the project.
+            update_project_index(
+                project_path_,
+                index_analysis(analysis),
             )
+
+            if is_debug(window):
+                print(
+                    f"(Pep) Paths analysis is completed (Project: {project_path_}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
+                )
 
 
 def analyze_paths_async(window):
@@ -3715,7 +3725,12 @@ class PgPepEventListener(sublime_plugin.EventListener):
             if is_debug(window):
                 print(f"(Pep) Clear project cache (Project: {project_path_})")
 
+            clear_project_index(project_path_)
+
             set_classpath_analysis(project_path_, {})
+
+            if is_debug(window):
+                print(f"(Pep) Cached:", ", ".join(_index_.keys()))
 
 
 # ---
