@@ -234,6 +234,15 @@ def view_status_show_highlighted_suffix(window):
     return setting(window, "view_status_show_highlighted_suffix", "")
 
 
+def startupinfo():
+    # Hide the console window on Windows.
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+        return startupinfo
+
+
 def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
@@ -1142,18 +1151,12 @@ def analyze_view(view, on_completed=None):
         view_file_name or "-",
     ]
 
-    # Hide the console window on Windows.
-    startupinfo = None
-    if os.name == "nt":
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
     analysis_completed_process = subprocess.run(
         analysis_subprocess_args,
         cwd=cwd,
         text=True,
         capture_output=True,
-        startupinfo=startupinfo,
+        startupinfo=startupinfo(),
         input=view_text(view),
     )
 
@@ -1227,18 +1230,12 @@ def analyze_classpath(window):
             classpath,
         ]
 
-        # Hide the console window on Windows.
-        startupinfo = None
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=project_path(window),
             text=True,
             capture_output=True,
-            startupinfo=startupinfo,
+            startupinfo=startupinfo(),
         )
 
         output = None
@@ -1328,18 +1325,12 @@ def analyze_paths(window):
             paths,
         ]
 
-        # Hide the console window on Windows.
-        startupinfo = None
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=project_path(window),
             text=True,
             capture_output=True,
-            startupinfo=startupinfo,
+            startupinfo=startupinfo(),
         )
 
         output = None
