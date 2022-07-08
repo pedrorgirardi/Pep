@@ -1286,6 +1286,7 @@ def analyze_classpath(window):
             jrn_usages=False,
         )
 
+        # Check if there's still a project_path - user might close the project before.
         if project_path_ := project_path(window):
             set_classpath_analysis(
                 project_path_,
@@ -1354,6 +1355,7 @@ def analyze_paths(window):
 
         analysis = output.get("analysis", {})
 
+        # Check if there's still a project_path - user might close the project before.
         if project_path_ := project_path(window):
             # Update index for paths - analysis for files in the project.
             update_project_index(
