@@ -1194,7 +1194,9 @@ def analyze_view(view, on_completed=None):
 
     # Update index for view - analysis for a single file (view).
     if project_path_ := project_path(window):
-        update_project_index(project_path_, index_analysis(analysis))
+        # Don't index non-project files.
+        if pathlib.Path(project_path_) in pathlib.Path(view.buffer().file_name()).parents:
+            update_project_index(project_path_, index_analysis(analysis))
 
     if on_completed:
         on_completed(view_analysis_)
