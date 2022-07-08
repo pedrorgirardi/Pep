@@ -3015,28 +3015,14 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
-    def input(self, args):
-        if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths"})
-
-    def run(self, scope):
+    def run(self):
         try:
-
-            project_path_ = project_path(self.window)
 
             active_view = self.window.active_view()
 
-            # Goto is a window command, so it's possible
-            # that there isn't an active view.
-            # In that case, an empty analysis dict is used.
-
             view_analysis_ = view_analysis(active_view.id()) if active_view else {}
 
-            paths_analysis_ = paths_analysis(project_path_)
-
-            findings = analysis_findings(
-                view_analysis_ if scope == "view" else paths_analysis_
-            )
+            findings = analysis_findings(view_analysis_)
 
             items = []
 
@@ -3061,13 +3047,9 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
                     }
                 )
 
-            show_goto_thingy_quick_panel(
-                self.window,
-                items,
-                goto_on_highlight=True,
-            )
+            show_goto_thingy_quick_panel(self.window, items, goto_on_highlight=True)
 
-        except Exception as e:
+        except:
             print(
                 f"(Pep) Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
             )
