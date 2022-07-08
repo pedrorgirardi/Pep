@@ -1228,7 +1228,7 @@ def analyze_classpath(window):
         t0 = time.time()
 
         if is_debug(window):
-            print(f"(Pep) Analyzing classpath... (Project: {project_path(window)})")
+            print(f"Pep: Analyzing classpath... (Project: {project_path(window)})")
 
         analysis_config = "{:skip-lint true :output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false} :format :json :canonical-paths true}}"
 
@@ -1300,7 +1300,7 @@ def analyze_classpath(window):
 
             if is_debug(window):
                 print(
-                    f"(Pep) Classpath analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Classpath analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
                 )
 
         return True
@@ -1326,7 +1326,7 @@ def analyze_paths(window):
 
         if is_debug(window):
             print(
-                f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths: {paths})"
+                f"Pep: Analyzing paths... (Project: {project_path(window)}, Paths: {paths})"
             )
 
         analysis_subprocess_args = [
@@ -1365,7 +1365,7 @@ def analyze_paths(window):
 
             if is_debug(window):
                 print(
-                    f"(Pep) Paths analysis is completed (Project: {project_path_}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Paths analysis is completed (Project: {project_path_}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
                 )
 
 
@@ -2291,7 +2291,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
         clear_cache()
 
         if is_debug(self.window):
-            print(f"(Pep) Cleared cache")
+            print(f"Pep: Cleared cache")
 
 
 class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
@@ -2933,7 +2933,7 @@ class PgPepGotoCommand(sublime_plugin.WindowCommand):
             goto(self.window, location, flags)
 
         else:
-            print("(Pep) Goto missing location arg")
+            print("Pep: Goto missing location arg")
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
@@ -3026,7 +3026,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto(window, thingy_location(definition), flags)
 
             else:
-                print("(Pep) Unable to find definition")
+                print("Pep: Unable to find definition")
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
@@ -3066,7 +3066,7 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
 
         except:
             print(
-                f"(Pep) Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
+                f"Pep: Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
             )
 
 
@@ -3388,7 +3388,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
                 self.view.sel().add_all(regions)
 
         except Exception as e:
-            print(f"(Pep) Error: PgPepSelectCommand", traceback.format_exc())
+            print(f"Pep: Error: PgPepSelectCommand", traceback.format_exc())
 
 
 class PgPepRenameCommand(sublime_plugin.TextCommand):
@@ -3448,7 +3448,7 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
                     shift_count += ident_diff
 
         except Exception as e:
-            print(f"(Pep) Error: PgPepRenameCommand", traceback.format_exc())
+            print(f"Pep: Error: PgPepRenameCommand", traceback.format_exc())
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
@@ -3503,7 +3503,7 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             self.view.set_status("pg_pep_view_summary", status_message)
 
         except Exception as e:
-            print(f"(Pep) Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
+            print(f"Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
 class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
@@ -3532,7 +3532,7 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
 
         except Exception as e:
             print(
-                f"(Pep) Error: PgPepViewNamespaceStatusCommand", traceback.format_exc()
+                f"Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc()
             )
 
 
@@ -3583,7 +3583,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
                 except Exception as ex:
                     if is_debug(self.view.window()):
                         print(
-                            "(Pep) Failed to annotate finding.",
+                            "Pep: Failed to annotate finding.",
                             {"error": ex, "finding": finding},
                         )
 
@@ -3620,7 +3620,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
             )
 
         except Exception as e:
-            print(f"(Pep) Error: PgPepAnnotateCommand", traceback.format_exc())
+            print(f"Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
 
 # ---
@@ -3725,14 +3725,11 @@ class PgPepEventListener(sublime_plugin.EventListener):
         """
         if project_path_ := project_path(window):
             if is_debug(window):
-                print(f"(Pep) Clear project cache (Project: {project_path_})")
+                print(f"Pep: Clear project cache: {project_path_}")
 
             clear_project_index(project_path_)
 
             set_classpath_analysis(project_path_, {})
-
-            if is_debug(window):
-                print(f"(Pep) Cached:", ", ".join(_index_.keys()))
 
 
 # ---
