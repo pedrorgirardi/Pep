@@ -45,10 +45,6 @@
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_paths_on_load_project": true,
 
-    // True if you would like to analyze your project's sources when a file is saved.
-    // (Doesn't do anything if there isn't a *.sublime-project file.)
-    "analyze_paths_on_post_save": true,
-
     // True if you would like to analyse your project's classpath when the plugin is loaded.
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_plugin_loaded": true,

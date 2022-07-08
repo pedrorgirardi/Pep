@@ -57,22 +57,107 @@ S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 # Status bar key used to show documentation.
 STATUS_BAR_DOC_KEY = "pep_doc"
 
-_view_analysis_ = {}
+CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
 
-_paths_analysis_ = {}
+## Mapping of filename to analysis data by semantic, e.g. var-definitions.
+_index_ = {}
+
+_view_analysis_ = {}
 
 _classpath_analysis_ = {}
 
 
+def project_index(project_path):
+    """
+    Mapping of filename to analysis data by semantic, e.g. var-definitions.
+    """
+    return _index_.get(project_path, {})
+
+
+def update_project_index(project_path, index):
+    project_index_ = project_index(project_path)
+
+    global _index_
+    _index_[project_path] = {**project_index_, **index}
+
+
 def clear_cache():
+    global _index_
+    _index_ = {}
+
     global _view_analysis_
     _view_analysis_ = {}
 
-    global _paths_analysis_
-    _paths_analysis_ = {}
-
     global _classpath_analysis_
     _classpath_analysis_ = {}
+
+
+def set_classpath_analysis(project_path, analysis):
+    """
+    Updates analysis for project.
+    """
+    global _classpath_analysis_
+    _classpath_analysis_[project_path] = analysis
+
+
+def classpath_analysis(project_path):
+    """
+    Returns analysis for project.
+    """
+    global _classpath_analysis_
+    return _classpath_analysis_.get(project_path, {})
+
+
+def set_view_analysis(view_id, analysis):
+    """
+    Updates analysis for a particular view.
+    """
+    global _view_analysis_
+    _view_analysis_[view_id] = analysis
+
+
+def view_analysis(view_id):
+    """
+    Returns analysis for a particular view.
+    """
+    global _view_analysis_
+    return _view_analysis_.get(view_id, {})
+
+
+def paths_analysis(project_path):
+    """
+    Returns analysis for paths.
+    """
+
+    project_index_ = project_index(project_path)
+
+    analysis = unify_analysis(project_index_)
+
+    keyword_index_ = keyword_index(analysis)
+
+    namespace_index_ = namespace_index(
+        analysis,
+        nrn=False,
+        nrn_usages=False,
+    )
+
+    var_index_ = var_index(
+        analysis,
+        vrn=False,
+        vrn_usages=False,
+    )
+
+    java_class_index_ = java_class_index(
+        analysis,
+        jrn_usages=False,
+    )
+
+    return {
+        **keyword_index_,
+        **namespace_index_,
+        **var_index_,
+        **java_class_index_,
+    }
 
 
 # -- Settings
@@ -87,6 +172,11 @@ def project_data(window):
 
 
 def setting(window, k, not_found):
+    """
+    Get setting k from project's data or Pep settings.
+
+    Returns not_found if setting k is is not set.
+    """
     v = project_data(window).get(k)
 
     return v if v is not None else settings().get(k, not_found)
@@ -144,6 +234,15 @@ def view_status_show_highlighted_suffix(window):
     return setting(window, "view_status_show_highlighted_suffix", "")
 
 
+def startupinfo():
+    # Hide the console window on Windows.
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+        return startupinfo
+
+
 def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
@@ -168,57 +267,6 @@ def output_panel(window):
     return window.find_output_panel(OUTPUT_PANEL_NAME) or window.create_output_panel(
         OUTPUT_PANEL_NAME
     )
-
-
-# -- Analysis
-
-
-def set_paths_analysis(project_path, analysis):
-    """
-    Updates analysis for paths.
-    """
-    global _paths_analysis_
-    _paths_analysis_[project_path] = analysis
-
-
-def paths_analysis(project_path):
-    """
-    Returns analysis for paths.
-    """
-    global _paths_analysis_
-    return _paths_analysis_.get(project_path, {})
-
-
-def set_classpath_analysis(project_path, analysis):
-    """
-    Updates analysis for project.
-    """
-    global _classpath_analysis_
-    _classpath_analysis_[project_path] = analysis
-
-
-def classpath_analysis(project_path):
-    """
-    Returns analysis for project.
-    """
-    global _classpath_analysis_
-    return _classpath_analysis_.get(project_path, {})
-
-
-def set_view_analysis(view_id, analysis):
-    """
-    Updates analysis for a particular view.
-    """
-    global _view_analysis_
-    _view_analysis_[view_id] = analysis
-
-
-def view_analysis(view_id):
-    """
-    Returns analysis for a particular view.
-    """
-    global _view_analysis_
-    return _view_analysis_.get(view_id, {})
 
 
 # ---
@@ -1063,71 +1111,61 @@ def project_classpath(window):
 ## ---
 
 
-def analyze_view_clj_kondo(view):
-    try:
-
-        window = view.window()
-
-        view_file_name = view.file_name()
-
-        project_file_name = window.project_file_name() if window else None
-
-        # Setting the working directory is important because of clj-kondo's cache.
-        cwd = None
-
-        if project_file_name:
-            cwd = os.path.dirname(project_file_name)
-        elif view_file_name:
-            cwd = os.path.dirname(view_file_name)
-
-        analysis_config = "{:output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }"
-        analysis_config = view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or analysis_config
-
-        # --lint <file>: a file can either be a normal file, directory or classpath.
-        # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
-        # Use - as filename for reading from stdin.
-
-        # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
-
-        analysis_subprocess_args = [
-            clj_kondo_path(view.window()),
-            "--config",
-            analysis_config,
-            "--lint",
-            "-",
-            "--filename",
-            view_file_name or "-",
-        ]
-
-        # Hide the console window on Windows.
-        startupinfo = None
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-        analysis_completed_process = subprocess.run(
-            analysis_subprocess_args,
-            cwd=cwd,
-            text=True,
-            capture_output=True,
-            startupinfo=startupinfo,
-            input=view_text(view),
-        )
-
-        return json.loads(analysis_completed_process.stdout)
-
-    except:
-        # Always return a dict, no matter what.
-        return {}
-
-
 def analyze_view(view, on_completed=None):
 
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
     view_change_count = view.change_count()
 
-    clj_kondo_data = analyze_view_clj_kondo(view)
+    window = view.window()
+
+    view_file_name = view.file_name()
+
+    project_file_name = window.project_file_name() if window else None
+
+    # Setting the working directory is important because of clj-kondo's cache.
+    cwd = None
+
+    if project_file_name:
+        cwd = os.path.dirname(project_file_name)
+    elif view_file_name:
+        cwd = os.path.dirname(view_file_name)
+
+    analysis_config = (
+        view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_PATHS_CONFIG
+    )
+
+    # --lint <file>: a file can either be a normal file, directory or classpath.
+    # In the case of a directory or classpath, only .clj, .cljs and .cljc will be processed.
+    # Use - as filename for reading from stdin.
+
+    # --filename <file>: in case stdin is used for linting, use this to set the reported filename.
+
+    analysis_subprocess_args = [
+        clj_kondo_path(window),
+        "--config",
+        analysis_config,
+        "--lint",
+        "-",
+        "--filename",
+        view_file_name or "-",
+    ]
+
+    analysis_completed_process = subprocess.run(
+        analysis_subprocess_args,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        startupinfo=startupinfo(),
+        input=view_text(view),
+    )
+
+    clj_kondo_data = None
+
+    try:
+        clj_kondo_data = json.loads(analysis_completed_process.stdout)
+    except:
+        clj_kondo_data = {}
 
     analysis = clj_kondo_data.get("analysis", {})
 
@@ -1153,6 +1191,12 @@ def analyze_view(view, on_completed=None):
     }
 
     set_view_analysis(view.id(), view_analysis_)
+
+    # Update index for view - analysis for a single file (view).
+    if project_path_ := project_path(window):
+        # Don't index non-project files.
+        if pathlib.Path(project_path_) in pathlib.Path(view.buffer().file_name()).parents:
+            update_project_index(project_path_, index_analysis(analysis))
 
     if on_completed:
         on_completed(view_analysis_)
@@ -1188,18 +1232,12 @@ def analyze_classpath(window):
             classpath,
         ]
 
-        # Hide the console window on Windows.
-        startupinfo = None
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=project_path(window),
             text=True,
             capture_output=True,
-            startupinfo=startupinfo,
+            startupinfo=startupinfo(),
         )
 
         output = None
@@ -1273,36 +1311,28 @@ def analyze_paths(window):
 
         path_separator = ";" if os.name == "nt" else ":"
 
-        classpath = path_separator.join(paths)
+        paths = path_separator.join(paths)
 
         if is_debug(window):
             print(
-                f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths {paths})"
+                f"(Pep) Analyzing paths... (Project: {project_path(window)}, Paths: {paths})"
             )
-
-        analysis_config = "{:skip-lint true :output {:analysis {:var-definitions true :var-usages true :arglists true :keywords true :java-class-usages true :java-class-definitions false} :format :json :canonical-paths true} }"
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
             "--config",
-            analysis_config,
+            CLJ_KONDO_PATHS_CONFIG,
             "--parallel",
             "--lint",
-            classpath,
+            paths,
         ]
-
-        # Hide the console window on Windows.
-        startupinfo = None
-        if os.name == "nt":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
         analysis_completed_process = subprocess.run(
             analysis_subprocess_args,
             cwd=project_path(window),
             text=True,
             capture_output=True,
-            startupinfo=startupinfo,
+            startupinfo=startupinfo(),
         )
 
         output = None
@@ -1314,44 +1344,58 @@ def analyze_paths(window):
 
         analysis = output.get("analysis", {})
 
-        keyword_index_ = keyword_index(analysis)
-
-        namespace_index_ = namespace_index(
-            analysis,
-            nrn=False,
-            nrn_usages=False,
-        )
-
-        var_index_ = var_index(
-            analysis,
-            vrn=False,
-            vrn_usages=False,
-        )
-
-        java_class_index_ = java_class_index(
-            analysis,
-            jrn_usages=False,
-        )
-
-        set_paths_analysis(
+        # Update index for paths - analysis for files in the project.
+        update_project_index(
             project_path(window),
-            {
-                **keyword_index_,
-                **namespace_index_,
-                **var_index_,
-                **java_class_index_,
-                "findings": output.get("findings", []),
-            },
+            index_analysis(analysis),
         )
 
         if is_debug(window):
             print(
-                f"(Pep) Paths analysis is completed (Project {project_path(window)}, Paths {paths}) [{time.time() - t0:,.2f} seconds]"
+                f"(Pep) Paths analysis is completed (Project: {project_path(window)}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
             )
 
 
 def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
+
+
+def index_analysis(analysis):
+    """
+    Analyze paths to create indexes for var and namespace definitions, and keywords.
+
+    Semantic is one of:
+      - namespace-definitions
+      - namespace-usages
+      - var-definitions
+      - var-usages
+      - locals
+      - local-usages
+      - keywords
+      - java-class-usages
+    """
+
+    index = {}
+
+    for semantic, thingies in analysis.items():
+
+        for thingy in thingies:
+            filename = thingy["filename"]
+
+            index.setdefault(filename, {}).setdefault(semantic, []).append(thingy)
+
+    return index
+
+
+def unify_analysis(index):
+    analysis = {}
+
+    for _, analysis_ in index.items():
+
+        for semantic, thingies in analysis_.items():
+            analysis.setdefault(semantic, []).extend(thingies)
+
+    return analysis
 
 
 ## ---
@@ -2973,28 +3017,14 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
-    def input(self, args):
-        if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths"})
-
-    def run(self, scope):
+    def run(self):
         try:
-
-            project_path_ = project_path(self.window)
 
             active_view = self.window.active_view()
 
-            # Goto is a window command, so it's possible
-            # that there isn't an active view.
-            # In that case, an empty analysis dict is used.
-
             view_analysis_ = view_analysis(active_view.id()) if active_view else {}
 
-            paths_analysis_ = paths_analysis(project_path_)
-
-            findings = analysis_findings(
-                view_analysis_ if scope == "view" else paths_analysis_
-            )
+            findings = analysis_findings(view_analysis_)
 
             items = []
 
@@ -3019,13 +3049,9 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
                     }
                 )
 
-            show_goto_thingy_quick_panel(
-                self.window,
-                items,
-                goto_on_highlight=True,
-            )
+            show_goto_thingy_quick_panel(self.window, items, goto_on_highlight=True)
 
-        except Exception as e:
+        except:
             print(
                 f"(Pep) Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
             )
@@ -3632,10 +3658,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         """
         self.modified_time = time.time()
 
-    def on_post_save_async(self):
-        if setting(self.view.window(), "analyze_paths_on_post_save", False):
-            analyze_paths_async(self.view.window())
-
     def on_selection_modified_async(self):
         """
         When the selection is modified, two actions might be triggered:
@@ -3692,7 +3714,6 @@ class PgPepEventListener(sublime_plugin.EventListener):
             if is_debug(window):
                 print(f"(Pep) Clear project cache (Project: {project_path_})")
 
-            set_paths_analysis(project_path_, {})
             set_classpath_analysis(project_path_, {})
 
 
