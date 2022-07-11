@@ -3325,6 +3325,14 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                             sublime.QuickPanelItem(trigger, details)
                         )
 
+                    def usage_location(index):
+                        _, _, filename, line, col = usage_items_sorted[index]
+
+                        return {"filename": filename,
+                                "line": line,
+                                "column": col}
+
+
                     def on_done(index, _):
                         if index == -1:
                             # Restore selection and viewport position:
@@ -3338,16 +3346,12 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                             self.view.set_viewport_position(viewport_position, True)
 
                         else:
-                            location = thingy_location(thingy_usages[index])
-
-                            goto(self.view.window(), location)
+                            goto(self.view.window(), usage_location(index))
 
                     def on_highlighted(index):
-                        location = thingy_location(thingy_usages[index])
-
                         goto(
                             self.view.window(),
-                            location,
+                            usage_location(index),
                             flags=sublime.ENCODED_POSITION | sublime.TRANSIENT,
                         )
 
