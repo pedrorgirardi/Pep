@@ -3418,9 +3418,14 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
                 self.view, view_analysis_, cursor_region
             ):
 
-                thingy_regions = find_thingy_regions(
-                    self.view, view_analysis_, cursor_thingy
-                )
+                # There's at least one region - cursor_thingy' region.
+                thingy_regions = []
+
+                # Replace only exact text matches of thingy usages.
+                # TODO: Comment about what doesn't get replaced / edge cases.
+                for r in find_thingy_regions(self.view, view_analysis_, cursor_thingy):
+                    if thingy_text(self.view, cursor_thingy) == self.view.substr(r):
+                        thingy_regions.append(r)
 
                 # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
                 thingy_regions.sort()
