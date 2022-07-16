@@ -3453,7 +3453,7 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
                     shift_count += ident_diff
 
         except Exception as e:
-            print(f"Pep: Error: PgPepRenameCommand", traceback.format_exc())
+            print(f"Pep: Error: PgPepReplaceCommand", traceback.format_exc())
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
