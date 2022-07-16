@@ -2115,7 +2115,7 @@ def highlight_regions(view, selection, regions):
         view.add_regions(
             HIGHLIGHTED_REGIONS_KEY,
             regions,
-            scope="region.cyanish",
+            scope=setting(view.window(), "highlight_scope", "region.cyanish"),
             icon="dot" if setting(view.window(), "highlight_gutter", None) else "",
             flags=sublime.DRAW_NO_FILL
             if setting(view.window(), "highlight_region", None)
