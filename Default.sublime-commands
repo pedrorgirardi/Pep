@@ -82,8 +82,8 @@
         ],
     },
     {
-        "caption": "Pep: Rename",
-        "command": "pg_pep_rename",
+        "caption": "Pep: Replace",
+        "command": "pg_pep_replace",
         "context": [
             {
                 "key": "selector",

@@ -2276,15 +2276,15 @@ class GotoScopeInputHandler(sublime_plugin.ListInputHandler):
         return "Scope"
 
 
-class RenameInputHandler(sublime_plugin.TextInputHandler):
-    def __init__(self, ident):
-        self.ident = ident
+class ReplaceTextInputHandler(sublime_plugin.TextInputHandler):
+    def __init__(self, text):
+        self.text = text
 
     def name(self):
-        return "new_ident"
+        return "text"
 
     def initial_text(self):
-        return self.ident
+        return self.text
 
 
 class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
@@ -3396,9 +3396,9 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
             print(f"Pep: Error: PgPepSelectCommand", traceback.format_exc())
 
 
-class PgPepRenameCommand(sublime_plugin.TextCommand):
+class PgPepReplaceCommand(sublime_plugin.TextCommand):
     def input(self, args):
-        if "new_ident" not in args:
+        if "text" not in args:
             view_analysis_ = view_analysis(self.view.id())
 
             cursor_region = self.view.sel()[0]
@@ -3406,9 +3406,9 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
             if cursor_thingy := thingy_in_region(
                 self.view, view_analysis_, cursor_region
             ):
-                return RenameInputHandler(ident=thingy_text(self.view, cursor_thingy))
+                return ReplaceTextInputHandler(text=thingy_text(self.view, cursor_thingy))
 
-    def run(self, edit, new_ident):
+    def run(self, edit, text):
         try:
             view_analysis_ = view_analysis(self.view.id())
 
@@ -3428,12 +3428,12 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
                 tregion, *tregion_more = thingy_regions
 
                 # Replace first region without shifting:
-                self.view.replace(edit, tregion, new_ident)
+                self.view.replace(edit, tregion, text)
 
                 # Subsequent regions possibly needs shifting its position.
                 # Regions might need to be left or right shifted - it depends on the new ident.
 
-                ident_diff = len(new_ident) - len(thingy_text(self.view, cursor_thingy))
+                ident_diff = len(text) - len(thingy_text(self.view, cursor_thingy))
 
                 # Initially, shift is the same as the difference.
                 shift_count = ident_diff
@@ -3446,7 +3446,7 @@ class PgPepRenameCommand(sublime_plugin.TextCommand):
                         region_begin_shifted, region_end_shifted
                     )
 
-                    self.view.replace(edit, region_shifted, new_ident)
+                    self.view.replace(edit, region_shifted, text)
 
                     # Shift is recursive
                     # E.g. 2nd region shifts n, 3rd region shifts n + n, 4th region shifts n + n + n.
