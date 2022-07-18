@@ -3382,15 +3382,20 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
         try:
             view_analysis_ = view_analysis(self.view.id())
 
-            region = self.view.sel()[0]
+            cursor_region = self.view.sel()[0]
 
-            thingy = thingy_in_region(self.view, view_analysis_, region)
+            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
 
-            if thingy:
-                regions = find_thingy_regions(self.view, view_analysis_, thingy)
+                # There's at least one region - cursor_thingy' region.
+                thingy_regions = []
+
+                # Replace only exact text matches of thingy usages.
+                for r in find_thingy_regions(self.view, view_analysis_, cursor_thingy):
+                    if thingy_text(self.view, cursor_thingy) == self.view.substr(r):
+                        thingy_regions.append(r)
 
                 self.view.sel().clear()
-                self.view.sel().add_all(regions)
+                self.view.sel().add_all(thingy_regions)
 
         except Exception as e:
             print(f"Pep: Error: PgPepSelectCommand", traceback.format_exc())
