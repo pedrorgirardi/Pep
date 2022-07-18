@@ -1205,10 +1205,7 @@ def analyze_view(view, on_completed=None):
     if project_path_ := project_path(window):
         if file_name := view.buffer().file_name():
             # Don't index non-project files.
-            if (
-                pathlib.Path(project_path_)
-                in pathlib.Path(file_name).parents
-            ):
+            if pathlib.Path(project_path_) in pathlib.Path(file_name).parents:
                 update_project_index(project_path_, index_analysis(analysis))
 
     if on_completed:
@@ -3343,10 +3340,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     def usage_location(index):
                         _, _, filename, line, col = usage_items_sorted[index]
 
-                        return {"filename": filename,
-                                "line": line,
-                                "column": col}
-
+                        return {"filename": filename, "line": line, "column": col}
 
                     def on_done(index, _):
                         if index == -1:
@@ -3399,9 +3393,13 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
 
-                thingy_regions = find_thingy_text_regions(self.view, view_analysis_, cursor_thingy)
+                thingy_regions = find_thingy_text_regions(
+                    self.view, view_analysis_, cursor_thingy
+                )
 
                 self.view.sel().clear()
                 self.view.sel().add_all(thingy_regions)
@@ -3420,7 +3418,9 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
             if cursor_thingy := thingy_in_region(
                 self.view, view_analysis_, cursor_region
             ):
-                return ReplaceTextInputHandler(text=thingy_text(self.view, cursor_thingy))
+                return ReplaceTextInputHandler(
+                    text=thingy_text(self.view, cursor_thingy)
+                )
 
     def run(self, edit, text):
         try:
@@ -3431,7 +3431,9 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
             if cursor_thingy := thingy_in_region(
                 self.view, view_analysis_, cursor_region
             ):
-                thingy_regions = find_thingy_text_regions(self.view, view_analysis_, cursor_thingy)
+                thingy_regions = find_thingy_text_regions(
+                    self.view, view_analysis_, cursor_thingy
+                )
 
                 # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
                 thingy_regions.sort()
