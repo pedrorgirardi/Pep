@@ -1078,8 +1078,11 @@ def set_view_name(view, name):
             view.set_name(name)
 
 
-def view_text(view):
-    return view.substr(sublime.Region(0, view.size()))
+def view_text(view, region=None):
+    if region:
+        return view.substr(region)
+    else:
+        return view.substr(sublime.Region(0, view.size()))
 
 
 def project_classpath(window):
@@ -3391,7 +3394,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
                 # Replace only exact text matches of thingy usages.
                 for r in find_thingy_regions(self.view, view_analysis_, cursor_thingy):
-                    if thingy_text(self.view, cursor_thingy) == self.view.substr(r):
+                    if thingy_text(self.view, cursor_thingy) == view_text(self.view, r):
                         thingy_regions.append(r)
 
                 self.view.sel().clear()
@@ -3429,7 +3432,7 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
                 # Replace only exact text matches of thingy usages.
                 # TODO: Comment about what doesn't get replaced / edge cases.
                 for r in find_thingy_regions(self.view, view_analysis_, cursor_thingy):
-                    if thingy_text(self.view, cursor_thingy) == self.view.substr(r):
+                    if thingy_text(self.view, cursor_thingy) == view_text(view, r):
                         thingy_regions.append(r)
 
                 # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
