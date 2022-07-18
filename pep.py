@@ -2262,6 +2262,18 @@ def find_thingy_regions(view, analysis, thingy):
     return regions
 
 
+def find_thingy_text_regions(view, analysis, thingy):
+    # There's at least one region - thingy's region.
+    thingy_regions = []
+
+    # Only exact text matches of thingy usages.
+    for r in find_thingy_regions(view, analysis, thingy):
+        if thingy_text(view, thingy) == view_text(view, r):
+            thingy_regions.append(r)
+
+    return thingy_regions
+
+
 # ---
 
 
@@ -3389,13 +3401,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
 
             if cursor_thingy := thingy_in_region(self.view, view_analysis_, cursor_region):
 
-                # There's at least one region - cursor_thingy' region.
-                thingy_regions = []
-
-                # Replace only exact text matches of thingy usages.
-                for r in find_thingy_regions(self.view, view_analysis_, cursor_thingy):
-                    if thingy_text(self.view, cursor_thingy) == view_text(self.view, r):
-                        thingy_regions.append(r)
+                thingy_regions = find_thingy_text_regions(self.view, view_analysis_, cursor_thingy)
 
                 self.view.sel().clear()
                 self.view.sel().add_all(thingy_regions)
@@ -3425,15 +3431,7 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
             if cursor_thingy := thingy_in_region(
                 self.view, view_analysis_, cursor_region
             ):
-
-                # There's at least one region - cursor_thingy' region.
-                thingy_regions = []
-
-                # Replace only exact text matches of thingy usages.
-                # TODO: Comment about what doesn't get replaced / edge cases.
-                for r in find_thingy_regions(self.view, view_analysis_, cursor_thingy):
-                    if thingy_text(self.view, cursor_thingy) == view_text(view, r):
-                        thingy_regions.append(r)
+                thingy_regions = find_thingy_text_regions(self.view, view_analysis_, cursor_thingy)
 
                 # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
                 thingy_regions.sort()
