@@ -2274,7 +2274,7 @@ def find_thingy_text_regions(view, analysis, thingy):
 # ---
 
 
-class GotoScopeInputHandler(sublime_plugin.ListInputHandler):
+class ScopeInputHandler(sublime_plugin.ListInputHandler):
     def __init__(self, scopes):
         self.scopes = scopes
 
@@ -2336,7 +2336,7 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
 
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
+            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
     def run(self, scope):
         project_path_ = project_path(self.window)
@@ -2397,7 +2397,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"paths", "classpath"})
+            return ScopeInputHandler(scopes=["paths", "classpath"])
 
     def run(self, scope):
         project_path_ = project_path(self.window)
@@ -2426,7 +2426,7 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
 
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
+            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
     def run(self, scope):
         project_path_ = project_path(self.window)
@@ -2452,7 +2452,7 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
 
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
+            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
@@ -2478,7 +2478,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
 
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths", "classpath"})
+            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
     def run(self, scope="paths"):
         project_path_ = project_path(self.window)
@@ -3090,7 +3090,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths"})
+            return ScopeInputHandler(scopes=["view", "paths"])
 
     def run(self, edit, scope):
         view_analysis_ = view_analysis(self.view.id())
@@ -3205,7 +3205,7 @@ class PgPepTraceUsages(sublime_plugin.TextCommand):
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def input(self, args):
         if "scope" not in args:
-            return GotoScopeInputHandler(scopes={"view", "paths"})
+            return ScopeInputHandler(scopes=["view", "paths"])
 
     def run(self, edit, scope):
         view_analysis_ = view_analysis(self.view.id())
