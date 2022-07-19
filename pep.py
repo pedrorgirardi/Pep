@@ -3691,6 +3691,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         """
         self.modified_time = time.time()
 
+        # Erase analysis annotations whenever the view is modified - it's computed again after analysis.
+        erase_analysis_regions(self.view)
+
+
     def on_selection_modified_async(self):
         """
         When the selection is modified, two actions might be triggered:
