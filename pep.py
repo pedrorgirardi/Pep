@@ -2312,19 +2312,21 @@ class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
         erase_analysis_regions(self.view)
 
 
-class PgPepAnalyzeClasspathCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        analyze_classpath_async(self.window)
+class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
+    def input(self, args):
+        if "scope" not in args:
+            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
+    def run(self, scope):
+        if scope == "view":
+            if view := self.window.active_view():
+                analyze_view_async(view, on_completed=view_analysis_completed(view))
 
-class PgPepAnalyzePathsCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        analyze_paths_async(self.window)
+        elif scope == "paths":
+            analyze_paths_async(self.window)
 
-
-class PgPepAnalyzeViewCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        analyze_view_async(self.view, on_completed=view_analysis_completed(self.view))
+        elif scope == "classpath":
+            analyze_classpath_async(self.window)
 
 
 class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):

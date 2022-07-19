@@ -8,16 +8,8 @@
         }
     },
     {
-        "caption": "Pep: Analyze View",
-        "command": "pg_pep_analyze_view"
-    },
-    {
-        "caption": "Pep: Analyze Classpath",
-        "command": "pg_pep_analyze_classpath"
-    },
-    {
-        "caption": "Pep: Analyze Paths",
-        "command": "pg_pep_analyze_paths"
+        "caption": "Pep: Analyze",
+        "command": "pg_pep_analyze"
     },
     {
         "caption": "Pep: Toggle Usage Highlighting",
