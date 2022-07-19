@@ -3668,9 +3668,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def __init__(self, view):
         self.view = view
-        self.modified_time = None
+        self.analyzer = None
 
-    def on_activated_async(self):
+    def analyze(self):
         analyze = True
 
         if self.view.is_scratch():
@@ -3682,45 +3682,19 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
                 on_completed=view_analysis_completed(self.view),
             )
 
+    def on_activated_async(self):
+        self.analyze()
+
     def on_modified_async(self):
-        """
-        The time of modification is recorded so it's possible
-        to check how long ago the last change happened.
+        if self.analyzer:
+            self.analyzer.cancel()
 
-        It's very import for the view analysis. See `on_selection_modified_async`.
-        """
-        self.modified_time = time.time()
-
-        # Erase analysis annotations whenever the view is modified - it's computed again after analysis.
-        erase_analysis_regions(self.view)
-
+        self.analyzer = threading.Timer(0.4, self.analyze)
+        self.analyzer.start()
 
     def on_selection_modified_async(self):
-        """
-        When the selection is modified, two actions might be triggered:
-        - A region is highlighted;
-        - Active view is analyzed.
-
-        The view is analyzed (async) when its analysis data is staled
-        and it passes a threshold (in seconds) of the last time the view was modified.
-        """
         if automatically_highlight(self.view.window()):
             highlight_thingy(self.view)
-
-        if self.modified_time:
-            # Don't analyze when the programmer is editing the view.
-            # (When last modification timestamp is less then threshold.)
-            if staled_analysis(self.view) and (time.time() - self.modified_time) > 0.2:
-                analyze = True
-
-                if self.view.is_scratch():
-                    analyze = analyze_scratch_view(self.view.window())
-
-                if analyze:
-                    analyze_view_async(
-                        self.view,
-                        on_completed=view_analysis_completed(self.view),
-                    )
 
     def on_close(self):
         """
