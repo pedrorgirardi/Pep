@@ -6,8 +6,7 @@
 
 | Command | Status | Description |
 | ------- | ------ | ----------- |
-| `pg_pep_analyze_paths` | Stable | Analyze paths configured in `pep.paths` |
-| `pg_pep_analyze_classpath` | Stable | Analyze classpath configured in `pep.classpath` |
+| `pg_pep_analyze` | Stable | Analyze view, paths or classpath |
 | `pg_pep_goto_anything` | Stable | Go to anything in scope |
 | `pg_pep_goto_namespace` | Stable | Go to namespace in scope |
 | `pg_pep_goto_var` | Stable | Go to var in scope |
@@ -163,9 +162,8 @@ Sublime Project example:
 ```json
 {
     "pep": {
-        "classpath": ["clojure", "-Spath"],
-        
-        "paths": ["src"]
+        "paths": ["src"],
+        "classpath": "clojure -Spath"
     }
 }
 ```
