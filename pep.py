@@ -1237,6 +1237,7 @@ def analyze_classpath(window):
             clj_kondo_path(window),
             "--config",
             analysis_config,
+            "--dependencies",
             "--parallel",
             "--lint",
             classpath,
