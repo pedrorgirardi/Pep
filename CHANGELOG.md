@@ -2,10 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.9.0 - Unreleased
-- Classpath analysis:
-	- Use `--dependencies` flag (See https://github.com/clj-kondo/clj-kondo#project-setup)
-
 ## 0.8.0 - 2022-07-20
 - Tweaked error logs
 - Improved paths indexing
