@@ -108,7 +108,7 @@ Default settings:
     "view_status_show_highlighted": false,
 
     // If you would like to add a custom prefix to the number of highlighted regions in the status bar.
-    "view_status_show_highlighted_prefix": "Usages ",
+    "view_status_show_highlighted_prefix": "Usages: ",
 
     // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
     "view_status_show_highlighted_suffix": "",
