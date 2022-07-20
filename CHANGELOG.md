@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.8.0 - Unreleased
+## 0.8.0 - 2022-07-20
 - Tweaked error logs
 - Improved paths indexing
 	- Removed "analyze_paths_on_post_save" setting because it's no longer needed;
