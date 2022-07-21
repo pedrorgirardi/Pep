@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.8.1 - 2022-07-21
+- Use KIND_ID_ prefix to support older versions of Sublime Text
+
 ## 0.8.0 - 2022-07-20
 - Tweaked error logs
 - Improved paths indexing

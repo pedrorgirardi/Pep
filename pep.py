@@ -3059,9 +3059,9 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
             for finding in findings:
 
                 item_kind = (
-                    (sublime.KindId.COLOR_REDISH, "e", "e")
+                    (sublime.KIND_ID_COLOR_REDISH, "e", "e")
                     if finding["level"] == "error"
-                    else (sublime.KindId.COLOR_ORANGISH, "w", "w")
+                    else (sublime.KIND_ID_COLOR_ORANGISH, "w", "w")
                 )
 
                 items.append(
