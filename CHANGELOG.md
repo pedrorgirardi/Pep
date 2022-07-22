@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.9.0 - Unreleased
-- Added a new Goto command: Goto Require
+- Added a new Goto command: Goto Require (Fixes [#28](https://github.com/pedrorgirardi/Pep/issues/28))
 
 ## 0.8.1 - 2022-07-21
 - Use KIND_ID_ prefix to support older versions of Sublime Text
