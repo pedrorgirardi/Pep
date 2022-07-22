@@ -1202,8 +1202,6 @@ def analyze_view(view, on_completed=None):
 
     local_index_ = local_index(analysis)
 
-    pprint.pprint(clj_kondo_data)
-
     view_analysis_ = {
         **namespace_index_,
         **var_index_,
@@ -3077,9 +3075,9 @@ class PgPepGotoRequire(sublime_plugin.TextCommand):
 
                 if cursor_namespace_usage := thingy_data.get("to"):
 
-                    namespace_usages = analysis_nindex_usages(view_analysis_)
+                    nindex_usages = analysis_nindex_usages(view_analysis_)
 
-                    if namespace_usages := namespace_usages.get(cursor_namespace_usage):
+                    if namespace_usages := nindex_usages.get(cursor_namespace_usage):
 
                         # Goto first usage only.
                         goto(self.view.window(), thingy_location(namespace_usages[0]))
@@ -3105,9 +3103,9 @@ class PgPepGotoImport(sublime_plugin.TextCommand):
 
                 if cursor_class_usage := thingy_data.get("class"):
 
-                    class_usages = analysis_jindex_usages(view_analysis_)
+                    jindex_usages = analysis_jindex_usages(view_analysis_)
 
-                    if class_usages := class_usages.get(cursor_class_usage):
+                    if class_usages := jindex_usages.get(cursor_class_usage):
 
                         # Goto first usage only.
                         goto(self.view.window(), thingy_location(class_usages[0]))
