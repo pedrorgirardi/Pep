@@ -472,6 +472,20 @@ def namespace_definitions(analysis):
     return l
 
 
+def namespace_usages(analysis):
+    """
+    Returns a list of namespace usages.
+    """
+
+    l = []
+
+    for namespace_usages in analysis_nindex_usages(analysis).values():
+        for namespace_usage in namespace_usages:
+            l.append(namespace_usage)
+
+    return l
+
+
 def var_definitions(analysis):
     """
     Returns a list of var definitions.
@@ -3042,6 +3056,34 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             else:
                 print("Pep: Unable to find definition")
+
+
+class PgPepGotoRequire(sublime_plugin.TextCommand):
+    """
+    Command to goto a require form of the var under cursor.
+    """
+    def run(self, edit):
+        try:
+            view_analysis_ = view_analysis(self.view.id())
+
+            cursor_region = self.view.sel()[0]
+
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
+                _, _, thingy_data = cursor_thingy
+
+                if cursor_namespace_usage := thingy_data.get("to"):
+
+                    namespace_usages = analysis_nindex_usages(view_analysis_)
+
+                    if namespace_usages := namespace_usages.get(cursor_namespace_usage):
+
+                        # Goto first usage only.
+                        goto(self.view.window(), thingy_location(namespace_usages[0]))
+
+        except Exception as e:
+            print(f"Pep: Error: PgPepGotoRequire", traceback.format_exc())
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):

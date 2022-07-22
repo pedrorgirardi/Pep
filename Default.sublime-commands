@@ -55,6 +55,10 @@
         "args": {"side_by_side": "true"},
     },
     {
+        "caption": "Pep: Goto Require",
+        "command": "pg_pep_goto_require"
+    },
+    {
         "caption": "Pep: Goto Analysis Finding",
         "command": "pg_pep_goto_analysis_finding"
     },
