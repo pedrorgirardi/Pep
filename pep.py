@@ -1202,6 +1202,8 @@ def analyze_view(view, on_completed=None):
 
     local_index_ = local_index(analysis)
 
+    pprint.pprint(clj_kondo_data)
+
     view_analysis_ = {
         **namespace_index_,
         **var_index_,
@@ -3084,6 +3086,34 @@ class PgPepGotoRequire(sublime_plugin.TextCommand):
 
         except Exception as e:
             print(f"Pep: Error: PgPepGotoRequire", traceback.format_exc())
+
+
+class PgPepGotoImport(sublime_plugin.TextCommand):
+    """
+    Command to goto a import form of the symbol under cursor.
+    """
+    def run(self, edit):
+        try:
+            view_analysis_ = view_analysis(self.view.id())
+
+            cursor_region = self.view.sel()[0]
+
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
+                _, _, thingy_data = cursor_thingy
+
+                if cursor_class_usage := thingy_data.get("class"):
+
+                    class_usages = analysis_jindex_usages(view_analysis_)
+
+                    if class_usages := class_usages.get(cursor_class_usage):
+
+                        # Goto first usage only.
+                        goto(self.view.window(), thingy_location(class_usages[0]))
+
+        except Exception as e:
+            print(f"Pep: Error: PgPepGotoImport", traceback.format_exc())
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):

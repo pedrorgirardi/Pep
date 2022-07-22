@@ -59,6 +59,10 @@
         "command": "pg_pep_goto_require"
     },
     {
+        "caption": "Pep: Goto Import",
+        "command": "pg_pep_goto_import"
+    },
+    {
         "caption": "Pep: Goto Analysis Finding",
         "command": "pg_pep_goto_analysis_finding"
     },
