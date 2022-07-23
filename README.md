@@ -83,6 +83,13 @@ Default settings:
 
     "clj_kondo_path": "clj-kondo",
 
+    "analysis_applicable_to": ["Packages/Clojure/Clojure.sublime-syntax",
+                               "Packages/Clojure/ClojureScript.sublime-syntax",
+                               "Packages/Tutkain/EDN (Tutkain).sublime-syntax",
+                               "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
+                               "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
+                               "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax"],
+
     // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
     "annotate_view_analysis": false,
 

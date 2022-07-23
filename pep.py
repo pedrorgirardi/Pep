@@ -192,6 +192,17 @@ def is_debug(window):
     return setting(window, "debug", False)
 
 
+def analysis_applicable_to(window):
+    return setting(
+        window,
+        "analysis_applicable_to",
+        [
+            "Packages/Clojure/Clojure.sublime-syntax",
+            "Packages/Clojure/ClojureScript.sublime-syntax",
+        ],
+    )
+
+
 def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
 
@@ -468,6 +479,20 @@ def namespace_definitions(analysis):
     for namespace_definitions in analysis_nindex(analysis).values():
         for namespace_definition in namespace_definitions:
             l.append(namespace_definition)
+
+    return l
+
+
+def namespace_usages(analysis):
+    """
+    Returns a list of namespace usages.
+    """
+
+    l = []
+
+    for namespace_usages in analysis_nindex_usages(analysis).values():
+        for namespace_usage in namespace_usages:
+            l.append(namespace_usage)
 
     return l
 
@@ -3044,6 +3069,64 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 print("Pep: Unable to find definition")
 
 
+class PgPepGotoRequireCommand(sublime_plugin.TextCommand):
+    """
+    Command to goto a require form of the var under cursor.
+    """
+
+    def run(self, edit):
+        try:
+            view_analysis_ = view_analysis(self.view.id())
+
+            cursor_region = self.view.sel()[0]
+
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
+                _, _, thingy_data = cursor_thingy
+
+                if cursor_namespace_usage := thingy_data.get("to"):
+
+                    nindex_usages = analysis_nindex_usages(view_analysis_)
+
+                    if namespace_usages := nindex_usages.get(cursor_namespace_usage):
+
+                        # Goto first usage only.
+                        goto(self.view.window(), thingy_location(namespace_usages[0]))
+
+        except Exception as e:
+            print(f"Pep: Error: PgPepGotoRequireCommand", traceback.format_exc())
+
+
+class PgPepGotoImportCommand(sublime_plugin.TextCommand):
+    """
+    Command to goto a import form of the class under cursor.
+    """
+
+    def run(self, edit):
+        try:
+            view_analysis_ = view_analysis(self.view.id())
+
+            cursor_region = self.view.sel()[0]
+
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
+                _, _, thingy_data = cursor_thingy
+
+                if cursor_class_usage := thingy_data.get("class"):
+
+                    jindex_usages = analysis_jindex_usages(view_analysis_)
+
+                    if class_usages := jindex_usages.get(cursor_class_usage):
+
+                        # Goto first usage only.
+                        goto(self.view.window(), thingy_location(class_usages[0]))
+
+        except Exception as e:
+            print(f"Pep: Error: PgPepGotoImportCommand", traceback.format_exc())
+
+
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
@@ -3070,7 +3153,6 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
                         "thingy_data": finding,
                         "quick_panel_item": sublime.QuickPanelItem(
                             finding["message"],
-                            details=finding["filename"],
                             kind=item_kind,
                             annotation=finding["type"],
                         ),
@@ -3085,7 +3167,7 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
             )
 
 
-class PgPepTraceUsages(sublime_plugin.TextCommand):
+class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
     """
     Command to trace usages of a var or namespace.
     """
@@ -3657,14 +3739,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     @classmethod
     def is_applicable(_, settings):
-        return settings.get("syntax") in {
-            "Packages/Tutkain/EDN (Tutkain).sublime-syntax",
-            "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
-            "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
-            "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
-            "Packages/Clojure/Clojure.sublime-syntax",
-            "Packages/Clojure/ClojureScript.sublime-syntax",
-        }
+        return settings.get("syntax") in set(
+            analysis_applicable_to(sublime.active_window())
+        )
 
     def __init__(self, view):
         self.view = view
