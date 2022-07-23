@@ -13,10 +13,14 @@
 | `pg_pep_goto_keyword` | Stable | Go to keyword in scope |
 | `pg_pep_goto_spec` | Stable | Go to spec in scope |
 | `pg_pep_goto_definition` | Stable | Go to definition |
+| `pg_pep_goto_analysis_finding` | Stable | Go to clj-kondo analysis finding (warning or error) |
+| `pg_pep_goto_require` | Experimental | Go to namespace require of var under the cursor |
+| `pg_pep_goto_import` | Experimental | Go to import of class under the cursor |
 | `pg_pep_show_doc` | Stable | Show documentation in a popup |
 | `pg_pep_jump` | Stable | Jump to occurrences of symbol or keyword |
 | `pg_pep_find_usages` | Stable | Find usages in scope |
 | `pg_pep_select` | Stable | Select occurrences of symbol or keyword |
+| `pg_pep_replace` | Stable | Replace occurrences of symbol or keyword |
 | `pg_pep_highlight` | Stable | Highlight occurrences of symbol or keyword |
 | `pg_pep_annotate` | Stable | Annotate view (or lint view) |
 | `pg_pep_copy_name` | Stable | Copy name of keyword or symbol to the clipboard |
