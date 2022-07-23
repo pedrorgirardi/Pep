@@ -192,6 +192,17 @@ def is_debug(window):
     return setting(window, "debug", False)
 
 
+def analysis_applicable_to(window):
+    return setting(
+        window,
+        "analysis_applicable_to",
+        [
+            "Packages/Clojure/Clojure.sublime-syntax",
+            "Packages/Clojure/ClojureScript.sublime-syntax",
+        ],
+    )
+
+
 def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
 
@@ -3062,6 +3073,7 @@ class PgPepGotoRequireCommand(sublime_plugin.TextCommand):
     """
     Command to goto a require form of the var under cursor.
     """
+
     def run(self, edit):
         try:
             view_analysis_ = view_analysis(self.view.id())
@@ -3090,6 +3102,7 @@ class PgPepGotoImportCommand(sublime_plugin.TextCommand):
     """
     Command to goto a import form of the class under cursor.
     """
+
     def run(self, edit):
         try:
             view_analysis_ = view_analysis(self.view.id())
@@ -3726,14 +3739,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     @classmethod
     def is_applicable(_, settings):
-        return settings.get("syntax") in {
-            "Packages/Tutkain/EDN (Tutkain).sublime-syntax",
-            "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
-            "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
-            "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
-            "Packages/Clojure/Clojure.sublime-syntax",
-            "Packages/Clojure/ClojureScript.sublime-syntax",
-        }
+        return settings.get("syntax") in set(
+            analysis_applicable_to(sublime.active_window())
+        )
 
     def __init__(self, view):
         self.view = view
