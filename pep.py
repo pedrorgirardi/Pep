@@ -3058,7 +3058,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 print("Pep: Unable to find definition")
 
 
-class PgPepGotoRequire(sublime_plugin.TextCommand):
+class PgPepGotoRequireCommand(sublime_plugin.TextCommand):
     """
     Command to goto a require form of the var under cursor.
     """
@@ -3083,10 +3083,10 @@ class PgPepGotoRequire(sublime_plugin.TextCommand):
                         goto(self.view.window(), thingy_location(namespace_usages[0]))
 
         except Exception as e:
-            print(f"Pep: Error: PgPepGotoRequire", traceback.format_exc())
+            print(f"Pep: Error: PgPepGotoRequireCommand", traceback.format_exc())
 
 
-class PgPepGotoImport(sublime_plugin.TextCommand):
+class PgPepGotoImportCommand(sublime_plugin.TextCommand):
     """
     Command to goto a import form of the class under cursor.
     """
@@ -3111,7 +3111,7 @@ class PgPepGotoImport(sublime_plugin.TextCommand):
                         goto(self.view.window(), thingy_location(class_usages[0]))
 
         except Exception as e:
-            print(f"Pep: Error: PgPepGotoImport", traceback.format_exc())
+            print(f"Pep: Error: PgPepGotoImportCommand", traceback.format_exc())
 
 
 class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
@@ -3154,7 +3154,7 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
             )
 
 
-class PgPepTraceUsages(sublime_plugin.TextCommand):
+class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
     """
     Command to trace usages of a var or namespace.
     """
