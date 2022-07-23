@@ -55,16 +55,16 @@
         "args": {"side_by_side": "true"},
     },
     {
-        "caption": "Pep: Goto Require",
-        "command": "pg_pep_goto_require"
-    },
-    {
-        "caption": "Pep: Goto Import",
-        "command": "pg_pep_goto_import"
-    },
-    {
         "caption": "Pep: Goto Analysis Finding",
         "command": "pg_pep_goto_analysis_finding"
+    },
+    {
+        "caption": "Pep: Jump to Require",
+        "command": "pg_pep_jump_to_require"
+    },
+    {
+        "caption": "Pep: Jump to Import",
+        "command": "pg_pep_jump_to_import"
     },
     {
         "caption": "Pep: Clear Cache",
