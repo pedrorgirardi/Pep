@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.10.0 - 2022-07-23
+- Renamed command 'Goto Require' to 'Jump to Require'
+- Renamed command 'Goto Import' to 'Jump to Import'
+
 ## 0.9.0 - 2022-07-23
 - Added a new Goto command: Goto Require (Fixes [#28](https://github.com/pedrorgirardi/Pep/issues/28))
 - Added a new Goto command: Goto Import (Fixes [#62](https://github.com/pedrorgirardi/Pep/issues/62))
