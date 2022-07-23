@@ -3140,7 +3140,6 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
                         "thingy_data": finding,
                         "quick_panel_item": sublime.QuickPanelItem(
                             finding["message"],
-                            details=finding["filename"],
                             kind=item_kind,
                             annotation=finding["type"],
                         ),
