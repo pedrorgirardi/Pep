@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.9.0 - Unreleased
+## 0.9.0 - 2022-07-23
 - Added a new Goto command: Goto Require (Fixes [#28](https://github.com/pedrorgirardi/Pep/issues/28))
 - Added a new Goto command: Goto Import (Fixes [#62](https://github.com/pedrorgirardi/Pep/issues/62))
 - Goto Analysis Finding - Removed file path from Quick Panel Item
