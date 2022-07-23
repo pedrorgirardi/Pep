@@ -2,9 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.11.0 - Unrelease
+- Changed default setting `view_status_show_highlighted_prefix`
+
 ## 0.10.0 - 2022-07-23
-- Renamed command 'Goto Require' to 'Jump to Require'
-- Renamed command 'Goto Import' to 'Jump to Import'
+- Renamed command ~~Goto Require~~ to **Jump to Require**
+- Renamed command ~~Goto Import~~ to **Jump to Import**
 
 ## 0.9.0 - 2022-07-23
 - Added a new Goto command: Goto Require (Fixes [#28](https://github.com/pedrorgirardi/Pep/issues/28))
