@@ -3088,7 +3088,7 @@ class PgPepGotoRequire(sublime_plugin.TextCommand):
 
 class PgPepGotoImport(sublime_plugin.TextCommand):
     """
-    Command to goto a import form of the symbol under cursor.
+    Command to goto a import form of the class under cursor.
     """
     def run(self, edit):
         try:
