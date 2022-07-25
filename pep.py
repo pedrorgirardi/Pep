@@ -2158,8 +2158,6 @@ def highlight_thingy(view):
 
     thingy = thingy_in_region(view, analysis, region)
 
-    view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
-
     status_message = ""
 
     # We can't highlight if view was modified,
@@ -2182,6 +2180,8 @@ def highlight_thingy(view):
                 suffix = view_status_show_highlighted_suffix(window)
 
                 status_message = f"{prefix}{len(regions)}{suffix}"
+    else:
+        view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
 
     view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
 
