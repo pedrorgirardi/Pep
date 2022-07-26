@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.11.0 - Unreleased
+## 0.11.0 - 2022-07-26
 - Changed default setting `view_status_show_highlighted_prefix`:
 	- Prefix is now set to `Highlighted: `
 - Improved region highlighting:
