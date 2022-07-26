@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 0.11.0 - Unreleased
 - Changed default setting `view_status_show_highlighted_prefix`:
 	- Prefix is now set to `Highlighted: `
+- Improved region highlighting:
+	- Fix flickery when moving the cursor within a highligted region
 
 ## 0.10.0 - 2022-07-23
 - Renamed command ~~Goto Require~~ to **Jump to Require**
