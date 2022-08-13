@@ -2919,64 +2919,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                     self.jump(state, movement, -1)
 
 
-class PgPepJumpToRequireCommand(sublime_plugin.TextCommand):
-    """
-    Command to jump to a require form of the var under cursor.
-    """
-
-    def run(self, edit):
-        try:
-            view_analysis_ = view_analysis(self.view.id())
-
-            cursor_region = self.view.sel()[0]
-
-            if cursor_thingy := thingy_in_region(
-                self.view, view_analysis_, cursor_region
-            ):
-                _, _, thingy_data = cursor_thingy
-
-                if cursor_namespace_usage := thingy_data.get("to"):
-
-                    nindex_usages = analysis_nindex_usages(view_analysis_)
-
-                    if namespace_usages := nindex_usages.get(cursor_namespace_usage):
-
-                        # Goto first usage only.
-                        goto(self.view.window(), thingy_location(namespace_usages[0]))
-
-        except Exception as e:
-            print(f"Pep: Error: PgPepJumpToRequireCommand", traceback.format_exc())
-
-
-class PgPepJumpToImportCommand(sublime_plugin.TextCommand):
-    """
-    Command to jump to the import form of the class under cursor.
-    """
-
-    def run(self, edit):
-        try:
-            view_analysis_ = view_analysis(self.view.id())
-
-            cursor_region = self.view.sel()[0]
-
-            if cursor_thingy := thingy_in_region(
-                self.view, view_analysis_, cursor_region
-            ):
-                _, _, thingy_data = cursor_thingy
-
-                if cursor_class_usage := thingy_data.get("class"):
-
-                    jindex_usages = analysis_jindex_usages(view_analysis_)
-
-                    if class_usages := jindex_usages.get(cursor_class_usage):
-
-                        # Goto first usage only.
-                        goto(self.view.window(), thingy_location(class_usages[0]))
-
-        except Exception as e:
-            print(f"Pep: Error: PgPepJumpToImportCommand", traceback.format_exc())
-
-
 class PgPepShowThingy(sublime_plugin.TextCommand):
     def run(self, edit):
         region = self.view.sel()[0]
@@ -3165,6 +3107,46 @@ class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
             print(
                 f"Pep: Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
             )
+
+
+class PgPepGotoRequireImportCommand(sublime_plugin.TextCommand):
+    """
+    Command to goto to a require or import form for the thingy under cursor.
+    """
+
+    def run(self, edit):
+        try:
+            view_analysis_ = view_analysis(self.view.id())
+
+            cursor_region = self.view.sel()[0]
+
+            if cursor_thingy := thingy_in_region(
+                self.view, view_analysis_, cursor_region
+            ):
+                _, _, thingy_data = cursor_thingy
+
+                if cursor_namespace_usage := thingy_data.get("to"):
+
+                    nindex_usages = analysis_nindex_usages(view_analysis_)
+
+                    if namespace_usages := nindex_usages.get(cursor_namespace_usage):
+
+                        # Goto first usage only.
+                        # TODO: Show a QuickPanel if there are multiple options.
+                        goto(self.view.window(), thingy_location(namespace_usages[0]))
+
+                elif cursor_class_usage := thingy_data.get("class"):
+
+                    jindex_usages = analysis_jindex_usages(view_analysis_)
+
+                    if class_usages := jindex_usages.get(cursor_class_usage):
+
+                        # Goto first usage only.
+                        # TODO: Show a QuickPanel if there are multiple options.
+                        goto(self.view.window(), thingy_location(class_usages[0]))
+
+        except Exception as e:
+            print(f"Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
 
 
 class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):

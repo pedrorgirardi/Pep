@@ -59,12 +59,8 @@
         "command": "pg_pep_goto_analysis_finding"
     },
     {
-        "caption": "Pep: Jump to Require",
-        "command": "pg_pep_jump_to_require"
-    },
-    {
-        "caption": "Pep: Jump to Import",
-        "command": "pg_pep_jump_to_import"
+        "caption": "Pep: Goto Require/Import",
+        "command": "pg_pep_goto_require_import"
     },
     {
         "caption": "Pep: Clear Cache",

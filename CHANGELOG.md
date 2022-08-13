@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.12.0 -
+- Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import**
+
 ## 0.11.0 - 2022-07-26
 - Changed default setting `view_status_show_highlighted_prefix`:
 	- Prefix is now set to `Highlighted: `
