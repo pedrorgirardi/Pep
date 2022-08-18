@@ -3069,7 +3069,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 print("Pep: Unable to find definition")
 
 
-class PgPepGotoAnalysisFindingCommand(sublime_plugin.WindowCommand):
+class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
 

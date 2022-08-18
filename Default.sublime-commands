@@ -55,8 +55,8 @@
         "args": {"side_by_side": "true"},
     },
     {
-        "caption": "Pep: Goto Analysis Finding",
-        "command": "pg_pep_goto_analysis_finding"
+        "caption": "Pep: Goto Warning/Error",
+        "command": "pg_pep_goto_warning_error"
     },
     {
         "caption": "Pep: Goto Require/Import",
