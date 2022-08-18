@@ -22,7 +22,7 @@ import sublime
 
 GOTO_DEFAULT_FLAGS = sublime.ENCODED_POSITION
 
-GOTO_USAGE_FLAGS = sublime.ENCODED_POSITION | sublime.TRANSIENT
+GOTO_TRANSIENT_FLAGS = sublime.ENCODED_POSITION | sublime.TRANSIENT
 
 GOTO_SIDE_BY_SIDE_FLAGS = (
     sublime.ENCODED_POSITION
@@ -1046,7 +1046,12 @@ def namespace_goto_items(analysis):
     return items_
 
 
-def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
+def show_goto_thingy_quick_panel(
+    window,
+    items,
+    goto_on_highlight=False,
+    side_by_side=False,
+):
     # Restore active view, its selection, and viewport position - if there's an active view.
 
     initial_view = window.active_view()
@@ -1066,7 +1071,7 @@ def show_goto_thingy_quick_panel(window, items, goto_on_highlight=False):
         goto(
             window,
             location(index),
-            flags=sublime.ENCODED_POSITION | sublime.TRANSIENT,
+            flags=GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_TRANSIENT_FLAGS,
         )
 
     def on_select(index):
