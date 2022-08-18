@@ -20,6 +20,9 @@ import sublime_plugin
 import sublime
 
 
+# Flags for creating/opening files in various ways.
+# https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
+
 GOTO_DEFAULT_FLAGS = sublime.ENCODED_POSITION
 
 GOTO_TRANSIENT_FLAGS = sublime.ENCODED_POSITION | sublime.TRANSIENT
