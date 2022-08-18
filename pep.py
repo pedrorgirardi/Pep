@@ -921,15 +921,8 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
             def open_file(filename, file):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
-                view.set_scratch(False)
+                view.set_scratch(True)
                 view.set_read_only(True)
-
-                # Filename doesn't match the namespace name because it's a temp file,
-                # and that's why the linter :namespace-name-mismatch is disabled.
-                view.settings().set(
-                    S_PEP_CLJ_KONDO_CONFIG,
-                    "{:linters {:namespace-name-mismatch {:level :off}} :output {:analysis {:arglists true :locals true :keywords true :java-class-usages true} :format :json :canonical-paths true} }",
-                )
 
             open_jar(filename, open_file)
 
