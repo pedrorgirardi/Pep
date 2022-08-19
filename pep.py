@@ -1046,7 +1046,6 @@ def show_goto_thingy_quick_panel(
     window,
     items,
     goto_on_highlight=False,
-    side_by_side=False,
 ):
     # Restore active view, its selection, and viewport position - if there's an active view.
 
@@ -1067,7 +1066,7 @@ def show_goto_thingy_quick_panel(
         goto(
             window,
             location(index),
-            flags=GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_TRANSIENT_FLAGS,
+            flags=GOTO_TRANSIENT_FLAGS,
         )
 
     def on_select(index):
