@@ -1067,7 +1067,7 @@ def show_goto_thingy_quick_panel(
         goto(
             window,
             location(index),
-            flags=GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_TRANSIENT_FLAGS,
+            flags=GOTO_TRANSIENT_FLAGS,
         )
 
     def on_select(index):
@@ -1082,7 +1082,7 @@ def show_goto_thingy_quick_panel(
 
                 initial_view.set_viewport_position(initial_viewport_position, True)
         else:
-            goto(window, location(index))
+            goto(window, location(index), GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS)
 
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
