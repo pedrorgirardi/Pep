@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 0.12.0 -
 - Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import**
 - Renamed `Goto Analysis Finding` to `Goto Warning/Error`
+- Added `side_by_side` arg to goto commands:
+	- Goto side-by-side if set to true
 
 ## 0.11.0 - 2022-07-26
 - Changed default setting `view_status_show_highlighted_prefix`:
