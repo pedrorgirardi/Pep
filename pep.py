@@ -14,6 +14,7 @@ import pathlib
 import shlex
 import time
 
+from typing import Optional, TypedDict
 from zipfile import ZipFile
 
 import sublime_plugin
@@ -62,6 +63,12 @@ STATUS_BAR_DOC_KEY = "pep_doc"
 
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
 CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
+
+
+class Thingy(TypedDict):
+    type: str
+    data: dict
+
 
 ## Mapping of filename to analysis data by semantic, e.g. var-definitions.
 _index_ = {}
@@ -1998,7 +2005,7 @@ def thingy_in_region(view, analysis, region):
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
 
-def thingy_in_region2(view, analysis, region):
+def thingy_in_region2(view, analysis, region) -> Optional[Thingy]:
     if type_region_data := thingy_in_region(view, analysis, region):
         t, _, d = type_region_data
 
