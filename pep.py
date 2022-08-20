@@ -1048,6 +1048,12 @@ def show_goto_thingy_quick_panel(
     goto_on_highlight=False,
     side_by_side=False,
 ):
+    """
+    Show a Quick Panel to select a thingy to goto.
+
+    Items is a list of dict with keys "thingy_type", "thingy_data" and "quick_panel_item".
+    """
+
     # Restore active view, its selection, and viewport position - if there's an active view.
 
     initial_view = window.active_view()
@@ -1082,7 +1088,11 @@ def show_goto_thingy_quick_panel(
 
                 initial_view.set_viewport_position(initial_viewport_position, True)
         else:
-            goto(window, location(index), GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS)
+            goto(
+                window,
+                location(index),
+                GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS,
+            )
 
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
 
