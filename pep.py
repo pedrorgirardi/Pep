@@ -66,7 +66,7 @@ CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var
 
 
 class Thingy(TypedDict):
-    type: str
+    semantic: str
     data: dict
 
 
@@ -2014,7 +2014,7 @@ def thingy_at_region(view, analysis, region) -> Optional[Thingy]:
         t, _, d = type_region_data
 
         return {
-            "type": t,
+            "semantic": t,
             "data": d,
         }
 
@@ -3065,17 +3065,17 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         if thingy := thingy_at_region(view, analysis, region):
 
-            thingy_type = thingy["type"]
+            thingy_semantic = thingy["semantic"]
             thingy_data = thingy["data"]
 
             definition = None
 
-            if thingy_type == TT_LOCAL_USAGE:
+            if thingy_semantic == TT_LOCAL_USAGE:
                 definition = find_local_binding(analysis, thingy_data)
 
             elif (
-                thingy_type == TT_NAMESPACE_USAGE
-                or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+                thingy_semantic == TT_NAMESPACE_USAGE
+                or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
             ):
                 project_path_ = project_path(window)
 
@@ -3089,7 +3089,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     or find_namespace_definition(classpath_analysis_, thingy_data)
                 )
 
-            elif thingy_type == TT_VAR_USAGE:
+            elif thingy_semantic == TT_VAR_USAGE:
                 namespace_ = thingy_data.get("to", None)
                 name_ = thingy_data.get("name", None)
 
@@ -3106,7 +3106,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 )
 
             # TODO
-            # elif thingy_type == TT_JAVA_CLASS_USAGE:
+            # elif thingy_semantic == TT_JAVA_CLASS_USAGE:
             #     project_path_ = project_path(window)
 
             #     paths_analysis_ = paths_analysis(project_path_)
@@ -3119,7 +3119,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             #         or find_java_class_definition(classpath_analysis_, thingy_data)
             #     )
 
-            elif thingy_type == TT_KEYWORD:
+            elif thingy_semantic == TT_KEYWORD:
                 keyword_namespace = thingy_data.get("ns", None)
                 keyword_name = thingy_data.get("name", None)
 
