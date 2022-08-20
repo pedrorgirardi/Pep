@@ -1058,7 +1058,7 @@ def show_goto_thingy_quick_panel(
     window,
     items,
     goto_on_highlight=False,
-    side_by_side=False,
+    goto_side_by_side=False,
 ):
     """
     Show a Quick Panel to select a thingy to goto.
@@ -1103,7 +1103,7 @@ def show_goto_thingy_quick_panel(
             goto(
                 window,
                 location(index),
-                GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS,
+                GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
             )
 
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
@@ -2449,7 +2449,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         if "scope" not in args:
             return ScopeInputHandler(scopes=["paths", "classpath"])
 
-    def run(self, scope):
+    def run(self, scope, side_by_side=False):
         project_path_ = project_path(self.window)
 
         analysis_ = {}
@@ -2464,7 +2464,12 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         # Sort by namespace name.
         items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(
+            window=self.window,
+            items=items_,
+            goto_on_highlight=False,
+            goto_side_by_side=side_by_side,
+        )
 
 
 class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
@@ -2478,7 +2483,7 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
         if "scope" not in args:
             return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
-    def run(self, scope):
+    def run(self, scope, side_by_side=False):
         project_path_ = project_path(self.window)
 
         analysis_ = {}
@@ -2492,7 +2497,12 @@ class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
 
         items_ = var_goto_items(analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(
+            window=self.window,
+            items=items_,
+            goto_on_highlight=False,
+            goto_side_by_side=side_by_side,
+        )
 
 
 class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
@@ -2504,7 +2514,7 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
         if "scope" not in args:
             return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
-    def run(self, scope="paths"):
+    def run(self, scope, side_by_side=False):
         project_path_ = project_path(self.window)
 
         analysis_ = {}
@@ -2518,7 +2528,12 @@ class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
 
         items_ = keyword_goto_items(analysis_)
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(
+            window=self.window,
+            items=items_,
+            goto_on_highlight=False,
+            goto_side_by_side=side_by_side,
+        )
 
 
 class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
@@ -2530,7 +2545,7 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
         if "scope" not in args:
             return ScopeInputHandler(scopes=["view", "paths", "classpath"])
 
-    def run(self, scope="paths"):
+    def run(self, scope, side_by_side=False):
         project_path_ = project_path(self.window)
 
         analysis_ = {}
@@ -2550,7 +2565,12 @@ class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
             if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
         ]
 
-        show_goto_thingy_quick_panel(self.window, items_)
+        show_goto_thingy_quick_panel(
+            window=self.window,
+            items=items_,
+            goto_on_highlight=False,
+            goto_side_by_side=side_by_side,
+        )
 
 
 class PgPepCopyNameCommand(sublime_plugin.TextCommand):
