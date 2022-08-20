@@ -3428,7 +3428,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         goto(
                             self.view.window(),
                             usage_location(index),
-                            flags=sublime.ENCODED_POSITION | sublime.TRANSIENT,
+                            flags=GOTO_TRANSIENT_FLAGS,
                         )
 
                     placeholder = None
