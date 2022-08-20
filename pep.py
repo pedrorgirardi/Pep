@@ -942,6 +942,10 @@ def thingy_quick_panel_item_annotation(thingy_data):
 
 
 def namespace_quick_panel_item(thingy_data):
+    """
+    Returns a QuickPanelItem for a namespace, usage or definition, thingy.
+    """
+
     namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
 
     return sublime.QuickPanelItem(
@@ -953,6 +957,10 @@ def namespace_quick_panel_item(thingy_data):
 
 
 def var_quick_panel_item(thingy_data, namespace_visible=True):
+    """
+    Returns a QuickPanelItem for a var, definition or usage, thingy.
+    """
+
     var_namespace = thingy_data.get("ns", thingy_data.get("to", ""))
     var_name = thingy_data.get("name", "")
     var_arglist = thingy_data.get("arglist-strs", [])
@@ -977,6 +985,10 @@ def var_quick_panel_item(thingy_data, namespace_visible=True):
 
 
 def keyword_quick_panel_item(thingy_data):
+    """
+    Returns a QuickPanelItem for a keyword thingy.
+    """
+
     keyword_namespace = thingy_data.get("ns", "")
     keyword_name = thingy_data.get("name", "")
     keyword_reg = thingy_data.get("reg", "")
