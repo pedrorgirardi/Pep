@@ -2005,7 +2005,11 @@ def thingy_in_region(view, analysis, region):
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
 
-def thingy_in_region2(view, analysis, region) -> Optional[Thingy]:
+def thingy_at_region(view, analysis, region) -> Optional[Thingy]:
+    """
+    Returns Thingy at region (a region under the cursor, most likely) or None.
+    """
+
     if type_region_data := thingy_in_region(view, analysis, region):
         t, _, d = type_region_data
 
@@ -3053,7 +3057,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         region = view.sel()[0]
 
-        if thingy := thingy_in_region2(view, analysis, region):
+        if thingy := thingy_at_region(view, analysis, region):
 
             thingy_type = thingy["type"]
             thingy_data = thingy["data"]
