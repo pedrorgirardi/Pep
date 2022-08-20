@@ -14,7 +14,7 @@ import pathlib
 import shlex
 import time
 
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, List
 from zipfile import ZipFile
 
 import sublime_plugin
@@ -2230,7 +2230,13 @@ def highlight_thingy(view):
     view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
 
 
-def find_thingy_regions(view, analysis, thingy):
+def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
+    """
+    Returns a list of regions where Thingy is found in analysis.
+
+    Note that an analysis might be for a view, paths or classpath.
+    """
+
     thingy_type, _, thingy_data = thingy
 
     regions = []
