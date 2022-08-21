@@ -3339,38 +3339,39 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
 
-def find_usages(analysis, thingy):
+def find_usages(analysis, thingy: Thingy):
 
-    thingy_type, _, thingy_data = thingy
+    thingy_semantic = thingy["semantic"]
+    thingy_data = thingy["data"]
 
     thingy_usages = None
 
-    if thingy_type == TT_KEYWORD:
+    if thingy_semantic == TT_KEYWORD:
         # To be considered:
         # If the keyword is a destructuring key,
         # should it show its local usages?
 
         thingy_usages = find_keyword_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_LOCAL_BINDING:
+    elif thingy_semantic == TT_LOCAL_BINDING:
         thingy_usages = find_local_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_LOCAL_USAGE:
+    elif thingy_semantic == TT_LOCAL_USAGE:
         thingy_usages = find_local_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_VAR_DEFINITION:
+    elif thingy_semantic == TT_VAR_DEFINITION:
         thingy_usages = find_var_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_VAR_USAGE:
+    elif thingy_semantic == TT_VAR_USAGE:
         thingy_usages = find_var_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_JAVA_CLASS_USAGE:
+    elif thingy_semantic == TT_JAVA_CLASS_USAGE:
         thingy_usages = find_java_class_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_NAMESPACE_DEFINITION:
+    elif thingy_semantic == TT_NAMESPACE_DEFINITION:
         thingy_usages = find_namespace_usages(analysis, thingy_data)
 
-    elif thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS:
+    elif thingy_semantic == TT_NAMESPACE_USAGE or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS:
 
         # Usages of a namespace, in the scope of a single view, shows usages of vars instead of namespace.
         # I think it's safe to assume that this behavior is expected for view usages.
@@ -3393,7 +3394,6 @@ def find_usages(analysis, thingy):
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-
     def run(self, edit, scope=None):
         view_analysis_ = view_analysis(self.view.id())
 
@@ -3401,11 +3401,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         region = self.view.sel()[0]
 
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
+        if thingy := thingy_at_region(self.view, view_analysis_, region):
 
-            thingy_type, _, thingy_data = thingy
-
-            analysis_ = {}
+            thingy_semantic = thingy["semantic"]
+            thingy_data = thingy["data"]
 
             thingy_usages = None
 
@@ -3519,8 +3518,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     placeholder = None
 
                     if (
-                        thingy_type == TT_NAMESPACE_USAGE
-                        or thingy_type == TT_NAMESPACE_USAGE_ALIAS
+                        thingy_semantic == TT_NAMESPACE_USAGE
+                        or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
                     ):
                         placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
                     else:
