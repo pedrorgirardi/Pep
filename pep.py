@@ -3339,6 +3339,59 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
 
+def find_usages(analysis, thingy):
+
+    thingy_type, _, thingy_data = thingy
+
+    thingy_usages = None
+
+    if thingy_type == TT_KEYWORD:
+        # To be considered:
+        # If the keyword is a destructuring key,
+        # should it show its local usages?
+
+        thingy_usages = find_keyword_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_LOCAL_BINDING:
+        thingy_usages = find_local_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_LOCAL_USAGE:
+        thingy_usages = find_local_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_VAR_DEFINITION:
+        thingy_usages = find_var_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_VAR_USAGE:
+        thingy_usages = find_var_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_JAVA_CLASS_USAGE:
+        thingy_usages = find_java_class_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_DEFINITION:
+        thingy_usages = find_namespace_usages(analysis, thingy_data)
+
+    elif thingy_type == TT_NAMESPACE_USAGE or thingy_type == TT_NAMESPACE_USAGE_ALIAS:
+
+        # Usages of a namespace, in the scope of a single view, shows usages of vars instead of namespace.
+        # I think it's safe to assume that this behavior is expected for view usages.
+
+        if scope == "view":
+            thingy_usages = find_namespace_vars_usages(
+                analysis,
+                thingy_data,
+            )
+        else:
+            thingy_usages = find_namespace_usages_with_usage(
+                analysis,
+                thingy_data,
+            )
+
+    # Prune None usages - it's strange that there are None items though.
+    thingy_usages = [usage for usage in thingy_usages if usage]
+
+    return thingy_usages
+
+
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def input(self, args):
         if "scope" not in args:
@@ -3355,8 +3408,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
             thingy_type, thingy_region, thingy_data = thingy
 
-            thingy_usages = None
-
             analysis_ = {}
 
             if scope == "view":
@@ -3366,54 +3417,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                 analysis_ = paths_analysis(project_path_)
 
-            if thingy_type == TT_KEYWORD:
-                # To be considered:
-                # If the keyword is a destructuring key,
-                # should it show its local usages?
-
-                thingy_usages = find_keyword_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_LOCAL_BINDING:
-                thingy_usages = find_local_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_LOCAL_USAGE:
-                thingy_usages = find_local_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_VAR_DEFINITION:
-                thingy_usages = find_var_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_VAR_USAGE:
-                thingy_usages = find_var_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_JAVA_CLASS_USAGE:
-                thingy_usages = find_java_class_usages(analysis_, thingy_data)
-
-            elif thingy_type == TT_NAMESPACE_DEFINITION:
-                thingy_usages = find_namespace_usages(analysis_, thingy_data)
-
-            elif (
-                thingy_type == TT_NAMESPACE_USAGE
-                or thingy_type == TT_NAMESPACE_USAGE_ALIAS
-            ):
-
-                # Usages of a namespace, in the scope of a single view, shows usages of vars instead of namespace.
-                # I think it's safe to assume that this behavior is expected for view usages.
-
-                if scope == "view":
-                    thingy_usages = find_namespace_vars_usages(
-                        analysis_,
-                        thingy_data,
-                    )
-                else:
-                    thingy_usages = find_namespace_usages_with_usage(
-                        analysis_,
-                        thingy_data,
-                    )
-
-            # Prune None usages - it's strange that there are None items though.
-            thingy_usages = [usage for usage in thingy_usages if usage]
-
-            if thingy_usages:
+            if thingy_usages := find_usages(analysis_, thingy):
 
                 if len(thingy_usages) == 1:
                     location = thingy_location(thingy_usages[0])
