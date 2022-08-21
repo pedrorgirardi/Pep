@@ -2176,6 +2176,50 @@ def find_keyword_definition(analysis, keyword):
             return keyword_indexed
 
 
+def find_usages(analysis, thingy: Thingy) -> Optional[List]:
+
+    thingy_semantic = thingy["semantic"]
+    thingy_data = thingy["data"]
+
+    thingy_usages = None
+
+    if thingy_semantic == TT_KEYWORD:
+        # To be considered:
+        # If the keyword is a destructuring key,
+        # should it show its local usages?
+
+        thingy_usages = find_keyword_usages(analysis, thingy_data)
+
+    elif thingy_semantic == TT_LOCAL_BINDING:
+        thingy_usages = find_local_usages(analysis, thingy_data)
+
+    elif thingy_semantic == TT_LOCAL_USAGE:
+        thingy_usages = find_local_usages(analysis, thingy_data)
+
+    elif thingy_semantic == TT_VAR_DEFINITION:
+        thingy_usages = find_var_usages(analysis, thingy_data)
+
+    elif thingy_semantic == TT_VAR_USAGE:
+        thingy_usages = find_var_usages(analysis, thingy_data)
+
+    elif thingy_semantic == TT_JAVA_CLASS_USAGE:
+        thingy_usages = find_java_class_usages(analysis, thingy_data)
+
+    elif thingy_semantic == TT_NAMESPACE_DEFINITION:
+        thingy_usages = find_namespace_usages(analysis, thingy_data)
+
+    elif (
+        thingy_semantic == TT_NAMESPACE_USAGE
+        or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+    ):
+        thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+
+    # Prune None usages - it's strange that there are None items though.
+    thingy_usages = [usage for usage in thingy_usages if usage]
+
+    return thingy_usages
+
+
 # ---
 
 
@@ -3323,50 +3367,6 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 )
 
                 self.view.window().focus_sheet(sheet)
-
-
-def find_usages(analysis, thingy: Thingy) -> Optional[List]:
-
-    thingy_semantic = thingy["semantic"]
-    thingy_data = thingy["data"]
-
-    thingy_usages = None
-
-    if thingy_semantic == TT_KEYWORD:
-        # To be considered:
-        # If the keyword is a destructuring key,
-        # should it show its local usages?
-
-        thingy_usages = find_keyword_usages(analysis, thingy_data)
-
-    elif thingy_semantic == TT_LOCAL_BINDING:
-        thingy_usages = find_local_usages(analysis, thingy_data)
-
-    elif thingy_semantic == TT_LOCAL_USAGE:
-        thingy_usages = find_local_usages(analysis, thingy_data)
-
-    elif thingy_semantic == TT_VAR_DEFINITION:
-        thingy_usages = find_var_usages(analysis, thingy_data)
-
-    elif thingy_semantic == TT_VAR_USAGE:
-        thingy_usages = find_var_usages(analysis, thingy_data)
-
-    elif thingy_semantic == TT_JAVA_CLASS_USAGE:
-        thingy_usages = find_java_class_usages(analysis, thingy_data)
-
-    elif thingy_semantic == TT_NAMESPACE_DEFINITION:
-        thingy_usages = find_namespace_usages(analysis, thingy_data)
-
-    elif (
-        thingy_semantic == TT_NAMESPACE_USAGE
-        or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
-    ):
-        thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
-
-    # Prune None usages - it's strange that there are None items though.
-    thingy_usages = [usage for usage in thingy_usages if usage]
-
-    return thingy_usages
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
