@@ -3393,11 +3393,8 @@ def find_usages(analysis, thingy):
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-    def input(self, args):
-        if "scope" not in args:
-            return ScopeInputHandler(scopes=["view", "paths"])
 
-    def run(self, edit, scope):
+    def run(self, edit, scope=None):
         view_analysis_ = view_analysis(self.view.id())
 
         viewport_position = self.view.viewport_position()
@@ -3406,18 +3403,32 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         if thingy := thingy_in_region(self.view, view_analysis_, region):
 
-            thingy_type, thingy_region, thingy_data = thingy
+            thingy_type, _, thingy_data = thingy
 
             analysis_ = {}
 
+            thingy_usages = None
+
             if scope == "view":
-                analysis_ = view_analysis_
+                thingy_usages = find_usages(view_analysis_, thingy)
+
             elif scope == "paths":
                 project_path_ = project_path(self.view.window())
 
-                analysis_ = paths_analysis(project_path_)
+                paths_analysis_ = paths_analysis(project_path_)
 
-            if thingy_usages := find_usages(analysis_, thingy):
+                thingy_usages = find_usages(paths_analysis_, thingy)
+
+            else:
+                project_path_ = project_path(self.view.window())
+
+                paths_analysis_ = paths_analysis(project_path_)
+
+                thingy_usages = find_usages(paths_analysis_, thingy) or find_usages(
+                    view_analysis_, thingy
+                )
+
+            if thingy_usages:
 
                 if len(thingy_usages) == 1:
                     location = thingy_location(thingy_usages[0])
