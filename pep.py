@@ -78,11 +78,11 @@ _view_analysis_ = {}
 _classpath_analysis_ = {}
 
 
-def project_index(project_path):
+def project_index(project_path, not_found={}):
     """
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
     """
-    return _index_.get(project_path, {})
+    return _index_.get(project_path, not_found)
 
 
 def update_project_index(project_path, index):
@@ -116,12 +116,12 @@ def set_classpath_analysis(project_path, analysis):
     _classpath_analysis_[project_path] = analysis
 
 
-def classpath_analysis(project_path):
+def classpath_analysis(project_path, not_found={}):
     """
     Returns analysis for project.
     """
     global _classpath_analysis_
-    return _classpath_analysis_.get(project_path, {})
+    return _classpath_analysis_.get(project_path, not_found)
 
 
 def set_view_analysis(view_id, analysis):
@@ -132,48 +132,48 @@ def set_view_analysis(view_id, analysis):
     _view_analysis_[view_id] = analysis
 
 
-def view_analysis(view_id):
+def view_analysis(view_id, not_found={}):
     """
     Returns analysis for a particular view.
     """
     global _view_analysis_
-    return _view_analysis_.get(view_id, {})
+    return _view_analysis_.get(view_id, not_found)
 
 
-def paths_analysis(project_path):
+def paths_analysis(project_path, not_found={}):
     """
     Returns analysis for paths.
     """
 
-    project_index_ = project_index(project_path)
+    if project_index_ := project_index(project_path, not_found=not_found):
 
-    analysis = unify_analysis(project_index_)
+        analysis = unify_analysis(project_index_)
 
-    keyword_index_ = keyword_index(analysis)
+        keyword_index_ = keyword_index(analysis)
 
-    namespace_index_ = namespace_index(
-        analysis,
-        nrn=False,
-        nrn_usages=False,
-    )
+        namespace_index_ = namespace_index(
+            analysis,
+            nrn=False,
+            nrn_usages=False,
+        )
 
-    var_index_ = var_index(
-        analysis,
-        vrn=False,
-        vrn_usages=False,
-    )
+        var_index_ = var_index(
+            analysis,
+            vrn=False,
+            vrn_usages=False,
+        )
 
-    java_class_index_ = java_class_index(
-        analysis,
-        jrn_usages=False,
-    )
+        java_class_index_ = java_class_index(
+            analysis,
+            jrn_usages=False,
+        )
 
-    return {
-        **keyword_index_,
-        **namespace_index_,
-        **var_index_,
-        **java_class_index_,
-    }
+        return {
+            **keyword_index_,
+            **namespace_index_,
+            **var_index_,
+            **java_class_index_,
+        }
 
 
 # -- Settings
@@ -2406,46 +2406,32 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
 
 class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
     """
-    Goto anything in scope.
-
-    Scope is one of: 'view', 'paths' or 'classpath'.
+    Goto namespace, var or keyword in classpath, paths or view.
     """
 
-    def input(self, args):
-        if "scope" not in args:
-            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
-
-    def run(self, scope):
-        project_path_ = project_path(self.window)
-
+    def run(self):
+        # Goto is a window command, so it's possible there isn't an active view.
         active_view = self.window.active_view()
 
-        # Goto is a window command, so it's possible
-        # that there isn't an active view.
-        # In that case, an empty analysis dict is used.
+        view_analysis_ = (
+            view_analysis(active_view.id(), not_found=None) if active_view else None
+        )
 
-        view_analysis_ = view_analysis(active_view.id()) if active_view else {}
+        project_path_ = project_path(self.window)
 
-        paths_analysis_ = paths_analysis(project_path_)
+        paths_analysis_ = paths_analysis(project_path_, not_found=None)
 
-        classpath_analysis_ = classpath_analysis(project_path_)
+        classpath_analysis_ = classpath_analysis(project_path_, not_found=None)
 
-        analysis_ = {}
+        if analysis_ := classpath_analysis_ or paths_analysis_ or view_analysis_:
 
-        if scope == "view":
-            analysis_ = view_analysis_
-        elif scope == "paths":
-            analysis_ = paths_analysis_
-        elif scope == "classpath":
-            analysis_ = classpath_analysis_
+            items_ = [
+                *namespace_goto_items(analysis_),
+                *var_goto_items(analysis_),
+                *keyword_goto_items(analysis_),
+            ]
 
-        items_ = [
-            *namespace_goto_items(analysis_),
-            *var_goto_items(analysis_),
-            *keyword_goto_items(analysis_),
-        ]
-
-        show_goto_thingy_quick_panel(self.window, items_)
+            show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepOutlineCommand(sublime_plugin.TextCommand):
