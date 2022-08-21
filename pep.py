@@ -3339,7 +3339,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
 
-def find_usages(analysis, thingy: Thingy):
+def find_usages(analysis, thingy: Thingy) -> Optional[List]:
 
     thingy_semantic = thingy["semantic"]
     thingy_data = thingy["data"]
