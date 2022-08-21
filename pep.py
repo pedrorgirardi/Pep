@@ -3371,21 +3371,11 @@ def find_usages(analysis, thingy: Thingy):
     elif thingy_semantic == TT_NAMESPACE_DEFINITION:
         thingy_usages = find_namespace_usages(analysis, thingy_data)
 
-    elif thingy_semantic == TT_NAMESPACE_USAGE or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS:
-
-        # Usages of a namespace, in the scope of a single view, shows usages of vars instead of namespace.
-        # I think it's safe to assume that this behavior is expected for view usages.
-
-        if scope == "view":
-            thingy_usages = find_namespace_vars_usages(
-                analysis,
-                thingy_data,
-            )
-        else:
-            thingy_usages = find_namespace_usages_with_usage(
-                analysis,
-                thingy_data,
-            )
+    elif (
+        thingy_semantic == TT_NAMESPACE_USAGE
+        or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+    ):
+        thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
 
     # Prune None usages - it's strange that there are None items though.
     thingy_usages = [usage for usage in thingy_usages if usage]
