@@ -3081,10 +3081,10 @@ class PgPepGotoRequireImportCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if cursor_thingy := thingy_in_region(
+            if cursor_thingy := thingy_at_region(
                 self.view, view_analysis_, cursor_region
             ):
-                _, _, thingy_data = cursor_thingy
+                thingy_data = cursor_thingy["data"]
 
                 if cursor_namespace_usage := thingy_data.get("to"):
 
