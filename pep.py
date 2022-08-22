@@ -2448,35 +2448,6 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
             analyze_classpath_async(self.window)
 
 
-class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
-    """
-    Goto namespace, var or keyword in classpath, paths or view.
-    """
-
-    def run(self):
-        # Goto is a window command, so it's possible there isn't an active view.
-        active_view = self.window.active_view()
-
-        view_analysis_ = (
-            view_analysis(active_view.id(), not_found=None) if active_view else None
-        )
-
-        project_path_ = project_path(self.window)
-
-        paths_analysis_ = paths_analysis(project_path_, not_found=None)
-
-        classpath_analysis_ = classpath_analysis(project_path_, not_found=None)
-
-        if analysis_ := classpath_analysis_ or paths_analysis_ or view_analysis_:
-
-            items_ = [
-                *namespace_goto_items(analysis_),
-                *var_goto_items(analysis_),
-                *keyword_goto_items(analysis_),
-            ]
-
-            show_goto_thingy_quick_panel(self.window, items_)
-
 
 class PgPepOutlineCommand(sublime_plugin.TextCommand):
     """
@@ -2493,141 +2464,6 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
         ]
 
         show_goto_thingy_quick_panel(self.view.window(), items_)
-
-
-class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
-    """
-    Goto namespace in scope.
-
-    Scope is either 'classpath' or 'paths'.
-    """
-
-    def input(self, args):
-        if "scope" not in args:
-            return ScopeInputHandler(scopes=["paths", "classpath"])
-
-    def run(self, scope, side_by_side=False):
-        project_path_ = project_path(self.window)
-
-        analysis_ = {}
-
-        if scope == "paths":
-            analysis_ = paths_analysis(project_path_)
-        elif scope == "classpath":
-            analysis_ = classpath_analysis(project_path_)
-
-        items_ = namespace_goto_items(analysis_)
-
-        # Sort by namespace name.
-        items_ = sorted(items_, key=lambda d: d["thingy_data"]["name"])
-
-        show_goto_thingy_quick_panel(
-            window=self.window,
-            items=items_,
-            goto_on_highlight=False,
-            goto_side_by_side=side_by_side,
-        )
-
-
-class PgPepGotoVarCommand(sublime_plugin.WindowCommand):
-    """
-    Goto var in scope.
-
-    Scope is either 'classpath' or 'paths'.
-    """
-
-    def input(self, args):
-        if "scope" not in args:
-            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
-
-    def run(self, scope, side_by_side=False):
-        project_path_ = project_path(self.window)
-
-        analysis_ = {}
-
-        if scope == "view":
-            analysis_ = view_analysis(self.window.active_view().id())
-        elif scope == "paths":
-            analysis_ = paths_analysis(project_path_)
-        elif scope == "classpath":
-            analysis_ = classpath_analysis(project_path_)
-
-        items_ = var_goto_items(analysis_)
-
-        show_goto_thingy_quick_panel(
-            window=self.window,
-            items=items_,
-            goto_on_highlight=False,
-            goto_side_by_side=side_by_side,
-        )
-
-
-class PgPepGotoKeywordCommand(sublime_plugin.WindowCommand):
-    """
-    Goto keyword in scope.
-    """
-
-    def input(self, args):
-        if "scope" not in args:
-            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
-
-    def run(self, scope, side_by_side=False):
-        project_path_ = project_path(self.window)
-
-        analysis_ = {}
-
-        if scope == "view":
-            analysis_ = view_analysis(self.window.active_view().id())
-        elif scope == "paths":
-            analysis_ = paths_analysis(project_path_)
-        elif scope == "classpath":
-            analysis_ = classpath_analysis(project_path_)
-
-        items_ = keyword_goto_items(analysis_)
-
-        show_goto_thingy_quick_panel(
-            window=self.window,
-            items=items_,
-            goto_on_highlight=False,
-            goto_side_by_side=side_by_side,
-        )
-
-
-class PgPepGotoSpecCommand(sublime_plugin.WindowCommand):
-    """
-    Goto keyword defined by Clojure Spec in scope.
-    """
-
-    def input(self, args):
-        if "scope" not in args:
-            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
-
-    def run(self, scope, side_by_side=False):
-        project_path_ = project_path(self.window)
-
-        analysis_ = {}
-
-        if scope == "view":
-            analysis_ = view_analysis(self.window.active_view().id())
-        elif scope == "paths":
-            analysis_ = paths_analysis(project_path_)
-        elif scope == "classpath":
-            analysis_ = classpath_analysis(project_path_)
-
-        items_ = keyword_goto_items(analysis_)
-
-        items_ = [
-            item_
-            for item_ in items_
-            if item_["thingy_data"]["reg"] == "clojure.spec.alpha/def"
-        ]
-
-        show_goto_thingy_quick_panel(
-            window=self.window,
-            items=items_,
-            goto_on_highlight=False,
-            goto_side_by_side=side_by_side,
-        )
 
 
 class PgPepCopyNameCommand(sublime_plugin.TextCommand):
@@ -3068,6 +2904,36 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
 class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
     def run(self, location, flags=GOTO_DEFAULT_FLAGS):
         goto(self.window, location, flags)
+
+
+class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
+    """
+    Goto namespace, var or keyword in classpath, paths or view.
+    """
+
+    def run(self):
+        # Goto is a window command, so it's possible there isn't an active view.
+        active_view = self.window.active_view()
+
+        view_analysis_ = (
+            view_analysis(active_view.id(), not_found=None) if active_view else None
+        )
+
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_, not_found=None)
+
+        classpath_analysis_ = classpath_analysis(project_path_, not_found=None)
+
+        if analysis_ := classpath_analysis_ or paths_analysis_ or view_analysis_:
+
+            items_ = [
+                *namespace_goto_items(analysis_),
+                *var_goto_items(analysis_),
+                *keyword_goto_items(analysis_),
+            ]
+
+            show_goto_thingy_quick_panel(self.window, items_)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
