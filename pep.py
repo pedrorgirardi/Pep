@@ -2843,7 +2843,9 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 # Jumping from a namespace usage, or alias, moves the caret
                 # to the first var usage of the namespace.
 
-                if thingy_findings := find_namespace_vars_usages(state, thingy_data["to"]):
+                if thingy_findings := find_namespace_vars_usages(
+                    state, thingy_data["to"]
+                ):
 
                     # ID is the namespace name.
                     thingy_id = thingy_data.get("to")
@@ -3033,14 +3035,55 @@ class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
-        viewport_position = self.view.viewport_position()
+        goto_items = []
 
-        region = self.view.sel()[0]
+        for region in self.view.sel():
+            if thingy := thingy_at_region(self.view, view_analysis_, region):
 
-        if thingy := thingy_at_region(self.view, view_analysis_, region):
+                thingy_semantic = thingy["semantic"]
 
-            thingy_semantic = thingy["semantic"]
-            thingy_data = thingy["data"]
+                thingy_data = thingy["data"]
+
+                namespace = None
+
+                if thingy_semantic == TT_VAR_USAGE:
+                    namespace = thingy_data["to"]
+
+                elif (
+                    thingy_semantic == TT_NAMESPACE_USAGE
+                    or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+                ):
+                    namespace = thingy_data["to"]
+
+                if namespace:
+                    vars = find_namespace_vars_usages(view_analysis_, namespace)
+
+                    for var_ in vars:
+                        goto_items.append(
+                            {
+                                "thingy_type": TT_VAR_USAGE,
+                                "thingy_data": var_,
+                                "quick_panel_item": var_quick_panel_item(var_),
+                            }
+                        )
+
+        if goto_items:
+
+            # Sort items by line and column:
+            goto_items_sorted = sorted(
+                goto_items,
+                key=lambda goto_item: (
+                    goto_item["thingy_data"]["row"],
+                    goto_item["thingy_data"]["col"],
+                ),
+            )
+
+            show_goto_thingy_quick_panel(
+                self.view.window(),
+                items=goto_items_sorted,
+                goto_on_highlight=True,
+                goto_side_by_side=False,
+            )
 
 
 class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
