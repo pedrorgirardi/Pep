@@ -3032,6 +3032,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
+    """
+    Goto usages of namespace in buffer.
+
+    Namespace is extracted from a namespace usage or var usage.
+    """
+
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
