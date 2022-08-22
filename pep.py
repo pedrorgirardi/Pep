@@ -957,9 +957,8 @@ def namespace_quick_panel_item(thingy_data):
 
     return sublime.QuickPanelItem(
         namespace_name,
-        kind=(sublime.KIND_ID_NAMESPACE, "n", ""),
         details=thingy_data.get("doc", ""),
-        annotation=thingy_quick_panel_item_annotation(thingy_data),
+        annotation="Namespace",
     )
 
 
@@ -976,19 +975,11 @@ def var_quick_panel_item(thingy_data, namespace_visible=True):
 
     annotation = thingy_quick_panel_item_annotation(thingy_data)
 
-    if var_arglist:
-        return sublime.QuickPanelItem(
-            trigger,
-            kind=sublime.KIND_FUNCTION,
-            details=" ".join(var_arglist),
-            annotation=annotation,
-        )
-    else:
-        return sublime.QuickPanelItem(
-            trigger,
-            kind=sublime.KIND_VARIABLE,
-            annotation=annotation,
-        )
+    return sublime.QuickPanelItem(
+        trigger,
+        details=" ".join(var_arglist),
+        annotation="Var",
+    )
 
 
 def keyword_quick_panel_item(thingy_data):
@@ -1006,9 +997,8 @@ def keyword_quick_panel_item(thingy_data):
 
     return sublime.QuickPanelItem(
         trigger,
-        kind=sublime.KIND_KEYWORD,
         details=keyword_reg,
-        annotation=thingy_quick_panel_item_annotation(thingy_data),
+        annotation="Keyword",
     )
 
 
