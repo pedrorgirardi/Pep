@@ -962,7 +962,13 @@ def namespace_quick_panel_item(thingy_data):
     )
 
 
-def var_quick_panel_item(thingy_data, namespace_visible=True):
+def var_quick_panel_item(
+    thingy_data,
+    opts={
+        "show_namespace": True,
+        "show_row_col": False,
+    },
+):
     """
     Returns a QuickPanelItem for a var, definition or usage, thingy.
     """
@@ -971,7 +977,10 @@ def var_quick_panel_item(thingy_data, namespace_visible=True):
     var_name = thingy_data.get("name", "")
     var_arglist = thingy_data.get("arglist-strs", [])
 
-    trigger = f"{var_namespace}/{var_name}" if namespace_visible else var_name
+    trigger = f"{var_namespace}/{var_name}" if opts.get("show_namespace") else var_name
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger} {thingy_data.get('row')}:{thingy_data.get('col')}"
 
     annotation = thingy_quick_panel_item_annotation(thingy_data)
 
@@ -1011,7 +1020,10 @@ def var_goto_items(analysis, namespace_visible=True):
                 "thingy_type": TT_VAR_DEFINITION,
                 "thingy_data": var_definition,
                 "quick_panel_item": var_quick_panel_item(
-                    var_definition, namespace_visible
+                    var_definition,
+                    {
+                        "show_namespace": namespace_visible,
+                    },
                 ),
             }
         )
@@ -3059,7 +3071,13 @@ class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
                             {
                                 "thingy_type": TT_VAR_USAGE,
                                 "thingy_data": var_,
-                                "quick_panel_item": var_quick_panel_item(var_),
+                                "quick_panel_item": var_quick_panel_item(
+                                    var_,
+                                    {
+                                        "show_namespace": True,
+                                        "show_row_col": True,
+                                    },
+                                ),
                             }
                         )
 
