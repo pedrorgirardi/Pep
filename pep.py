@@ -3066,7 +3066,7 @@ class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
 
         except:
             print(
-                f"Pep: Error: PgPepGotoAnalysisFindingCommand", traceback.format_exc()
+                f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc()
             )
 
 
