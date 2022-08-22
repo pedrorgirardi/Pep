@@ -3370,7 +3370,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-    def run(self, edit, scope=None):
+    def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
         viewport_position = self.view.viewport_position()
@@ -3382,28 +3382,13 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             thingy_semantic = thingy["semantic"]
             thingy_data = thingy["data"]
 
-            thingy_usages = None
+            project_path_ = project_path(self.view.window())
 
-            if scope == "view":
-                thingy_usages = find_usages(view_analysis_, thingy)
+            paths_analysis_ = paths_analysis(project_path_)
 
-            elif scope == "paths":
-                project_path_ = project_path(self.view.window())
-
-                paths_analysis_ = paths_analysis(project_path_)
-
-                thingy_usages = find_usages(paths_analysis_, thingy)
-
-            else:
-                project_path_ = project_path(self.view.window())
-
-                paths_analysis_ = paths_analysis(project_path_)
-
-                thingy_usages = find_usages(paths_analysis_, thingy) or find_usages(
-                    view_analysis_, thingy
-                )
-
-            if thingy_usages:
+            if thingy_usages := find_usages(paths_analysis_, thingy) or find_usages(
+                view_analysis_, thingy
+            ):
 
                 if len(thingy_usages) == 1:
                     location = thingy_location(thingy_usages[0])
