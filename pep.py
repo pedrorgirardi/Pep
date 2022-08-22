@@ -2448,7 +2448,6 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
             analyze_classpath_async(self.window)
 
 
-
 class PgPepOutlineCommand(sublime_plugin.TextCommand):
     """
     Outline thingies in view.
@@ -3030,6 +3029,20 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 print("Pep: Unable to find definition")
 
 
+class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        viewport_position = self.view.viewport_position()
+
+        region = self.view.sel()[0]
+
+        if thingy := thingy_at_region(self.view, view_analysis_, region):
+
+            thingy_semantic = thingy["semantic"]
+            thingy_data = thingy["data"]
+
+
 class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
@@ -3065,9 +3078,7 @@ class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
             show_goto_thingy_quick_panel(self.window, items, goto_on_highlight=True)
 
         except:
-            print(
-                f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc()
-            )
+            print(f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
 
 
 class PgPepGotoRequireImportCommand(sublime_plugin.TextCommand):
