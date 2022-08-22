@@ -2725,7 +2725,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             qualified_name = f"{ns}/{name}" if ns else name
 
             goto_command_url = sublime.command_url(
-                "pg_pep_goto",
+                "pg_pep_open_file",
                 {"location": thingy_location(definition)},
             )
 
@@ -3065,15 +3065,9 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
         self.view.window().focus_sheet(sheet)
 
 
-class PgPepGotoCommand(sublime_plugin.WindowCommand):
-    def run(self, location=None, side_by_side=False):
-        if location:
-            flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
-
-            goto(self.window, location, flags)
-
-        else:
-            print("Pep: Goto missing location arg")
+class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
+    def run(self, location, flags=GOTO_DEFAULT_FLAGS):
+        goto(self.window, location, flags)
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
@@ -3309,7 +3303,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 goto_location = thingy_location(thingy_data)
 
                 goto_command_url = sublime.command_url(
-                    "pg_pep_goto", {"location": goto_location}
+                    "pg_pep_open_file", {"location": goto_location}
                 )
 
                 goto_text = f"{from_namespace}{from_var}:{goto_location['line']}:{goto_location['column']}"
