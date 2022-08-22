@@ -2145,19 +2145,19 @@ def find_namespace_usages_with_usage(analysis, namespace_usage):
     ]
 
 
-def find_namespace_vars_usages(analysis, namespace_usage):
+def find_namespace_vars_usages(analysis, namespace):
     """
-    Returns usages of Vars from namespace_usage.
+    Returns usages of Vars from namespace.
 
-    It's useful when you want to see Vars (from namespace_usage) being used in your namespace.
+    It's useful when you want to see Vars (from namespace) being used in your namespace.
     """
 
     usages = []
 
     for var_qualified_name, var_usages in analysis.get("vindex_usages", {}).items():
-        namespace, _ = var_qualified_name
+        var_namespace, _ = var_qualified_name
 
-        if namespace == namespace_usage.get("to"):
+        if var_namespace == namespace:
             usages.extend(var_usages)
 
     return usages
@@ -2360,7 +2360,7 @@ def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
     elif thingy_type == TT_NAMESPACE_USAGE:
         regions.append(namespace_usage_region(view, thingy_data))
 
-        var_usages = find_namespace_vars_usages(analysis, thingy_data)
+        var_usages = find_namespace_vars_usages(analysis, thingy_data["to"])
 
         for var_usage in var_usages:
             if region := var_usage_namespace_region(view, var_usage):
@@ -2369,7 +2369,7 @@ def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
     elif thingy_type == TT_NAMESPACE_USAGE_ALIAS:
         regions.append(namespace_usage_alias_region(view, thingy_data))
 
-        var_usages = find_namespace_vars_usages(analysis, thingy_data)
+        var_usages = find_namespace_vars_usages(analysis, thingy_data["to"])
 
         for var_usage in var_usages:
             if region := var_usage_namespace_region(view, var_usage):
@@ -2843,7 +2843,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 # Jumping from a namespace usage, or alias, moves the caret
                 # to the first var usage of the namespace.
 
-                if thingy_findings := find_namespace_vars_usages(state, thingy_data):
+                if thingy_findings := find_namespace_vars_usages(state, thingy_data["to"]):
 
                     # ID is the namespace name.
                     thingy_id = thingy_data.get("to")
