@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file.
 - Added `side_by_side` arg to goto commands:
 	- Goto side-by-side if set to true
 - Refactor Find Usages
-	- Scope is optional - searches in paths and view by default
+	- Removed scope
+- New command: `pg_pep_goto_namespace_usage_in_buffer`
 
 ## 0.11.0 - 2022-07-26
 - Changed default setting `view_status_show_highlighted_prefix`:
