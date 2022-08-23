@@ -3307,103 +3307,115 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         viewport_position = self.view.viewport_position()
 
-        region = self.view.sel()[0]
+        thingies = []
 
-        if thingy := thingy_at_region(self.view, view_analysis_, region):
+        thingy_usages_ = []
 
-            thingy_semantic = thingy["semantic"]
+        for region in self.view.sel():
+            if thingy := thingy_at_region(self.view, view_analysis_, region):
 
-            thingy_data = thingy["data"]
+                thingies.append(thingy)
 
-            if thingy_usages := find_usages(paths_analysis_, thingy) or find_usages(
-                view_analysis_, thingy
-            ):
+                thingy_semantic = thingy["semantic"]
 
-                if len(thingy_usages) == 1:
-                    location = thingy_location(thingy_usages[0])
+                thingy_data = thingy["data"]
 
-                    goto(self.view.window(), location)
+                if thingy_usages := find_usages(
+                    analysis=paths_analysis_,
+                    thingy=thingy,
+                ) or find_usages(
+                    analysis=view_analysis_,
+                    thingy=thingy,
+                ):
+                    thingy_usages_.extend(thingy_usages)
 
-                else:
+        if thingy_usages_:
+            if len(thingy_usages) == 1:
+                location = thingy_location(thingy_usages_[0])
 
-                    thingy_usages_sorted = sorted(
-                        thingy_usages,
-                        key=lambda thingy_usage: [
-                            thingy_usage.get("filename"),
-                            thingy_usage.get("row"),
-                            thingy_usage.get("col"),
-                        ],
-                    )
+                goto(self.view.window(), location)
 
-                    selected_index = 0
+            else:
+                thingy_usages_sorted = sorted(
+                    thingy_usages_,
+                    key=lambda thingy_usage: [
+                        thingy_usage.get("filename"),
+                        thingy_usage.get("row"),
+                        thingy_usage.get("col"),
+                    ],
+                )
 
-                    quick_panel_items = []
+                selected_index = 0
 
-                    for index, thingy_usage in enumerate(thingy_usages_sorted):
+                quick_panel_items = []
 
-                        if thingy_usage == thingy_data:
+                for index, thingy_usage in enumerate(thingy_usages_sorted):
+
+                    # Select Thingy under the cursor:
+                    for thingy in thingies:
+                        if thingy_usage == thingy["data"]:
                             selected_index = index
 
-                        usage_trigger = (
-                            thingy_usage.get("from")
-                            or thingy_usage.get("ns")
-                            or os.path.basename(thingy_usage.get("filename"))
-                        )
-
-                        usage_filename = thingy_usage.get("filename", "-")
-                        usage_line = thingy_usage.get("row", "-")
-                        usage_column = thingy_usage.get("col", "-")
-
-                        usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
-
-                        quick_panel_items.append(sublime.QuickPanelItem(usage_trigger))
-
-
-                    def usage_location(index):
-                        return thingy_location(thingy_usages_sorted[index])
-
-                    def on_done(index, _):
-                        if index == -1:
-                            # Restore selection and viewport position:
-
-                            self.view.sel().clear()
-
-                            self.view.sel().add(region)
-
-                            self.view.window().focus_view(self.view)
-
-                            self.view.set_viewport_position(viewport_position, True)
-
-                        else:
-                            goto(self.view.window(), usage_location(index))
-
-                    def on_highlighted(index):
-                        goto(
-                            self.view.window(),
-                            usage_location(index),
-                            flags=GOTO_TRANSIENT_FLAGS,
-                        )
-
-                    placeholder = None
-
-                    if (
-                        thingy_semantic == TT_NAMESPACE_USAGE
-                        or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
-                    ):
-                        placeholder = f"{thingy_data.get('to')} is used {len(thingy_usages)} times"
-                    else:
-                        sym = thingy_data.get("name") or thingy_data.get("class")
-
-                        placeholder = f"{sym} is used {len(thingy_usages)} times"
-
-                    self.view.window().show_quick_panel(
-                        quick_panel_items,
-                        on_done,
-                        sublime.WANT_EVENT,
-                        selected_index,
-                        on_highlighted,
-                        placeholder,
+                    usage_trigger = (
+                        thingy_usage.get("from")
+                        or thingy_usage.get("ns")
+                        or os.path.basename(thingy_usage.get("filename"))
                     )
+
+                    usage_filename = thingy_usage.get("filename", "-")
+                    usage_line = thingy_usage.get("row", "-")
+                    usage_column = thingy_usage.get("col", "-")
+
+                    usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
+
+                    thingy_namespace = thingy_usage.get("ns") or thingy_usage.get("to")
+
+                    usage_annotation = None
+
+                    if thingy_name := thingy_usage.get("name"):
+                        usage_annotation = f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+                    else:
+                        usage_annotation = thingy_namespace
+
+                    quick_panel_items.append(
+                        sublime.QuickPanelItem(
+                            usage_trigger,
+                            annotation=usage_annotation,
+                        )
+                    )
+
+                def usage_location(index):
+                    return thingy_location(thingy_usages_sorted[index])
+
+                def on_done(index, _):
+                    if index == -1:
+                        # Restore selection and viewport position:
+
+                        self.view.sel().clear()
+
+                        self.view.sel().add(region)
+
+                        self.view.window().focus_view(self.view)
+
+                        self.view.set_viewport_position(viewport_position, True)
+
+                    else:
+                        goto(self.view.window(), usage_location(index))
+
+                def on_highlighted(index):
+                    goto(
+                        self.view.window(),
+                        usage_location(index),
+                        flags=GOTO_TRANSIENT_FLAGS,
+                    )
+
+                self.view.window().show_quick_panel(
+                    quick_panel_items,
+                    on_done,
+                    sublime.WANT_EVENT,
+                    selected_index,
+                    on_highlighted,
+                )
 
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
