@@ -3305,10 +3305,14 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         paths_analysis_ = paths_analysis(project_path_)
 
+        # Remember current viewport position so it can be restored afterwards.
         viewport_position = self.view.viewport_position()
 
+        # Store Thingy found at region(s).
+        # Used to find the QuickPanel selected index.
         thingies = []
 
+        # Store usages of Thingy at region(s).
         thingy_usages_ = []
 
         for region in self.view.sel():
@@ -3362,8 +3366,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         or os.path.basename(thingy_usage.get("filename"))
                     )
 
-                    usage_filename = thingy_usage.get("filename", "-")
                     usage_line = thingy_usage.get("row", "-")
+
                     usage_column = thingy_usage.get("col", "-")
 
                     usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
