@@ -980,7 +980,7 @@ def var_quick_panel_item(
     trigger = f"{var_namespace}/{var_name}" if opts.get("show_namespace") else var_name
 
     if opts.get("show_row_col"):
-        trigger = f"{thingy_data.get('row')}:{thingy_data.get('col')} {trigger}"
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
     annotation = thingy_quick_panel_item_annotation(thingy_data)
 
@@ -3301,6 +3301,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
+        project_path_ = project_path(self.view.window())
+
+        paths_analysis_ = paths_analysis(project_path_)
+
         viewport_position = self.view.viewport_position()
 
         region = self.view.sel()[0]
@@ -3308,11 +3312,8 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         if thingy := thingy_at_region(self.view, view_analysis_, region):
 
             thingy_semantic = thingy["semantic"]
+
             thingy_data = thingy["data"]
-
-            project_path_ = project_path(self.view.window())
-
-            paths_analysis_ = paths_analysis(project_path_)
 
             if thingy_usages := find_usages(paths_analysis_, thingy) or find_usages(
                 view_analysis_, thingy
@@ -3324,11 +3325,25 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     goto(self.view.window(), location)
 
                 else:
-                    usage_items_set = set()
+
+                    thingy_usages_sorted = sorted(
+                        thingy_usages,
+                        key=lambda thingy_usage: [
+                            thingy_usage.get("filename"),
+                            thingy_usage.get("row"),
+                            thingy_usage.get("col"),
+                        ],
+                    )
 
                     selected_index = 0
 
-                    for index, thingy_usage in enumerate(thingy_usages):
+                    quick_panel_items = []
+
+                    for index, thingy_usage in enumerate(thingy_usages_sorted):
+
+                        if thingy_usage == thingy_data:
+                            selected_index = index
+
                         usage_trigger = (
                             thingy_usage.get("from")
                             or thingy_usage.get("ns")
@@ -3339,48 +3354,13 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                         usage_line = thingy_usage.get("row", "-")
                         usage_column = thingy_usage.get("col", "-")
 
-                        usage_details = (
-                            f"Line: <b>{usage_line}</b>, Column: <b>{usage_column}</b>"
-                        )
+                        usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
 
-                        # Open Quick Panel with thingy under the cursor as the selected index.
-                        if thingy_usage == thingy_data:
-                            selected_index = index
+                        quick_panel_items.append(sublime.QuickPanelItem(usage_trigger))
 
-                        # Add to set to discard duplicates.
-                        usage_items_set.add(
-                            (
-                                usage_trigger,
-                                usage_details,
-                                usage_filename,
-                                usage_line,
-                                usage_column,
-                            )
-                        )
-
-                    # Sort items by trigger, filename, line and column.
-                    # (It's not an elegant solution by any means, but it does the trick.)
-                    usage_items_sorted = sorted(
-                        list(usage_items_set),
-                        key=lambda i: (
-                            i[0],
-                            i[2],
-                            i[3],
-                            i[4],
-                        ),
-                    )
-
-                    quick_panel_items = []
-
-                    for trigger, details, *_ in usage_items_sorted:
-                        quick_panel_items.append(
-                            sublime.QuickPanelItem(trigger, details)
-                        )
 
                     def usage_location(index):
-                        _, _, filename, line, col = usage_items_sorted[index]
-
-                        return {"filename": filename, "line": line, "column": col}
+                        return thingy_location(thingy_usages_sorted[index])
 
                     def on_done(index, _):
                         if index == -1:
