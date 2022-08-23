@@ -2244,17 +2244,17 @@ def highlight_thingy(view):
     """
     analysis = view_analysis(view.id())
 
-    region = thingy_sel_region(view)
-
-    thingy = thingy_in_region(view, analysis, region)
-
     status_message = ""
 
-    # We can't highlight if view was modified,
-    # because regions might be different.
-    if thingy and not staled_analysis(view):
-        if regions := find_thingy_regions(view, analysis, thingy):
+    if not staled_analysis(view):
+        regions = []
 
+        for region in view.sel():
+            if thingy := thingy_in_region(view, analysis, region):
+                if regions_ := find_thingy_regions(view, analysis, thingy):
+                    regions.extend(regions_)
+
+        if regions:
             window = view.window()
 
             if not setting(window, "highlight_self", None):
@@ -2270,6 +2270,8 @@ def highlight_thingy(view):
                 suffix = view_status_show_highlighted_suffix(window)
 
                 status_message = f"{prefix}{len(regions)}{suffix}"
+        else:
+            view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
     else:
         view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
 
@@ -3377,7 +3379,11 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     usage_annotation = None
 
                     if thingy_name := thingy_usage.get("name"):
-                        usage_annotation = f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+                        usage_annotation = (
+                            f"{thingy_namespace}/{thingy_name}"
+                            if thingy_namespace
+                            else thingy_name
+                        )
                     else:
                         usage_annotation = thingy_namespace
 
