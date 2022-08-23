@@ -3433,18 +3433,24 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
         try:
             view_analysis_ = view_analysis(self.view.id())
 
-            cursor_region = self.view.sel()[0]
+            regions = []
 
-            if cursor_thingy := thingy_in_region(
-                self.view, view_analysis_, cursor_region
-            ):
+            for region in self.view.sel():
+                if thingy := thingy_in_region(
+                    self.view,
+                    view_analysis_,
+                    region,
+                ):
+                    if thingy_regions := find_thingy_text_regions(
+                        self.view,
+                        view_analysis_,
+                        thingy,
+                    ):
+                        regions.extend(thingy_regions)
 
-                thingy_regions = find_thingy_text_regions(
-                    self.view, view_analysis_, cursor_thingy
-                )
-
+            if regions:
                 self.view.sel().clear()
-                self.view.sel().add_all(thingy_regions)
+                self.view.sel().add_all(regions)
 
         except Exception as e:
             print(f"Pep: Error: PgPepSelectCommand", traceback.format_exc())
