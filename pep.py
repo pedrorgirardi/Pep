@@ -980,7 +980,7 @@ def var_quick_panel_item(
     trigger = f"{var_namespace}/{var_name}" if opts.get("show_namespace") else var_name
 
     if opts.get("show_row_col"):
-        trigger = f"{trigger} {thingy_data.get('row')}:{thingy_data.get('col')}"
+        trigger = f"{thingy_data.get('row')}:{thingy_data.get('col')} {trigger}"
 
     annotation = thingy_quick_panel_item_annotation(thingy_data)
 
