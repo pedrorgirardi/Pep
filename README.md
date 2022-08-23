@@ -4,30 +4,26 @@
 
 [clj-kondo](https://github.com/clj-kondo/clj-kondo) is the sole dependency, and everything else is supplied by built-in [Sublime Text APIs](https://www.sublimetext.com/docs/api_reference.html).
 
-| Command | Status | Description |
-| ------- | ------ | ----------- |
-| `pg_pep_analyze` | Stable | Analyze view, paths or classpath |
-| `pg_pep_goto_anything` | Stable | Go to anything in scope |
-| `pg_pep_goto_namespace` | Stable | Go to namespace in scope |
-| `pg_pep_goto_var` | Stable | Go to var in scope |
-| `pg_pep_goto_keyword` | Stable | Go to keyword in scope |
-| `pg_pep_goto_spec` | Stable | Go to spec in scope |
-| `pg_pep_goto_definition` | Stable | Go to definition |
-| `pg_pep_goto_analysis_finding` | Stable | Go to clj-kondo analysis finding (warning or error) |
-| `pg_pep_show_doc` | Stable | Show documentation in a popup |
-| `pg_pep_jump` | Stable | Jump to occurrences of symbol or keyword |
-| `pg_pep_jump_to_require` | Experimental | Jump to namespace require of var under the cursor |
-| `pg_pep_jump_to_import` | Experimental | Jump to import of class under the cursor |
-| `pg_pep_find_usages` | Stable | Find usages in scope |
-| `pg_pep_select` | Stable | Select occurrences of symbol or keyword |
-| `pg_pep_replace` | Stable | Replace occurrences of symbol or keyword |
-| `pg_pep_highlight` | Stable | Highlight occurrences of symbol or keyword |
-| `pg_pep_annotate` | Stable | Annotate view (or lint view) |
-| `pg_pep_copy_name` | Stable | Copy name of keyword or symbol to the clipboard |
-| `pg_pep_show_name` | Stable | Show name of keyword or symbol in a popup |
+| Command | Description |
+| ------- | ----------- |
+| `pg_pep_analyze` | Analyze view, paths or classpath |
+| `pg_pep_goto_anything` | Go to anything - in view, paths, classpath |
+| `pg_pep_goto_definition` | Go to definition of symbol or keyword under the cursor |
+| `pg_pep_goto_warning_error` | Go to clj-kondo analysis finding (warning or error) |
+| `pg_pep_goto_to_require` | Go to require or import for symbol under the cursor |
+| `pg_pep_show_doc` | Show documentation in a popup for symbol under the cursor |
+| `pg_pep_jump` | Jump to occurrences of symbol or keyword under the cursor |
+| `pg_pep_find_usages` | Find usages of symbol or keyword under the cursor |
+| `pg_pep_select` | Select occurrences of symbol or keyword under the cursor |
+| `pg_pep_replace` | Replace occurrences of symbol or keyword under the cursor |
+| `pg_pep_highlight` | Highlight occurrences of symbol or keyword under the cursor |
+| `pg_pep_annotate` | Annotate view (or lint view) |
+| `pg_pep_copy_name` | Copy name of keyword or symbol to the clipboard |
+| `pg_pep_show_name` | Show name of keyword or symbol in a popup |
 
 
 I have worked on Pep for over a year, but I still consider it alpha.
+
 Pep is part of my Clojure(Script) development setup, combined with [Tutkain](https://github.com/eerohele/Tutkain), so I think it's developed enough to be helpful.
 
 You're welcome to try it, and I would be happy to hear if it works for you. If it doesn't work for you, I ask you to please create an issue, and I will do my best to address it.
