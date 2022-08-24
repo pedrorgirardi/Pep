@@ -3151,7 +3151,7 @@ class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
             )
 
 
-class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
+class PgPepGotoWarningErrorInBufferCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
 
@@ -3189,7 +3189,7 @@ class PgPepGotoWarningErrorCommand(sublime_plugin.WindowCommand):
             print(f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
 
 
-class PgPepGotoRequireImportCommand(sublime_plugin.TextCommand):
+class PgPepGotoRequireImportInBufferCommand(sublime_plugin.TextCommand):
     """
     Command to goto to a require or import form for the thingy under cursor.
     """
