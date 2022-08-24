@@ -20,8 +20,16 @@
         "command": "pg_pep_outline"
     },
     {
+        "caption": "Pep: Browse Classpath",
+        "command": "pg_pep_browse_classpath"
+    },
+    {
         "caption": "Pep: Goto Anything",
         "command": "pg_pep_goto_anything"
+    },
+    {
+        "caption": "Pep: Goto Namespace",
+        "command": "pg_pep_goto_namespace"
     },
     {
         "caption": "Pep: Goto Definition",
