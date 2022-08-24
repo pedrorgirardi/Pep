@@ -957,7 +957,6 @@ def namespace_quick_panel_item(thingy_data):
 
     return sublime.QuickPanelItem(
         namespace_name,
-        details=thingy_data.get("doc", ""),
         annotation="Namespace",
     )
 
@@ -2939,6 +2938,42 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
             ]
 
             show_goto_thingy_quick_panel(self.window, items_)
+
+
+class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
+    """
+    Goto namespace in classpath, paths or view.
+    """
+
+    def run(self, side_by_side=False):
+
+        # Goto is a window command, so it's possible there isn't an active view.
+        active_view = self.window.active_view()
+
+        view_analysis_ = (
+            view_analysis(active_view.id(), not_found=None) if active_view else None
+        )
+
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_, not_found=None)
+
+        classpath_analysis_ = classpath_analysis(project_path_, not_found=None)
+
+        if analysis_ := classpath_analysis_ or paths_analysis_ or view_analysis_:
+
+            # Sorted by namespace.
+            items_ = sorted(
+                namespace_goto_items(analysis_),
+                key=lambda item: os.path.basename(item["thingy_data"]["name"]),
+            )
+
+            show_goto_thingy_quick_panel(
+                self.window,
+                items_,
+                goto_on_highlight=False,
+                goto_side_by_side=side_by_side,
+            )
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
