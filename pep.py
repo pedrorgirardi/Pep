@@ -2910,13 +2910,36 @@ class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
         goto(self.window, location, flags)
 
 
-class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
+class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
     """
-    Goto namespace, var or keyword in classpath, paths or view.
+    Browse the classpath/go to anything in the classpath.
     """
 
     def run(self):
-        # Goto is a window command, so it's possible there isn't an active view.
+        project_path_ = project_path(self.window)
+
+        if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
+
+            items_ = [
+                *namespace_goto_items(classpath_analysis_),
+                *var_goto_items(classpath_analysis_),
+                *keyword_goto_items(classpath_analysis_),
+            ]
+
+            show_goto_thingy_quick_panel(
+                self.window,
+                items_,
+                goto_on_highlight=True,
+                goto_side_by_side=False,
+            )
+
+
+class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
+    """
+    Goto anything in paths or view.
+    """
+
+    def run(self, side_by_side=False):
         active_view = self.window.active_view()
 
         view_analysis_ = (
@@ -2927,9 +2950,7 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
 
         paths_analysis_ = paths_analysis(project_path_, not_found=None)
 
-        classpath_analysis_ = classpath_analysis(project_path_, not_found=None)
-
-        if analysis_ := classpath_analysis_ or paths_analysis_ or view_analysis_:
+        if analysis_ := paths_analysis_ or view_analysis_:
 
             items_ = [
                 *namespace_goto_items(analysis_),
@@ -2937,30 +2958,23 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
                 *keyword_goto_items(analysis_),
             ]
 
-            show_goto_thingy_quick_panel(self.window, items_)
+            show_goto_thingy_quick_panel(
+                self.window,
+                items_,
+                goto_on_highlight=False,
+                goto_side_by_side=side_by_side,
+            )
 
 
 class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     """
-    Goto namespace in classpath, paths or view.
+    Goto namespace in paths or view.
     """
 
     def run(self, side_by_side=False):
-
-        # Goto is a window command, so it's possible there isn't an active view.
-        active_view = self.window.active_view()
-
-        view_analysis_ = (
-            view_analysis(active_view.id(), not_found=None) if active_view else None
-        )
-
         project_path_ = project_path(self.window)
 
-        paths_analysis_ = paths_analysis(project_path_, not_found=None)
-
-        classpath_analysis_ = classpath_analysis(project_path_, not_found=None)
-
-        if analysis_ := classpath_analysis_ or paths_analysis_ or view_analysis_:
+        if analysis_ := paths_analysis(project_path_, not_found=None):
 
             # Sorted by namespace.
             items_ = sorted(
