@@ -937,15 +937,12 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             window.open_file(f"{filename}:{line}:{column}", flags=flags)
 
 
-def thingy_quick_panel_item_annotation(thingy_data):
-    """
-    Uses a thingy lang or filename for QuickPanelItem's annotation.
+def thingy_lang(thingy_data) -> Optional[str]:
+    if lang := thingy_data.get("lang"):
+        return lang
 
-    Note: clj-kondo adds 'lang' to .cljc files only.
-    """
-    return thingy_data.get("lang") or pathlib.Path(
-        thingy_data.get("filename", "")
-    ).suffix.replace(".", "")
+    elif filename := pathlib.Path(thingy_data.get("filename")):
+        return filename.suffix.replace(".", "")
 
 
 def namespace_quick_panel_item(thingy_data):
@@ -955,9 +952,14 @@ def namespace_quick_panel_item(thingy_data):
 
     namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
 
+    annotation = "Namespace"
+
+    if lang := thingy_lang(thingy_data):
+        annotation = f"{annotation} ({lang})"
+
     return sublime.QuickPanelItem(
         namespace_name,
-        annotation="Namespace",
+        annotation=annotation,
     )
 
 
@@ -981,12 +983,15 @@ def var_quick_panel_item(
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    annotation = thingy_quick_panel_item_annotation(thingy_data)
+    annotation = "Var"
+
+    if lang := thingy_lang(thingy_data):
+        annotation = f"{annotation} ({lang})"
 
     return sublime.QuickPanelItem(
         trigger,
         details=" ".join(var_arglist),
-        annotation="Var",
+        annotation=annotation,
     )
 
 
@@ -1003,10 +1008,15 @@ def keyword_quick_panel_item(thingy_data):
         f"{keyword_namespace}/{keyword_name}" if keyword_namespace else keyword_name
     )
 
+    annotation = "Keyword"
+
+    if lang := thingy_lang(thingy_data):
+        annotation = f"{annotation} ({lang})"
+
     return sublime.QuickPanelItem(
         trigger,
         details=keyword_reg,
-        annotation="Keyword",
+        annotation=annotation,
     )
 
 
