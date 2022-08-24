@@ -9,7 +9,6 @@ import traceback
 import pprint
 import threading
 import time
-import linecache
 import pathlib
 import shlex
 import time
@@ -906,16 +905,6 @@ def open_jar(filename, f):
                 file.write(jar_file.read().decode())
 
             f(tempath, jar_file)
-
-
-def getlines(filename, begin, end):
-    """
-    Returns a list of lines read from filename.
-
-    `end` is inclusive.
-    """
-
-    return [linecache.getline(filename, lineno) for lineno in range(begin, end + 1)]
 
 
 def goto(window, location, flags=sublime.ENCODED_POSITION):
