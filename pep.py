@@ -3421,25 +3421,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
 
-                    thingy_namespace = thingy_usage.get("ns") or thingy_usage.get("to")
-
-                    usage_annotation = None
-
-                    if thingy_name := thingy_usage.get("name"):
-                        usage_annotation = (
-                            f"{thingy_namespace}/{thingy_name}"
-                            if thingy_namespace
-                            else thingy_name
-                        )
-                    else:
-                        usage_annotation = thingy_namespace
-
-                    quick_panel_items.append(
-                        sublime.QuickPanelItem(
-                            usage_trigger,
-                            annotation=usage_annotation,
-                        )
-                    )
+                    quick_panel_items.append(sublime.QuickPanelItem(usage_trigger))
 
                 def usage_location(index):
                     return thingy_location(thingy_usages_sorted[index])
