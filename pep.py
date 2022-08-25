@@ -1,17 +1,16 @@
 import html
 import inspect
-import subprocess
-import os
-import re
-import tempfile
 import json
-import traceback
+import os
+import pathlib
 import pprint
+import re
+import shlex
+import subprocess
+import tempfile
 import threading
 import time
-import pathlib
-import shlex
-import time
+import traceback
 
 from typing import Optional, TypedDict, List
 from zipfile import ZipFile
