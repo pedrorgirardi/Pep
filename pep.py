@@ -933,6 +933,17 @@ def thingy_lang(thingy_data) -> Optional[str]:
         return filename.suffix.replace(".", "")
 
 
+def thingy_data_list_dedupe(thingy_data_list) -> List:
+    d = {}
+
+    for thingy_data in thingy_data_list:
+        d[
+            (thingy_data["filename"], thingy_data["row"], thingy_data["col"]),
+        ] = thingy_data
+
+    return d.values()
+
+
 def namespace_quick_panel_item(thingy_data):
     """
     Returns a QuickPanelItem for a namespace, usage or definition, thingy.
@@ -3383,7 +3394,10 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     thingy_usages_.extend(thingy_usages)
 
         if thingy_usages_:
-            if len(thingy_usages) == 1:
+
+            thingy_usages_ = thingy_data_list_dedupe(thingy_usages_)
+
+            if len(thingy_usages_) == 1:
                 location = thingy_location(thingy_usages_[0])
 
                 goto(self.view.window(), location)
