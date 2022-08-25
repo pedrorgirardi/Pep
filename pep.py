@@ -934,14 +934,16 @@ def thingy_lang(thingy_data) -> Optional[str]:
 
 
 def thingy_data_list_dedupe(thingy_data_list) -> List:
-    return {
-        (
-            thingy_data["filename"],
-            thingy_data["row"],
-            thingy_data["col"],
-        ): thingy_data
-        for thingy_data in thingy_data_list
-    }.values()
+    return list(
+        {
+            (
+                thingy_data["filename"],
+                thingy_data["row"],
+                thingy_data["col"],
+            ): thingy_data
+            for thingy_data in thingy_data_list
+        }.values()
+    )
 
 
 def namespace_quick_panel_item(thingy_data):
