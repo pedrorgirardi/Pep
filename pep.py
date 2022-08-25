@@ -2927,7 +2927,7 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
             show_goto_thingy_quick_panel(
                 self.window,
                 items_,
-                goto_on_highlight=True,
+                goto_on_highlight=False,
                 goto_side_by_side=False,
             )
 
