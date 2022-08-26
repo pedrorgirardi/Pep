@@ -947,12 +947,17 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
             window.open_file(f"{filename}:{line}:{column}", flags=flags)
 
 
+def thingy_extension(thingy_data) -> Optional[str]:
+    if filename := pathlib.Path(thingy_data.get("filename")):
+        return filename.suffix.replace(".", "")
+
+
 def thingy_lang(thingy_data) -> Optional[str]:
     if lang := thingy_data.get("lang"):
         return lang
 
-    elif filename := pathlib.Path(thingy_data.get("filename")):
-        return filename.suffix.replace(".", "")
+    else:
+        return thingy_extension(thingy_data)
 
 
 def thingy_data_list_dedupe(thingy_data_list) -> List:
@@ -2095,9 +2100,11 @@ def find_local_usages(analysis, local_binding_or_usage):
     return analysis.get("lindex_usages", {}).get(local_binding_or_usage.get("id"), [])
 
 
-def find_var_definition(analysis, thingy_data):
+def find_var_definition(analysis, thingy_data) -> Optional[dict]:
     """
-    Returns a var definition thingy data or None.
+    Returns a var_definition or None.
+
+    `thingy_data` can be either a var_definirion or var_usage.
     """
 
     ns = thingy_data.get("ns", thingy_data.get("to"))
@@ -2120,9 +2127,11 @@ def find_var_definition(analysis, thingy_data):
             return var_definition
 
 
-def find_var_usages(analysis, thingy_data):
+def find_var_usages(analysis, thingy_data) -> List:
     """
-    Returns a list of var usages for thingy.
+    Returns a list of var_usage.
+
+    `thingy_data` can be either a var_definirion or var_usage.
     """
     var_ns = thingy_data.get("ns") or thingy_data.get("to")
 
@@ -2138,16 +2147,18 @@ def find_java_class_definition(analysis, thingy_data):
     return analysis_jindex(analysis).get(thingy_data.get("class"))
 
 
-def find_java_class_usages(analysis, thingy_data):
+def find_java_class_usages(analysis, thingy_data) -> List:
     """
-    Returns a list of Java class usage analysis.
+    Returns a list of java_class_usage.
     """
     return analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
 
 
-def find_namespace_definition(analysis, thingy_data):
+def find_namespace_definition(analysis, thingy_data) -> Optional[dict]:
     """
-    Returns a namespace definition thingy data or None.
+    Returns a namespace_definition or None.
+
+    `thingy_data` can be either a namespace_definition or namespace_usage.
     """
 
     name = thingy_data.get("name", thingy_data.get("to"))
@@ -2169,48 +2180,35 @@ def find_namespace_definition(analysis, thingy_data):
             return namespace_definition
 
 
-def find_namespace_usages(analysis, namespace_definition):
+def find_namespace_usages(analysis, thingy_data) -> List:
     """
-    Returns usages of namespace_definition.
+    Returns a list of namespace_usage.
+
+    `thingy_data` can be either a namespace_definition or namespace_usage.
     """
 
-    name = namespace_definition.get("name")
+    name = thingy_data.get("name", thingy_data.get("to"))
 
     nindex_usages = analysis_nindex_usages(analysis)
 
     return [
         namespace_usage
         for namespace_usage in nindex_usages.get(name, [])
-        if file_extension(namespace_usage.get("filename"))
-        in thingy_file_extensions(namespace_definition)
-    ]
-
-
-def find_namespace_usages_with_usage(analysis, namespace_usage):
-    """
-    Returns usages of namespace_usage.
-    """
-
-    name = namespace_usage.get("to")
-
-    return [
-        usage
-        for usage in analysis_nindex_usages(analysis).get(name, [])
-        if file_extension(usage.get("filename"))
-        in thingy_file_extensions(namespace_usage)
+        if file_extension(thingy_data.get("filename"))
+        in thingy_file_extensions(thingy_data)
     ]
 
 
 def find_namespace_vars_usages(analysis, namespace):
     """
-    Returns usages of Vars from namespace.
+    Returns a list of var_usage of Vars from namespace.
 
     It's useful when you want to see Vars (from namespace) being used in your namespace.
     """
 
     usages = []
 
-    for var_qualified_name, var_usages in analysis.get("vindex_usages", {}).items():
+    for var_qualified_name, var_usages in analysis_vindex_usages(analysis).items():
         var_namespace, _ = var_qualified_name
 
         if var_namespace == namespace:
@@ -2268,7 +2266,7 @@ def find_usages(analysis, thingy: Thingy) -> Optional[List]:
         thingy_semantic == TT_NAMESPACE_USAGE
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
-        thingy_usages = find_namespace_usages_with_usage(analysis, thingy_data)
+        thingy_usages = find_namespace_usages(analysis, thingy_data)
 
     # Prune None usages - it's strange that there are None items though.
     thingy_usages = [usage for usage in thingy_usages if usage]
