@@ -485,8 +485,7 @@ def namespace_definitions(analysis):
     l = []
 
     for namespace_definitions in analysis_nindex(analysis).values():
-        for namespace_definition in namespace_definitions:
-            l.append(namespace_definition)
+        l.extend(namespace_definitions)
 
     return l
 
@@ -499,8 +498,7 @@ def namespace_usages(analysis):
     l = []
 
     for namespace_usages in analysis_nindex_usages(analysis).values():
-        for namespace_usage in namespace_usages:
-            l.append(namespace_usage)
+        l.extend(namespace_usages)
 
     return l
 
@@ -513,20 +511,22 @@ def var_definitions(analysis):
     l = []
 
     for var_definitions in analysis_vindex(analysis).values():
-        for var_definition in var_definitions:
-            l.append(var_definition)
+        l.extend(var_definitions)
 
     return l
 
 
-def var_usages(analysis, name):
+def var_usages(analysis):
     """
-    Returns Var usages for name.
+    Returns a list of var usages.
     """
 
-    usages = analysis_vindex_usages(analysis).get(name, [])
+    l = []
 
-    return remove_empty_rows(usages)
+    for var_usages in analysis_vindex_usages(analysis).values():
+        l.extend(var_usages)
+
+    return l
 
 
 def recursive_usage(thingy_usage):
@@ -570,7 +570,10 @@ def namespace_index(
     if nindex or nrn:
         for namespace_definition in namespace_definitions:
 
-            namespace_definition = {**namespace_definition, "_semantic": "namespace_definition"}
+            namespace_definition = {
+                **namespace_definition,
+                "_semantic": "namespace_definition",
+            }
 
             if nindex:
                 name = namespace_definition.get("name")
@@ -1038,6 +1041,25 @@ def keyword_quick_panel_item(thingy_data):
         details=keyword_reg,
         annotation=annotation,
     )
+
+
+def thingy_quick_panel_item(
+    thingy,
+    opts={
+        "show_namespace": True,
+        "show_row_col": False,
+    },
+) -> Optional[sublime.QuickPanelItem]:
+    semantic = thingy["_semantic"]
+
+    if semantic == "namespace_definition" or semantic == "namespace_usage":
+        return namespace_quick_panel_item(thingy, opts)
+
+    elif semantic == "var_definition" or semantic == "var_usage":
+        return var_quick_panel_item(thingy, opts)
+
+    elif semantic == "keyword":
+        return keyword_quick_panel_item(thingy, opts)
 
 
 def var_goto_items(analysis, namespace_visible=True):
@@ -2056,7 +2078,7 @@ def thingy_at_region(view, analysis, region) -> Optional[Thingy]:
 def find_keywords(analysis, keyword):
     keyword_qualified_name = (keyword.get("ns"), keyword.get("name"))
 
-    return analysis.get("kindex", {}).get(keyword_qualified_name, [])
+    return analysis_kindex(analysis).get(keyword_qualified_name, [])
 
 
 def find_keyword_usages(analysis, keyword):
@@ -2099,11 +2121,14 @@ def find_var_definition(analysis, thingy_data):
 
 
 def find_var_usages(analysis, thingy_data):
+    """
+    Returns a list of var usages for thingy.
+    """
     var_ns = thingy_data.get("ns") or thingy_data.get("to")
 
     var_name = thingy_data.get("name")
 
-    return var_usages(analysis, (var_ns, var_name))
+    return analysis_vindex_usages(analysis).get((var_ns, var_name), [])
 
 
 def find_java_class_definition(analysis, thingy_data):
@@ -3293,10 +3318,9 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
 
             def trace_var_usages(thingy_usage):
                 from_ = thingy_usage.get("from")
-
                 from_var_ = thingy_usage.get("from-var")
 
-                from_usages = var_usages(analysis_, (from_, from_var_))
+                from_usages = analysis_vindex_usages(analysis_).get((from_, from_var_), [])
 
                 return {
                     "thingy_data": thingy_usage,
