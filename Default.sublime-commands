@@ -36,23 +36,19 @@
         "command": "pg_pep_goto_definition",
         "context": [{"key": "selector",
                      "operator": "equal",
-                     "operand": "source.clojure"}],
+                     "operand": "source.clojure"}]
     },
     {
-        "caption": "Pep: Goto Definition Side by Side",
-        "command": "pg_pep_goto_definition",
+        "caption": "Pep: Goto Warning/Error in Buffer",
+        "command": "pg_pep_goto_warning_error_in_buffer",
         "context": [{"key": "selector",
                      "operator": "equal",
-                     "operand": "source.clojure"}],
-        "args": {"side_by_side": "true"},
+                     "operand": "source.clojure"}]
+
     },
     {
-        "caption": "Pep: Goto Warning/Error",
-        "command": "pg_pep_goto_warning_error"
-    },
-    {
-        "caption": "Pep: Goto Require/Import",
-        "command": "pg_pep_goto_require_import"
+        "caption": "Pep: Goto Require/Import in Buffer",
+        "command": "pg_pep_goto_require_import_in_buffer"
     },
     {
         "caption": "Pep: Clear Cache",
@@ -101,17 +97,5 @@
                 "operand": "source.clojure"
             }
         ],
-    },
-    {
-        "caption": "Pep: Show Documentation Side by Side",
-        "command": "pg_pep_show_doc",
-        "context": [
-            {
-                "key": "selector",
-                "operator": "equal",
-                "operand": "source.clojure"
-            }
-        ],
-        "args": {"side_by_side": true}
-    },
+    }
 ]
