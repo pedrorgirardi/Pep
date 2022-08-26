@@ -3095,7 +3095,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 print("Pep: Unable to find definition")
 
 
-class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
+class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
     """
     Goto usages of namespace in buffer.
 
@@ -3162,7 +3162,7 @@ class PgPepGotoNamespaceUsageInBufferCommand(sublime_plugin.TextCommand):
             )
 
 
-class PgPepGotoWarningErrorInBufferCommand(sublime_plugin.WindowCommand):
+class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
 
@@ -3200,7 +3200,7 @@ class PgPepGotoWarningErrorInBufferCommand(sublime_plugin.WindowCommand):
             print(f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
 
 
-class PgPepGotoRequireImportInBufferCommand(sublime_plugin.TextCommand):
+class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
     """
     Command to goto to a require or import form for the thingy under cursor.
     """

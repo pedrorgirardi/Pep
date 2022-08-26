@@ -39,16 +39,16 @@
                      "operand": "source.clojure"}]
     },
     {
-        "caption": "Pep: Goto Warning/Error in Buffer",
-        "command": "pg_pep_goto_warning_error_in_buffer",
+        "caption": "Pep: Goto Warning/Error in View",
+        "command": "pg_pep_goto_warning_error_in_view",
         "context": [{"key": "selector",
                      "operator": "equal",
                      "operand": "source.clojure"}]
 
     },
     {
-        "caption": "Pep: Goto Require/Import in Buffer",
-        "command": "pg_pep_goto_require_import_in_buffer"
+        "caption": "Pep: Goto Require/Import in View",
+        "command": "pg_pep_goto_require_import_in_view"
     },
     {
         "caption": "Pep: Clear Cache",
