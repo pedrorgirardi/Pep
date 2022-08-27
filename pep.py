@@ -38,6 +38,7 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 
 TT_FINDING = "finding"
 TT_KEYWORD = "keyword"
+TT_LOCAL = "local"
 TT_LOCAL_BINDING = "local_binding"
 TT_LOCAL_USAGE = "local_usage"
 TT_VAR_DEFINITION = "var_definition"
@@ -1962,6 +1963,14 @@ def thingy_name(thingy):
     return thingy_qualified_name
 
 
+def thingy_lexicographic(thingy):
+    thingy_namespace = thingy.get("ns") or thingy.get("to")
+
+    thingy_name = thingy.get("name")
+
+    return f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+
+
 def thingy_location(thingy_data):
     """
     Thingy (data) is one of: Var definition, Var usage, local binding, or local usage.
@@ -3072,17 +3081,25 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
 
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
 
-            items_ = [
-                *namespace_goto_items(classpath_analysis_),
-                *var_goto_items(classpath_analysis_),
-                *keyword_goto_items(classpath_analysis_),
-            ]
+            thingy_list = thingy_data_list_dedupe(
+                [
+                    *namespace_definitions(classpath_analysis_),
+                    *var_definitions(classpath_analysis_),
+                    *keyword_regs(classpath_analysis_),
+                ],
+            )
 
-            show_goto_thingy_quick_panel(
+            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+
+            show_thingy_quick_panel(
                 self.window,
-                items_,
+                thingy_list,
                 goto_on_highlight=False,
                 goto_side_by_side=False,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
             )
 
 
