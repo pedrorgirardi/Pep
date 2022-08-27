@@ -2945,44 +2945,39 @@ class PgPepInspect(sublime_plugin.TextCommand):
 
         analysis = view_analysis(self.view.id())
 
-        thingy = thingy_in_region(self.view, analysis, region)
+        if thingy := thingy_at_region(self.view, analysis, region):
 
-        if thingy is None:
-            return
+            items_html = ""
 
-        thingy_type, _, thingy_data = thingy
+            for k, v in thingy.items():
+                items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
 
-        items_html = ""
+            html = f"""
+            <body id='pg-pep-inspect'>
+                <style>
+                    h1 {{
+                        font-size: 1.1rem;
+                        font-weight: 500;
+                        font-family: system;
+                    }}
+                </style>
 
-        for k, v in thingy_data.items():
-            items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
+                <h1>Semantic: {thingy['_semantic']}</h1>
 
-        html = f"""
-        <body id='pg-pep-inspect'>
-            <style>
-                h1 {{
-                    font-size: 1.1rem;
-                    font-weight: 500;
-                    font-family: system;
-                }}
-            </style>
+                <ul>
+                    {items_html}
+                </ul>
 
-            <h1>Semantic: {thingy_type}</h1>
+            </body>
+            """
 
-            <ul>
-                {items_html}
-            </ul>
+            flags = (
+                sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
+            )
 
-        </body>
-        """
+            sheet = self.view.window().new_html_sheet("Inspect", html, flags)
 
-        flags = (
-            sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
-        )
-
-        sheet = self.view.window().new_html_sheet(thingy_type, html, flags)
-
-        self.view.window().focus_sheet(sheet)
+            self.view.window().focus_sheet(sheet)
 
 
 class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
