@@ -477,6 +477,9 @@ def analysis_nrn_usages(analysis):
     return analysis.get("nrn_usages", {})
 
 
+# ---
+
+
 def namespace_definitions(analysis):
     """
     Returns a list of namespace definitions.
@@ -518,13 +521,27 @@ def var_definitions(analysis):
 
 def var_usages(analysis):
     """
-    Returns a list of var usages.
+    Returns a list of var_usage.
     """
 
     l = []
 
     for var_usages in analysis_vindex_usages(analysis).values():
         l.extend(var_usages)
+
+    return l
+
+
+def keyword_regs(analysis) -> List:
+    """
+    Returns a list of keyword where reg is not None.
+    """
+    l = []
+
+    for keywords_ in analysis_kindex(analysis).values():
+        for keyword_ in keywords_:
+            if reg := keyword_.get("reg"):
+                l.append(keyword_)
 
     return l
 
@@ -540,6 +557,9 @@ def recursive_usage(thingy_usage):
     is_same_var = usage_name == usage_from_var
 
     return is_same_ns and is_same_var
+
+
+# ---
 
 
 def namespace_index(
@@ -969,6 +989,9 @@ def thingy_data_list_dedupe(thingy_data_list) -> List:
                 thingy_data["col"],
             ): thingy_data
             for thingy_data in thingy_data_list
+            if thingy_data.get("filename")
+            and thingy_data.get("row")
+            and thingy_data.get("col")
         }.values()
     )
 
@@ -991,13 +1014,7 @@ def namespace_quick_panel_item(thingy_data):
     )
 
 
-def var_quick_panel_item(
-    thingy_data,
-    opts={
-        "show_namespace": True,
-        "show_row_col": False,
-    },
-):
+def var_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a var, definition or usage, thingy.
     """
@@ -1013,8 +1030,8 @@ def var_quick_panel_item(
 
     annotation = "Var"
 
-    if lang := thingy_lang(thingy_data):
-        annotation = f"{annotation} ({lang})"
+    if extension := thingy_extension(thingy_data):
+        annotation = f"{annotation} ({extension})"
 
     return sublime.QuickPanelItem(
         trigger,
@@ -1048,23 +1065,17 @@ def keyword_quick_panel_item(thingy_data):
     )
 
 
-def thingy_quick_panel_item(
-    thingy,
-    opts={
-        "show_namespace": True,
-        "show_row_col": False,
-    },
-) -> Optional[sublime.QuickPanelItem]:
+def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]:
     semantic = thingy["_semantic"]
 
     if semantic == "namespace_definition" or semantic == "namespace_usage":
-        return namespace_quick_panel_item(thingy, opts)
+        return namespace_quick_panel_item(thingy)
 
     elif semantic == "var_definition" or semantic == "var_usage":
         return var_quick_panel_item(thingy, opts)
 
     elif semantic == "keyword":
-        return keyword_quick_panel_item(thingy, opts)
+        return keyword_quick_panel_item(thingy)
 
 
 def var_goto_items(analysis, namespace_visible=True):
@@ -1172,6 +1183,75 @@ def show_goto_thingy_quick_panel(
             )
 
     quick_panel_items = [item_["quick_panel_item"] for item_ in items]
+
+    window.show_quick_panel(
+        quick_panel_items,
+        on_select,
+        on_highlight=on_highlight if goto_on_highlight else None,
+    )
+
+
+def show_thingy_quick_panel(
+    window,
+    thingy_list,
+    goto_on_highlight=False,
+    goto_side_by_side=False,
+    quick_panel_item_opts={
+        "show_namespace": True,
+        "show_row_col": False,
+    },
+):
+    """
+    Show a Quick Panel to select a thingy to goto.
+
+    Items is a list of dict with keys "thingy_type", "thingy_data" and "quick_panel_item".
+    """
+
+    # Restore active view, its selection, and viewport position - if there's an active view.
+
+    initial_view = window.active_view()
+
+    initial_regions = [region for region in initial_view.sel()] if initial_view else []
+
+    initial_viewport_position = (
+        initial_view.viewport_position() if initial_view else None
+    )
+
+    def location(index):
+        return thingy_location(thingy_list[index])
+
+    def on_highlight(index):
+        goto(
+            window,
+            location(index),
+            flags=GOTO_TRANSIENT_FLAGS,
+        )
+
+    def on_select(index):
+        if index == -1:
+            if initial_view:
+                initial_view.sel().clear()
+
+                for region in initial_regions:
+                    initial_view.sel().add(region)
+
+                window.focus_view(initial_view)
+
+                initial_view.set_viewport_position(initial_viewport_position, True)
+        else:
+            goto(
+                window,
+                location(index),
+                GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
+            )
+
+    quick_panel_items = [
+        thingy_quick_panel_item(
+            thingy,
+            opts=quick_panel_item_opts,
+        )
+        for thingy in thingy_list
+    ]
 
     window.show_quick_panel(
         quick_panel_items,
@@ -2506,19 +2586,38 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
 
 class PgPepOutlineCommand(sublime_plugin.TextCommand):
     """
-    Outline thingies in view.
+    Outline Thingies in View.
     """
 
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
-        items_ = [
-            *namespace_goto_items(view_analysis_),
-            *var_goto_items(view_analysis_, namespace_visible=False),
-            *keyword_goto_items(view_analysis_),
-        ]
+        thingy_list = thingy_data_list_dedupe(
+            [
+                *namespace_definitions(view_analysis_),
+                *var_definitions(view_analysis_),
+                *keyword_regs(view_analysis_),
+            ],
+        )
 
-        show_goto_thingy_quick_panel(self.view.window(), items_)
+        thingy_list = sorted(
+            thingy_list,
+            key=lambda thingy: (
+                thingy["row"],
+                thingy["col"],
+            ),
+        )
+
+        show_thingy_quick_panel(
+            self.view.window(),
+            thingy_list,
+            goto_on_highlight=True,
+            goto_side_by_side=False,
+            quick_panel_item_opts={
+                "show_namespace": False,
+                "show_row_col": False,
+            },
+        )
 
 
 class PgPepCopyNameCommand(sublime_plugin.TextCommand):
@@ -3318,7 +3417,9 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 from_ = thingy_usage.get("from")
                 from_var_ = thingy_usage.get("from-var")
 
-                from_usages = analysis_vindex_usages(analysis_).get((from_, from_var_), [])
+                from_usages = analysis_vindex_usages(analysis_).get(
+                    (from_, from_var_), []
+                )
 
                 return {
                     "thingy_data": thingy_usage,
