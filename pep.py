@@ -1041,6 +1041,18 @@ def var_quick_panel_item(thingy_data, opts={}):
     )
 
 
+def finding_quick_panel_item(thingy_data):
+    return sublime.QuickPanelItem(
+        thingy_data["message"],
+        annotation=thingy_data["type"],
+        kind=(
+            (sublime.KIND_ID_COLOR_REDISH, "e", "e")
+            if thingy_data["level"] == "error"
+            else (sublime.KIND_ID_COLOR_ORANGISH, "w", "w")
+        ),
+    )
+
+
 def keyword_quick_panel_item(thingy_data):
     """
     Returns a QuickPanelItem for a keyword thingy.
@@ -1069,14 +1081,18 @@ def keyword_quick_panel_item(thingy_data):
 def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]:
     semantic = thingy["_semantic"]
 
-    if semantic == "namespace_definition" or semantic == "namespace_usage":
+    if semantic == TT_NAMESPACE_DEFINITION or semantic == TT_NAMESPACE_USAGE:
         return namespace_quick_panel_item(thingy)
 
-    elif semantic == "var_definition" or semantic == "var_usage":
+    elif semantic == TT_VAR_DEFINITION or semantic == TT_VAR_USAGE:
         return var_quick_panel_item(thingy, opts)
 
-    elif semantic == "keyword":
+    elif semantic == TT_KEYWORD:
         return keyword_quick_panel_item(thingy)
+
+    elif semantic == TT_FINDING:
+        return finding_quick_panel_item(thingy)
+
 
 def show_goto_thingy_quick_panel(
     window,
@@ -1329,6 +1345,11 @@ def analyze_view(view, on_completed=None):
 
     local_index_ = local_index(analysis)
 
+    findings_ = [
+        {**finding, "_semantic": TT_FINDING}
+        for finding in clj_kondo_data.get("findings", [])
+    ]
+
     view_analysis_ = {
         **namespace_index_,
         **var_index_,
@@ -1336,7 +1357,7 @@ def analyze_view(view, on_completed=None):
         **keyword_index_,
         **local_index_,
         "view_change_count": view_change_count,
-        "findings": clj_kondo_data.get("findings", []),
+        "findings": findings_,
         "summary": clj_kondo_data.get("summary", {}),
     }
 
@@ -3280,36 +3301,26 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
 class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
-
             active_view = self.window.active_view()
 
             view_analysis_ = view_analysis(active_view.id()) if active_view else {}
 
-            findings = analysis_findings(view_analysis_)
+            thingy_list = analysis_findings(view_analysis_)
 
-            items = []
+            thingy_list = sorted(
+                thingy_list,
+                key=lambda thingy_usage: [
+                    thingy_usage.get("row"),
+                    thingy_usage.get("col"),
+                ],
+            )
 
-            for finding in findings:
-
-                item_kind = (
-                    (sublime.KIND_ID_COLOR_REDISH, "e", "e")
-                    if finding["level"] == "error"
-                    else (sublime.KIND_ID_COLOR_ORANGISH, "w", "w")
-                )
-
-                items.append(
-                    {
-                        "thingy_type": TT_FINDING,
-                        "thingy_data": finding,
-                        "quick_panel_item": sublime.QuickPanelItem(
-                            finding["message"],
-                            kind=item_kind,
-                            annotation=finding["type"],
-                        ),
-                    }
-                )
-
-            show_goto_thingy_quick_panel(self.window, items, goto_on_highlight=True)
+            show_thingy_quick_panel(
+                self.window,
+                thingy_list,
+                goto_on_highlight=True,
+                goto_side_by_side=False,
+            )
 
         except:
             print(f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
