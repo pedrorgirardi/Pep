@@ -1078,59 +1078,6 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
     elif semantic == "keyword":
         return keyword_quick_panel_item(thingy)
 
-
-def var_goto_items(analysis, namespace_visible=True):
-    items_ = []
-
-    for var_definition in var_definitions(analysis):
-        items_.append(
-            {
-                "thingy_type": TT_VAR_DEFINITION,
-                "thingy_data": var_definition,
-                "quick_panel_item": var_quick_panel_item(
-                    var_definition,
-                    {
-                        "show_namespace": namespace_visible,
-                    },
-                ),
-            }
-        )
-
-    return items_
-
-
-def keyword_goto_items(analysis):
-    items_ = []
-
-    for keywords_ in analysis_kindex(analysis).values():
-        for keyword_ in keywords_:
-            if reg := keyword_.get("reg", None):
-                items_.append(
-                    {
-                        "thingy_type": TT_KEYWORD,
-                        "thingy_data": keyword_,
-                        "quick_panel_item": keyword_quick_panel_item(keyword_),
-                    }
-                )
-
-    return items_
-
-
-def namespace_goto_items(analysis):
-    items_ = []
-
-    for namespace_definition in namespace_definitions(analysis):
-        items_.append(
-            {
-                "thingy_type": TT_NAMESPACE_DEFINITION,
-                "thingy_data": namespace_definition,
-                "quick_panel_item": namespace_quick_panel_item(namespace_definition),
-            }
-        )
-
-    return items_
-
-
 def show_goto_thingy_quick_panel(
     window,
     items,
