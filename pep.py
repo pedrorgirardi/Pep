@@ -615,7 +615,10 @@ def namespace_index(
     if nindex_usages or nrn_usages:
         for namespace_usage in analysis.get("namespace-usages", []):
 
-            namespace_usage = {**namespace_usage, "_semantic": TT_NAMESPACE_USAGE}
+            namespace_usage = {
+                **namespace_usage,
+                "_semantic": TT_NAMESPACE_USAGE,
+            }
 
             if nindex_usages:
                 name = namespace_usage.get("to")
@@ -666,7 +669,10 @@ def local_index(
     if lindex or lrn:
         for local_binding in analysis.get("locals", []):
 
-            local_binding = {**local_binding, "_semantic": TT_LOCAL}
+            local_binding = {
+                **local_binding,
+                "_semantic": TT_LOCAL,
+            }
 
             id = local_binding.get("id")
             row = local_binding.get("row")
@@ -686,7 +692,10 @@ def local_index(
     if lindex_usages or lrn_usages:
         for local_usage in analysis.get("local-usages", []):
 
-            local_usage = {**local_usage, "_semantic": TT_LOCAL_USAGE}
+            local_usage = {
+                **local_usage,
+                "_semantic": TT_LOCAL_USAGE,
+            }
 
             id = local_usage.get("id")
             name_row = local_usage.get("name-row")
@@ -719,7 +728,10 @@ def keyword_index(
     if kindex or krn:
         for keyword in analysis.get("keywords", []):
 
-            keyword = {**keyword, "_semantic": TT_KEYWORD}
+            keyword = {
+                **keyword,
+                "_semantic": TT_KEYWORD,
+            }
 
             ns = keyword.get("ns")
             name = keyword.get("name")
@@ -753,7 +765,10 @@ def var_index(
     if vindex or vrn:
         for var_definition in analysis.get("var-definitions", []):
 
-            var_definition = {**var_definition, "_semantic": TT_VAR_DEFINITION}
+            var_definition = {
+                **var_definition,
+                "_semantic": TT_VAR_DEFINITION,
+            }
 
             if vindex:
                 ns = var_definition.get("ns")
@@ -776,7 +791,10 @@ def var_index(
     if vindex_usages or vrn_usages:
         for var_usage in analysis.get("var-usages", []):
 
-            var_usage = {**var_usage, "_semantic": TT_VAR_USAGE}
+            var_usage = {
+                **var_usage,
+                "_semantic": TT_VAR_USAGE,
+            }
 
             if vindex_usages:
                 ns = var_usage.get("to")
@@ -828,7 +846,10 @@ def java_class_index(
     if jindex_usages or jrn_usages:
         for java_class_usage in analysis.get("java-class-usages", []):
 
-            java_class_usage = {**java_class_usage, "_semantic": TT_JAVA_CLASS_USAGE}
+            java_class_usage = {
+                **java_class_usage,
+                "_semantic": TT_JAVA_CLASS_USAGE,
+            }
 
             if jindex_usages:
                 jindex_usages_.setdefault(java_class_usage.get("class"), []).append(
