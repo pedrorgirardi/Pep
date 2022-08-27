@@ -2939,7 +2939,7 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                     self.jump(state, movement, -1)
 
 
-class PgPepShowThingy(sublime_plugin.TextCommand):
+class PgPepInspect(sublime_plugin.TextCommand):
     def run(self, edit):
         region = self.view.sel()[0]
 
@@ -2958,7 +2958,7 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
             items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
 
         html = f"""
-        <body id='pg-pep-show-thingy'>
+        <body id='pg-pep-inspect'>
             <style>
                 h1 {{
                     font-size: 1.1rem;
@@ -2967,7 +2967,7 @@ class PgPepShowThingy(sublime_plugin.TextCommand):
                 }}
             </style>
 
-            <h1>{thingy_type}</h1>
+            <h1>Semantic: {thingy_type}</h1>
 
             <ul>
                 {items_html}

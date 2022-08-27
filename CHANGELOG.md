@@ -3,13 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.12.0 -
-- Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import**
-- Renamed `Goto Analysis Finding` to `Goto Warning/Error`
+- Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import in View**
+- Renamed `Goto Analysis Finding` to `Goto Warning/Error in View`
 - Added `side_by_side` arg to goto commands:
 	- Goto side-by-side if set to true
 - Refactor Find Usages
 	- Removed scope
-- New command: `pg_pep_goto_namespace_usage_in_buffer`
+- New command: `Goto Namespace Usage in View`
+- New command: `Browse Classpath`
+- Removed duplicates in QuickPanel
 
 ## 0.11.0 - 2022-07-26
 - Changed default setting `view_status_show_highlighted_prefix`:
