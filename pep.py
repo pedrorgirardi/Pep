@@ -64,11 +64,6 @@ STATUS_BAR_DOC_KEY = "pep_doc"
 CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
 
 
-class Thingy(TypedDict):
-    semantic: str
-    data: dict
-
-
 ## Mapping of filename to analysis data by semantic, e.g. var-definitions.
 _index_ = {}
 
@@ -2080,18 +2075,15 @@ def thingy_in_region(view, analysis, region):
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
 
-def thingy_at_region(view, analysis, region) -> Optional[Thingy]:
+def thingy_at_region(view, analysis, region) -> Optional[dict]:
     """
     Returns Thingy at region (a region under the cursor, most likely) or None.
     """
 
-    if type_region_data := thingy_in_region(view, analysis, region):
-        t, _, d = type_region_data
+    if semantic_region_data := thingy_in_region(view, analysis, region):
+        _, _, data = semantic_region_data
 
-        return {
-            "semantic": t,
-            "data": d,
-        }
+        return data
 
 
 # ---
@@ -2247,10 +2239,9 @@ def find_keyword_definition(analysis, keyword):
             return keyword_indexed
 
 
-def find_usages(analysis, thingy: Thingy) -> Optional[List]:
+def find_usages(analysis, thingy) -> Optional[List]:
 
-    thingy_semantic = thingy["semantic"]
-    thingy_data = thingy["data"]
+    thingy_semantic = thingy["_semantic"]
 
     thingy_usages = None
 
@@ -2259,31 +2250,31 @@ def find_usages(analysis, thingy: Thingy) -> Optional[List]:
         # If the keyword is a destructuring key,
         # should it show its local usages?
 
-        thingy_usages = find_keyword_usages(analysis, thingy_data)
+        thingy_usages = find_keyword_usages(analysis, thingy)
 
     elif thingy_semantic == TT_LOCAL_BINDING:
-        thingy_usages = find_local_usages(analysis, thingy_data)
+        thingy_usages = find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_LOCAL_USAGE:
-        thingy_usages = find_local_usages(analysis, thingy_data)
+        thingy_usages = find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_DEFINITION:
-        thingy_usages = find_var_usages(analysis, thingy_data)
+        thingy_usages = find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_USAGE:
-        thingy_usages = find_var_usages(analysis, thingy_data)
+        thingy_usages = find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_JAVA_CLASS_USAGE:
-        thingy_usages = find_java_class_usages(analysis, thingy_data)
+        thingy_usages = find_java_class_usages(analysis, thingy)
 
     elif thingy_semantic == TT_NAMESPACE_DEFINITION:
-        thingy_usages = find_namespace_usages(analysis, thingy_data)
+        thingy_usages = find_namespace_usages(analysis, thingy)
 
     elif (
         thingy_semantic == TT_NAMESPACE_USAGE
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
-        thingy_usages = find_namespace_usages(analysis, thingy_data)
+        thingy_usages = find_namespace_usages(analysis, thingy)
 
     # Prune None usages - it's strange that there are None items though.
     thingy_usages = [usage for usage in thingy_usages if usage]
@@ -3116,13 +3107,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         if thingy := thingy_at_region(view, analysis, region):
 
-            thingy_semantic = thingy["semantic"]
-            thingy_data = thingy["data"]
+            thingy_semantic = thingy["_semantic"]
 
             definition = None
 
             if thingy_semantic == TT_LOCAL_USAGE:
-                definition = find_local_binding(analysis, thingy_data)
+                definition = find_local_binding(analysis, thingy)
 
             elif (
                 thingy_semantic == TT_NAMESPACE_USAGE
@@ -3135,14 +3125,14 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 classpath_analysis_ = classpath_analysis(project_path_)
 
                 definition = (
-                    find_namespace_definition(analysis, thingy_data)
-                    or find_namespace_definition(paths_analysis_, thingy_data)
-                    or find_namespace_definition(classpath_analysis_, thingy_data)
+                    find_namespace_definition(analysis, thingy)
+                    or find_namespace_definition(paths_analysis_, thingy)
+                    or find_namespace_definition(classpath_analysis_, thingy)
                 )
 
             elif thingy_semantic == TT_VAR_USAGE:
-                namespace_ = thingy_data.get("to", None)
-                name_ = thingy_data.get("name", None)
+                namespace_ = thingy.get("to", None)
+                name_ = thingy.get("name", None)
 
                 project_path_ = project_path(window)
 
@@ -3151,9 +3141,9 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 classpath_analysis_ = classpath_analysis(project_path_)
 
                 definition = (
-                    find_var_definition(analysis, thingy_data)
-                    or find_var_definition(paths_analysis_, thingy_data)
-                    or find_var_definition(classpath_analysis_, thingy_data)
+                    find_var_definition(analysis, thingy)
+                    or find_var_definition(paths_analysis_, thingy)
+                    or find_var_definition(classpath_analysis_, thingy)
                 )
 
             # TODO
@@ -3165,22 +3155,22 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             #     classpath_analysis_ = classpath_analysis(project_path_)
 
             #     definition = (
-            #         find_java_class_definition(analysis, thingy_data)
-            #         or find_java_class_definition(paths_analysis_, thingy_data)
-            #         or find_java_class_definition(classpath_analysis_, thingy_data)
+            #         find_java_class_definition(analysis, thingy)
+            #         or find_java_class_definition(paths_analysis_, thingy)
+            #         or find_java_class_definition(classpath_analysis_, thingy)
             #     )
 
             elif thingy_semantic == TT_KEYWORD:
-                keyword_namespace = thingy_data.get("ns", None)
-                keyword_name = thingy_data.get("name", None)
+                keyword_namespace = thingy.get("ns", None)
+                keyword_name = thingy.get("name", None)
 
                 project_path_ = project_path(window)
 
                 paths_analysis_ = paths_analysis(project_path_)
 
                 definition = find_keyword_definition(
-                    analysis, thingy_data
-                ) or find_keyword_definition(paths_analysis_, thingy_data)
+                    analysis, thingy
+                ) or find_keyword_definition(paths_analysis_, thingy)
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
@@ -3206,20 +3196,18 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
         for region in self.view.sel():
             if thingy := thingy_at_region(self.view, view_analysis_, region):
 
-                thingy_semantic = thingy["semantic"]
-
-                thingy_data = thingy["data"]
+                thingy_semantic = thingy["_semantic"]
 
                 namespace = None
 
                 if thingy_semantic == TT_VAR_USAGE:
-                    namespace = thingy_data["to"]
+                    namespace = thingy["to"]
 
                 elif (
                     thingy_semantic == TT_NAMESPACE_USAGE
                     or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
                 ):
-                    namespace = thingy_data["to"]
+                    namespace = thingy["to"]
 
                 if namespace:
                     vars = find_namespace_vars_usages(view_analysis_, namespace)
@@ -3247,7 +3235,7 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
                 goto_on_highlight=True,
                 goto_side_by_side=False,
                 quick_panel_item_opts={
-                    "show_namespace": False,
+                    "show_namespace": True,
                     "show_row_col": True,
                 },
             )
@@ -3292,12 +3280,8 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if cursor_thingy := thingy_at_region(
-                self.view, view_analysis_, cursor_region
-            ):
-                thingy_data = cursor_thingy["data"]
-
-                if cursor_namespace_usage := thingy_data.get("to"):
+            if thingy := thingy_at_region(self.view, view_analysis_, cursor_region):
+                if cursor_namespace_usage := thingy.get("to"):
 
                     nindex_usages = analysis_nindex_usages(view_analysis_)
 
@@ -3307,7 +3291,7 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
                         # TODO: Show a QuickPanel if there are multiple options.
                         goto(self.view.window(), thingy_location(namespace_usages[0]))
 
-                elif cursor_class_usage := thingy_data.get("class"):
+                elif cursor_class_usage := thingy.get("class"):
 
                     jindex_usages = analysis_jindex_usages(view_analysis_)
 
@@ -3464,10 +3448,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                 thingies.append(thingy)
 
-                thingy_semantic = thingy["semantic"]
-
-                thingy_data = thingy["data"]
-
                 if thingy_usages := find_usages(
                     analysis=paths_analysis_,
                     thingy=thingy,
@@ -3504,7 +3484,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
                     # Select Thingy under the cursor:
                     for thingy in thingies:
-                        if thingy_usage == thingy["data"]:
+                        if thingy_usage == thingy:
                             selected_index = index
 
                     usage_trigger = (
