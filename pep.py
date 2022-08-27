@@ -2972,7 +2972,9 @@ class PgPepInspect(sublime_plugin.TextCommand):
             """
 
             flags = (
-                sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION | sublime.CLEAR_TO_RIGHT
+                sublime.SEMI_TRANSIENT
+                | sublime.ADD_TO_SELECTION
+                | sublime.CLEAR_TO_RIGHT
             )
 
             sheet = self.view.window().new_html_sheet("Inspect", html, flags)
@@ -3578,42 +3580,28 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if cursor_thingy := thingy_in_region(
-                self.view, view_analysis_, cursor_region
+            if thingy := thingy_in_region(
+                self.view,
+                view_analysis_,
+                cursor_region,
             ):
                 thingy_regions = find_thingy_text_regions(
-                    self.view, view_analysis_, cursor_thingy
+                    self.view,
+                    view_analysis_,
+                    thingy,
                 )
 
-                # Regions must be sorted because of shitfting - first region doesn't change, but subsequent regions do.
-                thingy_regions.sort()
+                adjust = 0
 
-                tregion, *tregion_more = thingy_regions
-
-                # Replace first region without shifting:
-                self.view.replace(edit, tregion, text)
-
-                # Subsequent regions possibly needs shifting its position.
-                # Regions might need to be left or right shifted - it depends on the new ident.
-
-                ident_diff = len(text) - len(thingy_text(self.view, cursor_thingy))
-
-                # Initially, shift is the same as the difference.
-                shift_count = ident_diff
-
-                # Shift & replace regions:
-                for region in tregion_more:
-                    region_begin_shifted = region.begin() + shift_count
-                    region_end_shifted = region.end() + shift_count
-                    region_shifted = sublime.Region(
-                        region_begin_shifted, region_end_shifted
+                for thingy_region in thingy_regions:
+                    replace = sublime.Region(
+                        thingy_region.a - adjust,
+                        thingy_region.b - adjust,
                     )
 
-                    self.view.replace(edit, region_shifted, text)
+                    adjust += replace.size() - len(text)
 
-                    # Shift is recursive
-                    # E.g. 2nd region shifts n, 3rd region shifts n + n, 4th region shifts n + n + n.
-                    shift_count += ident_diff
+                    self.view.replace(edit, replace, text)
 
         except Exception as e:
             print(f"Pep: Error: PgPepReplaceCommand", traceback.format_exc())
