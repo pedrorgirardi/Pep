@@ -3153,17 +3153,19 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         if analysis_ := paths_analysis(project_path_, not_found=None):
 
-            # Sorted by namespace.
-            items_ = sorted(
-                namespace_goto_items(analysis_),
-                key=lambda item: os.path.basename(item["thingy_data"]["name"]),
-            )
+            thingy_list = thingy_data_list_dedupe(namespace_definitions(analysis_))
 
-            show_goto_thingy_quick_panel(
+            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+
+            show_thingy_quick_panel(
                 self.window,
-                items_,
+                thingy_list,
                 goto_on_highlight=False,
-                goto_side_by_side=side_by_side,
+                goto_side_by_side=False,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
             )
 
 
