@@ -9,9 +9,10 @@ All notable changes to this project will be documented in this file.
 	- Goto side-by-side if set to true
 - Refactor Find Usages
 	- Removed scope
-- New command: `Goto Namespace Usage in View`
+- New command: `Goto Namespace Usages in View`
 - New command: `Browse Classpath`
 - Removed duplicates in QuickPanel
+- Improved `Replace` command
 
 ## 0.11.0 - 2022-07-26
 - Changed default setting `view_status_show_highlighted_prefix`:
