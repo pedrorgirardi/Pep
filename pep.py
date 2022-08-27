@@ -1115,67 +1115,6 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
         return finding_quick_panel_item(thingy)
 
 
-def show_goto_thingy_quick_panel(
-    window,
-    items,
-    goto_on_highlight=False,
-    goto_side_by_side=False,
-):
-    """
-    Show a Quick Panel to select a thingy to goto.
-
-    Items is a list of dict with keys "thingy_type", "thingy_data" and "quick_panel_item".
-    """
-
-    # Restore active view, its selection, and viewport position - if there's an active view.
-
-    initial_view = window.active_view()
-
-    initial_regions = [region for region in initial_view.sel()] if initial_view else []
-
-    initial_viewport_position = (
-        initial_view.viewport_position() if initial_view else None
-    )
-
-    def location(index):
-        thingy_data_ = items[index]["thingy_data"]
-
-        return thingy_location(thingy_data_)
-
-    def on_highlight(index):
-        goto(
-            window,
-            location(index),
-            flags=GOTO_TRANSIENT_FLAGS,
-        )
-
-    def on_select(index):
-        if index == -1:
-            if initial_view:
-                initial_view.sel().clear()
-
-                for region in initial_regions:
-                    initial_view.sel().add(region)
-
-                window.focus_view(initial_view)
-
-                initial_view.set_viewport_position(initial_viewport_position, True)
-        else:
-            goto(
-                window,
-                location(index),
-                GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
-            )
-
-    quick_panel_items = [item_["quick_panel_item"] for item_ in items]
-
-    window.show_quick_panel(
-        quick_panel_items,
-        on_select,
-        on_highlight=on_highlight if goto_on_highlight else None,
-    )
-
-
 def show_thingy_quick_panel(
     window,
     thingy_list,
@@ -3262,7 +3201,7 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
-        goto_items = []
+        thingy_list = []
 
         for region in self.view.sel():
             if thingy := thingy_at_region(self.view, view_analysis_, region):
@@ -3285,37 +3224,32 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
                 if namespace:
                     vars = find_namespace_vars_usages(view_analysis_, namespace)
 
-                    for var_ in vars:
-                        goto_items.append(
-                            {
-                                "thingy_type": TT_VAR_USAGE,
-                                "thingy_data": var_,
-                                "quick_panel_item": var_quick_panel_item(
-                                    var_,
-                                    {
-                                        "show_namespace": True,
-                                        "show_row_col": True,
-                                    },
-                                ),
-                            }
+                    thingy_list.extend(
+                        find_namespace_vars_usages(
+                            view_analysis_,
+                            namespace,
                         )
+                    )
 
-        if goto_items:
+        if thingy_list:
 
-            # Sort items by line and column:
-            goto_items_sorted = sorted(
-                goto_items,
-                key=lambda goto_item: (
-                    goto_item["thingy_data"]["row"],
-                    goto_item["thingy_data"]["col"],
+            thingy_list = sorted(
+                thingy_list,
+                key=lambda thingy: (
+                    thingy["row"],
+                    thingy["col"],
                 ),
             )
 
-            show_goto_thingy_quick_panel(
+            show_thingy_quick_panel(
                 self.view.window(),
-                items=goto_items_sorted,
+                thingy_list,
                 goto_on_highlight=True,
                 goto_side_by_side=False,
+                quick_panel_item_opts={
+                    "show_namespace": False,
+                    "show_row_col": True,
+                },
             )
 
 
