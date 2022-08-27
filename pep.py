@@ -1006,8 +1006,8 @@ def namespace_quick_panel_item(thingy_data):
 
     annotation = "Namespace"
 
-    if lang := thingy_lang(thingy_data):
-        annotation = f"{annotation} ({lang})"
+    if extension := thingy_extension(thingy_data):
+        annotation = f"{annotation} ({extension})"
 
     return sublime.QuickPanelItem(
         namespace_name,
@@ -1056,8 +1056,8 @@ def keyword_quick_panel_item(thingy_data):
 
     annotation = "Keyword"
 
-    if lang := thingy_lang(thingy_data):
-        annotation = f"{annotation} ({lang})"
+    if extension := thingy_extension(thingy_data):
+        annotation = f"{annotation} ({extension})"
 
     return sublime.QuickPanelItem(
         trigger,
@@ -3121,17 +3121,25 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
 
         if analysis_ := paths_analysis_ or view_analysis_:
 
-            items_ = [
-                *namespace_goto_items(analysis_),
-                *var_goto_items(analysis_),
-                *keyword_goto_items(analysis_),
-            ]
+            thingy_list = thingy_data_list_dedupe(
+                [
+                    *namespace_definitions(analysis_),
+                    *var_definitions(analysis_),
+                    *keyword_regs(analysis_),
+                ],
+            )
 
-            show_goto_thingy_quick_panel(
+            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+
+            show_thingy_quick_panel(
                 self.window,
-                items_,
+                thingy_list,
                 goto_on_highlight=False,
-                goto_side_by_side=side_by_side,
+                goto_side_by_side=False,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
             )
 
 
