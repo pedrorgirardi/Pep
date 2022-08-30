@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.12.0 -
-- Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import in View**
+- Merged commands `Jump to Require` and `Jump to Import` into `Goto Require/Import in View`
 - Renamed `Goto Analysis Finding` to `Goto Warning/Error in View`
 - Added `side_by_side` arg to goto commands:
 	- Goto side-by-side if set to true
