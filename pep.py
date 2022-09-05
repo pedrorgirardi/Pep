@@ -2243,8 +2243,6 @@ def find_usages(analysis, thingy) -> Optional[List]:
 
     thingy_semantic = thingy["_semantic"]
 
-    thingy_usages = None
-
     if thingy_semantic == TT_KEYWORD:
         # To be considered:
         # If the keyword is a destructuring key,
@@ -2252,34 +2250,30 @@ def find_usages(analysis, thingy) -> Optional[List]:
 
         thingy_usages = find_keyword_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_LOCAL_BINDING:
-        thingy_usages = find_local_usages(analysis, thingy)
+    elif thingy_semantic == TT_LOCAL:
+        return find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_LOCAL_USAGE:
-        thingy_usages = find_local_usages(analysis, thingy)
+        return find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_DEFINITION:
-        thingy_usages = find_var_usages(analysis, thingy)
+        return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_USAGE:
-        thingy_usages = find_var_usages(analysis, thingy)
+        return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_JAVA_CLASS_USAGE:
-        thingy_usages = find_java_class_usages(analysis, thingy)
+        return find_java_class_usages(analysis, thingy)
 
     elif thingy_semantic == TT_NAMESPACE_DEFINITION:
-        thingy_usages = find_namespace_usages(analysis, thingy)
+        return find_namespace_usages(analysis, thingy)
 
     elif (
         thingy_semantic == TT_NAMESPACE_USAGE
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
-        thingy_usages = find_namespace_usages(analysis, thingy)
+        return find_namespace_usages(analysis, thingy)
 
-    # Prune None usages - it's strange that there are None items though.
-    thingy_usages = [usage for usage in thingy_usages if usage]
-
-    return thingy_usages
 
 
 # ---
