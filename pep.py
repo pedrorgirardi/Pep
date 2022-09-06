@@ -1540,16 +1540,16 @@ def erase_analysis_regions(view):
 # ---
 
 
-def keyword_region(view, keyword_usage):
+def keyword_region(view, thingy) -> sublime.Region:
     """
-    Returns the Region of a keyword_usage.
+    Returns Region for keyword.
     """
 
-    row_start = keyword_usage["row"]
-    col_start = keyword_usage["col"]
+    row_start = thingy["row"]
+    col_start = thingy["col"]
 
-    row_end = keyword_usage["end-row"]
-    col_end = keyword_usage["end-col"]
+    row_end = thingy["end-row"]
+    col_end = thingy["end-col"]
 
     start_point = view.text_point(row_start - 1, col_start - 1)
     end_point = view.text_point(row_end - 1, col_end - 1)
@@ -2273,7 +2273,6 @@ def find_usages(analysis, thingy) -> Optional[List]:
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
         return find_namespace_usages(analysis, thingy)
-
 
 
 # ---
@@ -3583,6 +3582,18 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
                     self.view,
                     view_analysis_,
                     thingy,
+                )
+
+                # Dedupe regions - it's necessary because clj-kondo duplicates data for .cljc
+                # (It's duplicate because clj-kondo returns data for each 'lang' - clj/cljs)
+                thingy_regions = list(
+                    {
+                        (
+                            region.a,
+                            region.b,
+                        ): region
+                        for region in thingy_regions
+                    }.values()
                 )
 
                 adjust = 0
