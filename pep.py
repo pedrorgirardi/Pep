@@ -1557,16 +1557,16 @@ def keyword_region(view, thingy) -> sublime.Region:
     return sublime.Region(start_point, end_point)
 
 
-def namespace_region(view, namespace):
+def namespace_region(view, thingy) -> sublime.Region:
     """
-    Returns a Region of a namespace usage.
+    Returns Region for namespace - usage or definition.
     """
 
-    row_start = namespace.get("name-row")
-    col_start = namespace.get("name-col")
+    row_start = thingy.get("name-row")
+    col_start = thingy.get("name-col")
 
-    row_end = namespace.get("name-end-row")
-    col_end = namespace.get("name-end-col")
+    row_end = thingy.get("name-end-row")
+    col_end = thingy.get("name-end-col")
 
     start_point = view.text_point(row_start - 1, col_start - 1)
     end_point = view.text_point(row_end - 1, col_end - 1)
