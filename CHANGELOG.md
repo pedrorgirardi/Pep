@@ -3,16 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.12.0 -
-- Merged commands `Jump to Require` and `Jump to Import` into `Goto Require/Import in View`
-- Renamed `Goto Analysis Finding` to `Goto Warning/Error in View`
+- Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import in View** (`pg_pep_goto_require_import_in_view`)
+- Renamed **Goto Analysis Finding** to **Goto Warning/Error in View** (`pg_pep_goto_warning_error_in_view`)
 - Added `side_by_side` arg to goto commands:
 	- Goto side-by-side if set to true
 - Refactor Find Usages
 	- Removed scope
-- New command: `Goto Namespace Usages in View`
-- New command: `Browse Classpath`
+- New command: ***Goto Namespace** Usage in View (`pg_pep_goto_namespace_usage_in_view`)
+- New command: **Browse Classpath** (`pg_pep_browse_classpath`)
 - Removed duplicates in QuickPanel
-- Improved `Replace` command
+- Improved `Replace` command (`pg_pep_replace`)
 - Analyze Babashka files
 
 ## 0.11.0 - 2022-07-26
