@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 	- Goto side-by-side if set to true
 - Refactor Find Usages
 	- Removed scope
-- New command: ***Goto Namespace** Usage in View (`pg_pep_goto_namespace_usage_in_view`)
+- New command: **Goto Namespace Usage in View** (`pg_pep_goto_namespace_usage_in_view`)
 - New command: **Browse Classpath** (`pg_pep_browse_classpath`)
 - Removed duplicates in QuickPanel
 - Improved `Replace` command (`pg_pep_replace`)
