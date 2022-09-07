@@ -3200,8 +3200,6 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
                     namespace = thingy["to"]
 
                 if namespace:
-                    vars = find_namespace_vars_usages(view_analysis_, namespace)
-
                     thingy_list.extend(
                         find_namespace_vars_usages(
                             view_analysis_,
