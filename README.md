@@ -7,6 +7,8 @@
 | Command | Description |
 | ------- | ----------- |
 | `pg_pep_analyze` | Analyze view, paths or classpath |
+| `pg_pep_browse_classpath` | Go to anything in the classpath |
+| `pg_pep_outline` | Show symbols defined in the namespace - it might also be known as 'file structure' |
 | `pg_pep_goto_anything` | Go to anything - in view, paths, classpath |
 | `pg_pep_goto_namespace` | Go to namespace in paths |
 | `pg_pep_goto_definition` | Go to definition of symbol or keyword under the cursor |
