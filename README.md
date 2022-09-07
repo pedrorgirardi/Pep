@@ -8,9 +8,11 @@
 | ------- | ----------- |
 | `pg_pep_analyze` | Analyze view, paths or classpath |
 | `pg_pep_goto_anything` | Go to anything - in view, paths, classpath |
+| `pg_pep_goto_namespace` | Go to namespace in paths |
 | `pg_pep_goto_definition` | Go to definition of symbol or keyword under the cursor |
-| `pg_pep_goto_warning_error` | Go to clj-kondo analysis finding (warning or error) |
-| `pg_pep_goto_to_require` | Go to require or import for symbol under the cursor |
+| `pg_pep_goto_warning_error_in_view` | Go to clj-kondo analysis finding (warning or error) |
+| `pg_pep_goto_require_import_in_view` | Go to require or import for symbol under the cursor |
+| `pg_pep_goto_namespace_usage_in_view` | Go to usage of namespace in view |
 | `pg_pep_show_doc` | Show documentation in a popup for symbol under the cursor |
 | `pg_pep_jump` | Jump to occurrences of symbol or keyword under the cursor |
 | `pg_pep_find_usages` | Find usages of symbol or keyword under the cursor |
@@ -88,12 +90,13 @@ Default settings:
                                "Packages/Tutkain/EDN (Tutkain).sublime-syntax",
                                "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
                                "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
-                               "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax"],
+                               "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
+                               "Packages/Tutkain/Babashka (Tutkain).sublime-syntax"],
 
-    // True if you want to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
+    // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
     "annotate_view_analysis": false,
 
-    // The font size used by view analysis annotations.
+    // The font-size used by view analysis annotations.
     "annotation_font_size": "0.9em",
 
     // True if you would like to see the number of clj-kondo errors, if any, in the status bar.
@@ -111,17 +114,17 @@ Default settings:
     // If you would like to add a custom suffix to the namespace of the view in the status bar.
     "view_status_show_namespace_suffix": "",
 
-    // True if you want to see the number of highlighted regions in the status bar.
+    // True if you would like to see the number of highlighted regions in the status bar.
     "view_status_show_highlighted": false,
 
     // If you would like to add a custom prefix to the number of highlighted regions in the status bar.
-    "view_status_show_highlighted_prefix": "Usages: ",
+    "view_status_show_highlighted_prefix": "Highlighted: ",
 
     // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
     "view_status_show_highlighted_suffix": "",
 
     // It's unlikely to need to analyze scratch views,
-    // but you can run the command to analyze a view if needed.
+    // but you can run the command to analyze a view if you need it.
     "analyze_scratch_view": false,
 
     // True if you would like to analyse your project's sources when the plugin is loaded.
@@ -136,7 +139,7 @@ Default settings:
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_plugin_loaded": true,
 
-    // True if you would like to analyse your project's classpath when the project is loaded.
+    // True if you would like to analyze your project's classpath when the project is loaded.
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_load_project": true,
 
