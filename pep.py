@@ -3014,7 +3014,7 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
 
 class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
     """
-    Goto anything in paths or view.
+    Goto namespace, var or keyword in paths or view.
     """
 
     def run(self, side_by_side=False):
