@@ -2269,7 +2269,7 @@ def find_usages(analysis, thingy) -> Optional[List]:
         # If the keyword is a destructuring key,
         # should it show its local usages?
 
-        thingy_usages = find_keyword_usages(analysis, thingy)
+        return find_keyword_usages(analysis, thingy)
 
     elif thingy_semantic == TT_LOCAL:
         return find_local_usages(analysis, thingy)
