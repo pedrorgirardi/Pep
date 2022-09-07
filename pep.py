@@ -586,20 +586,23 @@ def namespace_index(
     if nindex or nrn:
         for namespace_definition in namespace_definitions:
 
-            namespace_definition = {
-                **namespace_definition,
-                "_semantic": TT_NAMESPACE_DEFINITION,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if namespace_definition.get("row") and namespace_definition.get("col"):
 
-            if nindex:
-                name = namespace_definition.get("name")
+                namespace_definition = {
+                    **namespace_definition,
+                    "_semantic": TT_NAMESPACE_DEFINITION,
+                }
 
-                nindex_.setdefault(name, []).append(namespace_definition)
+                if nindex:
+                    name = namespace_definition.get("name")
 
-            if nrn:
-                name_row = namespace_definition.get("name-row")
+                    nindex_.setdefault(name, []).append(namespace_definition)
 
-                nrn_.setdefault(name_row, []).append(namespace_definition)
+                if nrn:
+                    name_row = namespace_definition.get("name-row")
+
+                    nrn_.setdefault(name_row, []).append(namespace_definition)
 
     # Namespace usages indexed by name.
     nindex_usages_ = {}
@@ -610,27 +613,30 @@ def namespace_index(
     if nindex_usages or nrn_usages:
         for namespace_usage in analysis.get("namespace-usages", []):
 
-            namespace_usage = {
-                **namespace_usage,
-                "_semantic": TT_NAMESPACE_USAGE,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if namespace_usage.get("row") and namespace_usage.get("col"):
 
-            if nindex_usages:
-                name = namespace_usage.get("to")
+                namespace_usage = {
+                    **namespace_usage,
+                    "_semantic": TT_NAMESPACE_USAGE,
+                }
 
-                nindex_usages_.setdefault(name, []).append(namespace_usage)
+                if nindex_usages:
+                    name = namespace_usage.get("to")
 
-            if nrn_usages:
-                name_row = namespace_usage.get("name-row")
+                    nindex_usages_.setdefault(name, []).append(namespace_usage)
 
-                nrn_usages_.setdefault(name_row, []).append(namespace_usage)
+                if nrn_usages:
+                    name_row = namespace_usage.get("name-row")
 
-                # Index alias row (in case there's one).
-                # Note: It's possible to have both the name and alias in the same row.
-                if namespace_usage.get("alias"):
-                    alias_row = namespace_usage.get("alias-row")
+                    nrn_usages_.setdefault(name_row, []).append(namespace_usage)
 
-                    nrn_usages_.setdefault(alias_row, []).append(namespace_usage)
+                    # Index alias row (in case there's one).
+                    # Note: It's possible to have both the name and alias in the same row.
+                    if namespace_usage.get("alias"):
+                        alias_row = namespace_usage.get("alias-row")
+
+                        nrn_usages_.setdefault(alias_row, []).append(namespace_usage)
 
     return {
         "nindex": nindex_,
@@ -664,19 +670,22 @@ def local_index(
     if lindex or lrn:
         for local_binding in analysis.get("locals", []):
 
-            local_binding = {
-                **local_binding,
-                "_semantic": TT_LOCAL,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if local_binding.get("row") and local_binding.get("col"):
 
-            id = local_binding.get("id")
-            row = local_binding.get("row")
+                local_binding = {
+                    **local_binding,
+                    "_semantic": TT_LOCAL,
+                }
 
-            if lrn:
-                lrn_.setdefault(row, []).append(local_binding)
+                id = local_binding.get("id")
+                row = local_binding.get("row")
 
-            if lindex:
-                lindex_[id] = local_binding
+                if lrn:
+                    lrn_.setdefault(row, []).append(local_binding)
+
+                if lindex:
+                    lindex_[id] = local_binding
 
     # Local usages indexed by ID - local binding ID to a set of local usages.
     lindex_usages_ = {}
@@ -687,19 +696,22 @@ def local_index(
     if lindex_usages or lrn_usages:
         for local_usage in analysis.get("local-usages", []):
 
-            local_usage = {
-                **local_usage,
-                "_semantic": TT_LOCAL_USAGE,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if local_usage.get("row") and local_usage.get("col"):
 
-            id = local_usage.get("id")
-            name_row = local_usage.get("name-row")
+                local_usage = {
+                    **local_usage,
+                    "_semantic": TT_LOCAL_USAGE,
+                }
 
-            if lindex_usages:
-                lindex_usages_.setdefault(id, []).append(local_usage)
+                id = local_usage.get("id")
+                name_row = local_usage.get("name-row")
 
-            if lrn_usages:
-                lrn_usages_.setdefault(name_row, []).append(local_usage)
+                if lindex_usages:
+                    lindex_usages_.setdefault(id, []).append(local_usage)
+
+                if lrn_usages:
+                    lrn_usages_.setdefault(name_row, []).append(local_usage)
 
     return {
         "lindex": lindex_,
@@ -723,20 +735,23 @@ def keyword_index(
     if kindex or krn:
         for keyword in analysis.get("keywords", []):
 
-            keyword = {
-                **keyword,
-                "_semantic": TT_KEYWORD,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if keyword.get("row") and keyword.get("col"):
 
-            ns = keyword.get("ns")
-            name = keyword.get("name")
-            row = keyword.get("row")
+                keyword = {
+                    **keyword,
+                    "_semantic": TT_KEYWORD,
+                }
 
-            if kindex:
-                kindex_.setdefault((ns, name), []).append(keyword)
+                ns = keyword.get("ns")
+                name = keyword.get("name")
+                row = keyword.get("row")
 
-            if krn:
-                krn_.setdefault(row, []).append(keyword)
+                if kindex:
+                    kindex_.setdefault((ns, name), []).append(keyword)
+
+                if krn:
+                    krn_.setdefault(row, []).append(keyword)
 
     return {
         "kindex": kindex_,
@@ -760,22 +775,25 @@ def var_index(
     if vindex or vrn:
         for var_definition in analysis.get("var-definitions", []):
 
-            var_definition = {
-                **var_definition,
-                "_semantic": TT_VAR_DEFINITION,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if var_definition.get("row") and var_definition.get("col"):
 
-            if vindex:
-                ns = var_definition.get("ns")
+                var_definition = {
+                    **var_definition,
+                    "_semantic": TT_VAR_DEFINITION,
+                }
 
-                name = var_definition.get("name")
+                if vindex:
+                    ns = var_definition.get("ns")
 
-                vindex_.setdefault((ns, name), []).append(var_definition)
+                    name = var_definition.get("name")
 
-            if vrn:
-                name_row = var_definition.get("name-row")
+                    vindex_.setdefault((ns, name), []).append(var_definition)
 
-                vrn_.setdefault(name_row, []).append(var_definition)
+                if vrn:
+                    name_row = var_definition.get("name-row")
+
+                    vrn_.setdefault(name_row, []).append(var_definition)
 
     # Var usages indexed by row.
     vrn_usages_ = {}
@@ -786,22 +804,25 @@ def var_index(
     if vindex_usages or vrn_usages:
         for var_usage in analysis.get("var-usages", []):
 
-            var_usage = {
-                **var_usage,
-                "_semantic": TT_VAR_USAGE,
-            }
+            # Ignore data missing row and col - it seems like a clj-kondo bug.
+            if var_usage.get("row") and var_usage.get("col"):
 
-            if vindex_usages:
-                ns = var_usage.get("to")
+                var_usage = {
+                    **var_usage,
+                    "_semantic": TT_VAR_USAGE,
+                }
 
-                name = var_usage.get("name")
+                if vindex_usages:
+                    ns = var_usage.get("to")
 
-                vindex_usages_.setdefault((ns, name), []).append(var_usage)
+                    name = var_usage.get("name")
 
-            if vrn_usages:
-                name_row = var_usage.get("name-row")
+                    vindex_usages_.setdefault((ns, name), []).append(var_usage)
 
-                vrn_usages_.setdefault(name_row, []).append(var_usage)
+                if vrn_usages:
+                    name_row = var_usage.get("name-row")
+
+                    vrn_usages_.setdefault(name_row, []).append(var_usage)
 
     return {
         "vindex": vindex_,
