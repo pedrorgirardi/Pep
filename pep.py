@@ -2717,7 +2717,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 sheet = self.view.window().new_html_sheet(
                     qualified_name,
                     content,
-                    sublime.SEMI_TRANSIENT,
+                    sublime.TRANSIENT | sublime.ADD_TO_SELECTION,
                 )
 
                 self.view.window().focus_sheet(sheet)
