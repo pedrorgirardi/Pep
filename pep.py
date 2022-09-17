@@ -206,6 +206,8 @@ def analysis_applicable_to(window):
         ],
     )
 
+def analysis_delay(window):
+    return setting(window, "analysis_delay", 0.6)
 
 def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
@@ -3838,7 +3840,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if self.analyzer:
             self.analyzer.cancel()
 
-        self.analyzer = threading.Timer(0.4, self.analyze)
+        analysis_delay_ = analysis_delay(self.view.window())
+
+        self.analyzer = threading.Timer(analysis_delay_, self.analyze)
         self.analyzer.start()
 
     def on_selection_modified_async(self):
