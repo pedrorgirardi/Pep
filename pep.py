@@ -946,6 +946,9 @@ def view_analysis_completed(view):
         view.run_command("pg_pep_view_summary_status")
         view.run_command("pg_pep_view_namespace_status")
 
+        if automatically_highlight(view.window()):
+            highlight_thingy(view)
+
     return on_completed
 
 
