@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## 0.13.0 -
 - Fix `pg_pep_show_doc` `side_by_side`;
+- Show documentation: added support for multiple cursors;
 
 ## 0.12.0 - 2022-09-07
 - Merged commands **Jump to Require** and **Jump to Import** into **Goto Require/Import in View** (`pg_pep_goto_require_import_in_view`)
