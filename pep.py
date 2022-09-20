@@ -853,7 +853,8 @@ def java_class_index(
 
     if jindex:
         for java_class_definition in analysis.get("java-class-definitions", []):
-            jindex_[java_class_definition.get("class")] = java_class_definition
+            if java_class_definition.get("row") and java_class_definition.get("col"):
+                jindex_[java_class_definition.get("class")] = java_class_definition
 
     # Java class usages indexed by row.
     jrn_usages_ = {}
@@ -864,20 +865,22 @@ def java_class_index(
     if jindex_usages or jrn_usages:
         for java_class_usage in analysis.get("java-class-usages", []):
 
-            java_class_usage = {
-                **java_class_usage,
-                "_semantic": TT_JAVA_CLASS_USAGE,
-            }
+            if java_class_usage.get("row") and java_class_usage.get("col"):
 
-            if jindex_usages:
-                jindex_usages_.setdefault(java_class_usage.get("class"), []).append(
-                    java_class_usage
-                )
+                java_class_usage = {
+                    **java_class_usage,
+                    "_semantic": TT_JAVA_CLASS_USAGE,
+                }
 
-            if jrn_usages:
-                jrn_usages_.setdefault(java_class_usage.get("row"), []).append(
-                    java_class_usage
-                )
+                if jindex_usages:
+                    jindex_usages_.setdefault(java_class_usage.get("class"), []).append(
+                        java_class_usage
+                    )
+
+                if jrn_usages:
+                    jrn_usages_.setdefault(java_class_usage.get("row"), []).append(
+                        java_class_usage
+                    )
 
     return {
         "jindex": jindex_,
@@ -1707,16 +1710,16 @@ def java_class_usage_region(view, java_class_usage):
     Returns the Region of a Java class usage.
     """
 
-    name_row_start = java_class_usage.get("row")
-    name_col_start = java_class_usage.get("col")
+    row_start = java_class_usage.get("row")
+    col_start = java_class_usage.get("col")
 
-    name_row_end = java_class_usage.get("end-row")
-    name_col_end = java_class_usage.get("end-col")
+    row_end = java_class_usage.get("end-row")
+    col_end = java_class_usage.get("end-col")
 
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
 
-    return sublime.Region(name_start_point, name_end_point)
+    return sublime.Region(start_point, end_point)
 
 
 def var_usage_namespace_region(view, var_usage):
