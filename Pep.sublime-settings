@@ -41,6 +41,9 @@
     // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
     "view_status_show_highlighted_suffix": "",
 
+    // Number of seconds to delay the analysis after a view is modified.
+    "analysis_delay": 0.6,
+
     // It's unlikely to need to analyze scratch views,
     // but you can run the command to analyze a view if you need it.
     "analyze_scratch_view": false,
