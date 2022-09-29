@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.14.0 - 
+
 ## 0.13.0 - 2022-09-29
 - Fix `pg_pep_show_doc` `side_by_side`;
 - Show documentation: added support for multiple cursors;
