@@ -217,6 +217,10 @@ def annotate_view_analysis(window):
     return setting(window, "annotate_view_analysis", False)
 
 
+def annotate_view_on_save(window):
+    return setting(window, "annotate_view_on_save", False)
+
+
 def annotation_font_size(window):
     return setting(window, "annotation_font_size", "0.9em")
 
@@ -951,7 +955,7 @@ def view_analysis_completed(view):
         view.run_command("pg_pep_view_namespace_status")
 
         if annotate_view_analysis(view.window()):
-            view.run_command("pg_pep_annotate")
+            annotate_view(view)
 
         if automatically_highlight(view.window()):
             highlight_thingy(view)
@@ -2478,6 +2482,78 @@ def find_thingy_text_regions(view, analysis, thingy):
     return thingy_regions
 
 
+def annotate_view(view):
+    def finding_region(finding):
+        line_start = finding["row"] - 1
+        line_end = (finding.get("end-row") or finding.get("row")) - 1
+        col_start = finding["col"] - 1
+        col_end = (finding.get("end-col") or finding.get("col")) - 1
+
+        pa = view.text_point(line_start, col_start)
+        pb = view.text_point(line_end, col_end)
+
+        return sublime.Region(pa, pb)
+
+    def finding_minihtml(finding):
+        return f"""
+        <body>
+        <div">
+            <span style="font-size:{annotation_font_size(view.window())}">{htmlify(finding["message"])}</span></div>
+        </div>
+        </body>
+        """
+
+    analysis = view_analysis(view.id())
+
+    findings = analysis_findings(analysis)
+
+    warning_region_set = []
+    warning_minihtml_set = []
+
+    error_region_set = []
+    error_minihtml_set = []
+
+    for finding in findings:
+        if finding["level"] == "error":
+            error_region_set.append(finding_region(finding))
+            error_minihtml_set.append(finding_minihtml(finding))
+        elif finding["level"] == "warning":
+            warning_region_set.append(finding_region(finding))
+            warning_minihtml_set.append(finding_minihtml(finding))
+
+    # Erase regions from previous analysis.
+    erase_analysis_regions(view)
+
+    redish = view.style_for_scope("region.redish")["foreground"]
+    orangish = view.style_for_scope("region.orangish")["foreground"]
+
+    view.add_regions(
+        "pg_pep_analysis_error",
+        error_region_set,
+        scope="region.redish",
+        annotations=error_minihtml_set,
+        annotation_color=redish,
+        flags=(
+            sublime.DRAW_SQUIGGLY_UNDERLINE
+            | sublime.DRAW_NO_FILL
+            | sublime.DRAW_NO_OUTLINE
+        ),
+    )
+
+    view.add_regions(
+        "pg_pep_analysis_warning",
+        warning_region_set,
+        scope="region.orangish",
+        annotations=warning_minihtml_set,
+        annotation_color=orangish,
+        flags=(
+            sublime.DRAW_SQUIGGLY_UNDERLINE
+            | sublime.DRAW_NO_FILL
+            | sublime.DRAW_NO_OUTLINE
+        ),
+    )
+
+
 # ---
 
 
@@ -3720,86 +3796,7 @@ class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
-
-            def finding_region(finding):
-                line_start = finding["row"] - 1
-                line_end = (finding.get("end-row") or finding.get("row")) - 1
-                col_start = finding["col"] - 1
-                col_end = (finding.get("end-col") or finding.get("col")) - 1
-
-                pa = self.view.text_point(line_start, col_start)
-                pb = self.view.text_point(line_end, col_end)
-
-                return sublime.Region(pa, pb)
-
-            def finding_minihtml(finding):
-                return f"""
-                <body>
-                <div">
-                    <span style="font-size:{annotation_font_size(self.view.window())}">{htmlify(finding["message"])}</span></div>
-                </div>
-                </body>
-                """
-
-            analysis = view_analysis(self.view.id())
-
-            findings = analysis_findings(analysis)
-
-            warning_region_set = []
-            warning_minihtml_set = []
-
-            error_region_set = []
-            error_minihtml_set = []
-
-            for finding in findings:
-                try:
-
-                    if finding["level"] == "error":
-                        error_region_set.append(finding_region(finding))
-                        error_minihtml_set.append(finding_minihtml(finding))
-                    elif finding["level"] == "warning":
-                        warning_region_set.append(finding_region(finding))
-                        warning_minihtml_set.append(finding_minihtml(finding))
-
-                except Exception as ex:
-                    if is_debug(self.view.window()):
-                        print(
-                            "Pep: Failed to annotate finding.",
-                            {"error": ex, "finding": finding},
-                        )
-
-            # Erase regions from previous analysis.
-            erase_analysis_regions(self.view)
-
-            redish = self.view.style_for_scope("region.redish")["foreground"]
-            orangish = self.view.style_for_scope("region.orangish")["foreground"]
-
-            self.view.add_regions(
-                "pg_pep_analysis_error",
-                error_region_set,
-                scope="region.redish",
-                annotations=error_minihtml_set,
-                annotation_color=redish,
-                flags=(
-                    sublime.DRAW_SQUIGGLY_UNDERLINE
-                    | sublime.DRAW_NO_FILL
-                    | sublime.DRAW_NO_OUTLINE
-                ),
-            )
-
-            self.view.add_regions(
-                "pg_pep_analysis_warning",
-                warning_region_set,
-                scope="region.orangish",
-                annotations=warning_minihtml_set,
-                annotation_color=orangish,
-                flags=(
-                    sublime.DRAW_SQUIGGLY_UNDERLINE
-                    | sublime.DRAW_NO_FILL
-                    | sublime.DRAW_NO_OUTLINE
-                ),
-            )
-
+            annotate_view(self.view)
         except Exception as e:
             print(f"Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
@@ -3853,6 +3850,10 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def on_selection_modified_async(self):
         if automatically_highlight(self.view.window()):
             highlight_thingy(self.view)
+
+    def on_post_save_async(self):
+        if annotate_view_on_save(self.view.window()):
+            annotate_view(self.view)
 
     def on_close(self):
         """
