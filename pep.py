@@ -2514,11 +2514,6 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
             print(f"Pep: Cleared cache")
 
 
-class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        erase_analysis_regions(self.view)
-
-
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
     def input(self, args):
         if "scope" not in args:
@@ -3715,6 +3710,11 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             print(
                 f"Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc()
             )
+
+
+class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        erase_analysis_regions(self.view)
 
 
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
