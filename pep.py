@@ -947,9 +947,11 @@ def project_data_paths(window):
 
 def view_analysis_completed(view):
     def on_completed(analysis):
-        view.run_command("pg_pep_annotate")
         view.run_command("pg_pep_view_summary_status")
         view.run_command("pg_pep_view_namespace_status")
+
+        if annotate_view_analysis(view.window()):
+            view.run_command("pg_pep_annotate")
 
         if automatically_highlight(view.window()):
             highlight_thingy(view)
