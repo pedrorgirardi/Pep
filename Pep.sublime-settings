@@ -11,9 +11,13 @@
                                "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
                                "Packages/Tutkain/Babashka (Tutkain).sublime-syntax"],
 
-    // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
+    // If you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view:
+
+    // True if it should be displayed right after the analysis is completed.
+    // It's a 'tighter feedback loop' to display warnings/errors after the analysis, but some might find it distracting.
     "annotate_view_after_analysis": false,
 
+    // True if it should be displayed only when a view is saved.
     "annotate_view_on_save": false,
 
     // The font-size used by view analysis annotations.
