@@ -95,8 +95,37 @@ Default settings:
                                "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
                                "Packages/Tutkain/Babashka (Tutkain).sublime-syntax"],
 
-    // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
-    "annotate_view_analysis": false,
+    // Number of seconds to delay the analysis after a view is modified.
+    "analysis_delay": 0.6,
+
+    // It's unlikely to need to analyze scratch views,
+    // but you can run the command to analyze a view if you need it.
+    "analyze_scratch_view": false,
+
+    // True if you would like to analyse your project's sources when the plugin is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
+    "analyze_paths_on_plugin_loaded": true,
+
+    // True if you would like to analyze your project's sources when the project is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
+    "analyze_paths_on_load_project": true,
+
+    // True if you would like to analyse your project's classpath when the plugin is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
+    "analyze_classpath_on_plugin_loaded": true,
+
+    // True if you would like to analyze your project's classpath when the project is loaded.
+    // (Doesn't do anything if there isn't a *.sublime-project file.)
+    "analyze_classpath_on_load_project": true,
+
+    // If you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view:
+
+    // True if it should be displayed right after the analysis is completed.
+    // It's a 'tighter feedback loop' to display warnings/errors after the analysis, but some might find it distracting.
+    "annotate_view_after_analysis": false,
+
+    // True if it should be displayed only when a view is saved.
+    "annotate_view_on_save": false,
 
     // The font-size used by view analysis annotations.
     "annotation_font_size": "0.9em",
@@ -124,29 +153,6 @@ Default settings:
 
     // If you would like to add a custom suffix to the number of highlighted regions in the status bar.
     "view_status_show_highlighted_suffix": "",
-
-    // Number of seconds to delay the analysis after a view is modified.
-    "analysis_delay": 0.6,
-
-    // It's unlikely to need to analyze scratch views,
-    // but you can run the command to analyze a view if you need it.
-    "analyze_scratch_view": false,
-
-    // True if you would like to analyse your project's sources when the plugin is loaded.
-    // (Doesn't do anything if there isn't a *.sublime-project file.)
-    "analyze_paths_on_plugin_loaded": true,
-
-    // True if you would like to analyze your project's sources when the project is loaded.
-    // (Doesn't do anything if there isn't a *.sublime-project file.)
-    "analyze_paths_on_load_project": true,
-
-    // True if you would like to analyse your project's classpath when the plugin is loaded.
-    // (Doesn't do anything if there isn't a *.sublime-project file.)
-    "analyze_classpath_on_plugin_loaded": true,
-
-    // True if you would like to analyze your project's classpath when the project is loaded.
-    // (Doesn't do anything if there isn't a *.sublime-project file.)
-    "analyze_classpath_on_load_project": true,
 
     // True if you would like to highlight vars, local bindings and keywords usages.
     "automatically_highlight": false,
