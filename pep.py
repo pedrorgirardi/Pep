@@ -213,8 +213,8 @@ def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
 
 
-def annotate_view_analysis(window):
-    return setting(window, "annotate_view_analysis", False)
+def annotate_view_after_analysis(window):
+    return setting(window, "annotate_view_after_analysis", False)
 
 
 def annotate_view_on_save(window):
@@ -954,7 +954,7 @@ def view_analysis_completed(view):
         view.run_command("pg_pep_view_summary_status")
         view.run_command("pg_pep_view_namespace_status")
 
-        if annotate_view_analysis(view.window()):
+        if annotate_view_after_analysis(view.window()):
             annotate_view(view)
 
         if automatically_highlight(view.window()):

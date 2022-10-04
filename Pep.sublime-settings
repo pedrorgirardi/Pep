@@ -12,7 +12,7 @@
                                "Packages/Tutkain/Babashka (Tutkain).sublime-syntax"],
 
     // True if you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view.
-    "annotate_view_analysis": false,
+    "annotate_view_after_analysis": false,
 
     "annotate_view_on_save": false,
 
