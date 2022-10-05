@@ -178,7 +178,10 @@ def settings():
 
 
 def project_data(window):
-    return window.project_data().get("pep", {}) if window.project_data() else {}
+    if window:
+        return window.project_data().get("pep", {}) if window.project_data() else {}
+    else:
+        return {}
 
 
 def setting(window, k, not_found):
@@ -206,8 +209,10 @@ def analysis_applicable_to(window):
         ],
     )
 
+
 def analysis_delay(window):
     return setting(window, "analysis_delay", 0.6)
+
 
 def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
