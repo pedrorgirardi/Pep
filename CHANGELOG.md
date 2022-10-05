@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## 0.14.0 - 
 - New command: **Annotate View** (`pg_pep_annotate_view`)
 - New command: **Clear View Annotations** (`pg_pep_clear_view_annotations`)
+- New setting: `annotate_view_on_save`
+	- True if warnings/errors should be displayed only when a view is saved. See `Pep.sublime-settings`
+- Breaking change: renamed setting `annotate_view_analysis` to `annotate_view_after_analysis`
+	- True if warnings/errors should be displayed right after the analysis is completed. See `Pep.sublime-settings`
 
 ## 0.13.0 - 2022-09-29
 - Fix `pg_pep_show_doc` `side_by_side`;

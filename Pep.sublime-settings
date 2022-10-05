@@ -36,7 +36,7 @@
 
     // If you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view:
 
-    // True if it should be displayed right after the analysis is completed.
+    // True if warnings/errors should be displayed right after the analysis is completed.
     // It's a 'tighter feedback loop' to display warnings/errors after the analysis, but some might find it distracting.
     "annotate_view_after_analysis": false,
 
