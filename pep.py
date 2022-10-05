@@ -206,8 +206,10 @@ def analysis_applicable_to(window):
         ],
     )
 
+
 def analysis_delay(window):
     return setting(window, "analysis_delay", 0.6)
+
 
 def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
