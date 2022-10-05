@@ -206,13 +206,19 @@ def analysis_applicable_to(window):
         ],
     )
 
+def analysis_delay(window):
+    return setting(window, "analysis_delay", 0.6)
 
 def automatically_highlight(window):
     return setting(window, "automatically_highlight", False)
 
 
-def annotate_view_analysis(window):
-    return setting(window, "annotate_view_analysis", False)
+def annotate_view_after_analysis(window):
+    return setting(window, "annotate_view_after_analysis", False)
+
+
+def annotate_view_on_save(window):
+    return setting(window, "annotate_view_on_save", False)
 
 
 def annotation_font_size(window):
@@ -851,7 +857,8 @@ def java_class_index(
 
     if jindex:
         for java_class_definition in analysis.get("java-class-definitions", []):
-            jindex_[java_class_definition.get("class")] = java_class_definition
+            if java_class_definition.get("row") and java_class_definition.get("col"):
+                jindex_[java_class_definition.get("class")] = java_class_definition
 
     # Java class usages indexed by row.
     jrn_usages_ = {}
@@ -862,20 +869,22 @@ def java_class_index(
     if jindex_usages or jrn_usages:
         for java_class_usage in analysis.get("java-class-usages", []):
 
-            java_class_usage = {
-                **java_class_usage,
-                "_semantic": TT_JAVA_CLASS_USAGE,
-            }
+            if java_class_usage.get("row") and java_class_usage.get("col"):
 
-            if jindex_usages:
-                jindex_usages_.setdefault(java_class_usage.get("class"), []).append(
-                    java_class_usage
-                )
+                java_class_usage = {
+                    **java_class_usage,
+                    "_semantic": TT_JAVA_CLASS_USAGE,
+                }
 
-            if jrn_usages:
-                jrn_usages_.setdefault(java_class_usage.get("row"), []).append(
-                    java_class_usage
-                )
+                if jindex_usages:
+                    jindex_usages_.setdefault(java_class_usage.get("class"), []).append(
+                        java_class_usage
+                    )
+
+                if jrn_usages:
+                    jrn_usages_.setdefault(java_class_usage.get("row"), []).append(
+                        java_class_usage
+                    )
 
     return {
         "jindex": jindex_,
@@ -942,9 +951,14 @@ def project_data_paths(window):
 
 def view_analysis_completed(view):
     def on_completed(analysis):
-        view.run_command("pg_pep_annotate")
         view.run_command("pg_pep_view_summary_status")
         view.run_command("pg_pep_view_namespace_status")
+
+        if annotate_view_after_analysis(view.window()):
+            annotate_view(view)
+
+        if automatically_highlight(view.window()):
+            highlight_thingy(view)
 
     return on_completed
 
@@ -1702,16 +1716,16 @@ def java_class_usage_region(view, java_class_usage):
     Returns the Region of a Java class usage.
     """
 
-    name_row_start = java_class_usage.get("row")
-    name_col_start = java_class_usage.get("col")
+    row_start = java_class_usage.get("row")
+    col_start = java_class_usage.get("col")
 
-    name_row_end = java_class_usage.get("end-row")
-    name_col_end = java_class_usage.get("end-col")
+    row_end = java_class_usage.get("end-row")
+    col_end = java_class_usage.get("end-col")
 
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
 
-    return sublime.Region(name_start_point, name_end_point)
+    return sublime.Region(start_point, end_point)
 
 
 def var_usage_namespace_region(view, var_usage):
@@ -2468,6 +2482,78 @@ def find_thingy_text_regions(view, analysis, thingy):
     return thingy_regions
 
 
+def annotate_view(view):
+    def finding_region(finding):
+        line_start = finding["row"] - 1
+        line_end = (finding.get("end-row") or finding.get("row")) - 1
+        col_start = finding["col"] - 1
+        col_end = (finding.get("end-col") or finding.get("col")) - 1
+
+        pa = view.text_point(line_start, col_start)
+        pb = view.text_point(line_end, col_end)
+
+        return sublime.Region(pa, pb)
+
+    def finding_minihtml(finding):
+        return f"""
+        <body>
+        <div">
+            <span style="font-size:{annotation_font_size(view.window())}">{htmlify(finding["message"])}</span></div>
+        </div>
+        </body>
+        """
+
+    analysis = view_analysis(view.id())
+
+    findings = analysis_findings(analysis)
+
+    warning_region_set = []
+    warning_minihtml_set = []
+
+    error_region_set = []
+    error_minihtml_set = []
+
+    for finding in findings:
+        if finding["level"] == "error":
+            error_region_set.append(finding_region(finding))
+            error_minihtml_set.append(finding_minihtml(finding))
+        elif finding["level"] == "warning":
+            warning_region_set.append(finding_region(finding))
+            warning_minihtml_set.append(finding_minihtml(finding))
+
+    # Erase regions from previous analysis.
+    erase_analysis_regions(view)
+
+    redish = view.style_for_scope("region.redish")["foreground"]
+    orangish = view.style_for_scope("region.orangish")["foreground"]
+
+    view.add_regions(
+        "pg_pep_analysis_error",
+        error_region_set,
+        scope="region.redish",
+        annotations=error_minihtml_set,
+        annotation_color=redish,
+        flags=(
+            sublime.DRAW_SQUIGGLY_UNDERLINE
+            | sublime.DRAW_NO_FILL
+            | sublime.DRAW_NO_OUTLINE
+        ),
+    )
+
+    view.add_regions(
+        "pg_pep_analysis_warning",
+        warning_region_set,
+        scope="region.orangish",
+        annotations=warning_minihtml_set,
+        annotation_color=orangish,
+        flags=(
+            sublime.DRAW_SQUIGGLY_UNDERLINE
+            | sublime.DRAW_NO_FILL
+            | sublime.DRAW_NO_OUTLINE
+        ),
+    )
+
+
 # ---
 
 
@@ -2502,11 +2588,6 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
 
         if is_debug(self.window):
             print(f"Pep: Cleared cache")
-
-
-class PgPepEraseAnalysisRegionsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        erase_analysis_regions(self.view)
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -2608,100 +2689,109 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
     def run(self, edit, show="popup"):
         view_analysis_ = view_analysis(self.view.id())
 
-        region = self.view.sel()[0]
-
-        thingy = thingy_in_region(self.view, view_analysis_, region)
-
-        thingy_type, _, thingy_data = thingy or (None, None, None)
-
-        definition = None
-
         project_path_ = project_path(self.view.window())
 
         paths_analysis_ = paths_analysis(project_path_)
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
-        if thingy_type == TT_VAR_DEFINITION or thingy_type == TT_VAR_USAGE:
-            # Try to find Var definition in view first,
-            # only if not found try paths and project analysis.
-            definition = (
-                find_var_definition(view_analysis_, thingy_data)
-                or find_var_definition(paths_analysis_, thingy_data)
-                or find_var_definition(classpath_analysis_, thingy_data)
-            )
+        minihtmls = []
 
-        elif (
-            thingy_type == TT_NAMESPACE_DEFINITION
-            or thingy_type == TT_NAMESPACE_USAGE
-            or thingy_type == TT_NAMESPACE_USAGE_ALIAS
-        ):
-            definition = (
-                find_namespace_definition(view_analysis_, thingy_data)
-                or find_namespace_definition(paths_analysis_, thingy_data)
-                or find_namespace_definition(classpath_analysis_, thingy_data)
-            )
+        for region in self.view.sel():
+            thingy = thingy_at_region(self.view, view_analysis_, region)
 
-        if definition:
-            # Name
-            # ---
+            thingy_semantic = thingy["_semantic"]
 
-            name = definition.get("name", "")
-            name = inspect.cleandoc(html.escape(name))
+            definition = None
 
-            ns = definition.get("ns", "")
-            ns = inspect.cleandoc(html.escape(ns))
+            if thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
+                # Try to find Var definition in view first,
+                # only if not found try paths and project analysis.
+                definition = (
+                    find_var_definition(view_analysis_, thingy)
+                    or find_var_definition(paths_analysis_, thingy)
+                    or find_var_definition(classpath_analysis_, thingy)
+                )
 
-            filename = definition.get("filename")
+            elif (
+                thingy_semantic == TT_NAMESPACE_DEFINITION
+                or thingy_semantic == TT_NAMESPACE_USAGE
+                or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+            ):
+                definition = (
+                    find_namespace_definition(view_analysis_, thingy)
+                    or find_namespace_definition(paths_analysis_, thingy)
+                    or find_namespace_definition(classpath_analysis_, thingy)
+                )
 
-            qualified_name = f"{ns}/{name}" if ns else name
+            if definition:
+                # Name
+                # ---
 
-            goto_command_url = sublime.command_url(
-                "pg_pep_open_file",
-                {"location": thingy_location(definition)},
-            )
+                name = definition.get("name", "")
+                name = inspect.cleandoc(html.escape(name))
 
-            name_minihtml = f"""
-            <p class="name">
-                <a href="{goto_command_url}"><b>{qualified_name}</b></a>
-            </p>
-            """
+                ns = definition.get("ns", "")
+                ns = inspect.cleandoc(html.escape(ns))
 
-            # Arglists
-            # ---
+                filename = definition.get("filename")
 
-            arglists = definition.get("arglist-strs", [])
+                qualified_name = f"{ns}/{name}" if ns else name
 
-            arglists_minihtml = ""
+                goto_command_url = sublime.command_url(
+                    "pg_pep_open_file",
+                    {"location": thingy_location(definition)},
+                )
 
-            if arglists:
-                arglists_minihtml = """<p class="arglists">"""
+                name_minihtml = f"""
+                <p class="name">
+                    <a href="{goto_command_url}"><b>{qualified_name}</b></a>
+                </p>
+                """
 
-                for arglist in arglists:
-                    arglists_minihtml += f"<code>{htmlify(arglist)}</code>"
+                # Arglists
+                # ---
 
-                arglists_minihtml += """</p>"""
+                arglists = definition.get("arglist-strs", [])
 
-            # Doc
-            # ---
+                arglists_minihtml = ""
 
-            doc = definition.get("doc")
+                if arglists:
+                    arglists_minihtml = """<p class="arglists">"""
 
-            doc_minihtml = ""
+                    for arglist in arglists:
+                        arglists_minihtml += f"<code>{htmlify(arglist)}</code>"
 
-            if doc:
-                doc = re.sub(r"\s", "&nbsp;", htmlify(doc))
+                    arglists_minihtml += """</p>"""
 
-                doc_minihtml = f"""<p class="doc">{doc}</p>"""
+                # Doc
+                # ---
+
+                doc = definition.get("doc")
+
+                doc_minihtml = ""
+
+                if doc:
+                    doc = re.sub(r"\s", "&nbsp;", htmlify(doc))
+
+                    doc_minihtml = f"""<p class="doc">{doc}</p>"""
+
+                minihtmls.append(
+                    f"""
+                        {name_minihtml}
+
+                        {arglists_minihtml}
+
+                        {doc_minihtml}
+                    """
+                )
+
+        if minihtmls:
 
             content = f"""
             <body id='pg-pep-show-doc'>
 
-                {name_minihtml}
-
-                {arglists_minihtml}
-
-                {doc_minihtml}
+                {"<br/>".join(minihtmls)}
                 
             </body>
             """
@@ -2715,30 +2805,12 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
             elif show == "side_by_side":
                 sheet = self.view.window().new_html_sheet(
-                    qualified_name,
+                    "Documentation",
                     content,
-                    sublime.SEMI_TRANSIENT,
+                    sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
                 )
 
                 self.view.window().focus_sheet(sheet)
-
-            elif show == "status_bar":
-                name = definition.get("name", "")
-
-                ns = definition.get("ns", "")
-
-                qualified_name = f"{ns}/{name}" if ns else name
-
-                self.view.set_status(
-                    STATUS_BAR_DOC_KEY, f"{qualified_name} {' '.join(arglists)}"
-                )
-
-        else:
-
-            # Status bar documentation must be cleared when a definition is not found.
-
-            if show == "status_bar":
-                self.view.set_status(STATUS_BAR_DOC_KEY, "")
 
 
 class PgPepJumpCommand(sublime_plugin.TextCommand):
@@ -3716,89 +3788,15 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             )
 
 
+class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        erase_analysis_regions(self.view)
+
+
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
-
-            def finding_region(finding):
-                line_start = finding["row"] - 1
-                line_end = (finding.get("end-row") or finding.get("row")) - 1
-                col_start = finding["col"] - 1
-                col_end = (finding.get("end-col") or finding.get("col")) - 1
-
-                pa = self.view.text_point(line_start, col_start)
-                pb = self.view.text_point(line_end, col_end)
-
-                return sublime.Region(pa, pb)
-
-            def finding_minihtml(finding):
-                return f"""
-                <body>
-                <div">
-                    <span style="font-size:{annotation_font_size(self.view.window())}">{htmlify(finding["message"])}</span></div>
-                </div>
-                </body>
-                """
-
-            analysis = view_analysis(self.view.id())
-
-            findings = analysis_findings(analysis)
-
-            warning_region_set = []
-            warning_minihtml_set = []
-
-            error_region_set = []
-            error_minihtml_set = []
-
-            for finding in findings:
-                try:
-
-                    if finding["level"] == "error":
-                        error_region_set.append(finding_region(finding))
-                        error_minihtml_set.append(finding_minihtml(finding))
-                    elif finding["level"] == "warning":
-                        warning_region_set.append(finding_region(finding))
-                        warning_minihtml_set.append(finding_minihtml(finding))
-
-                except Exception as ex:
-                    if is_debug(self.view.window()):
-                        print(
-                            "Pep: Failed to annotate finding.",
-                            {"error": ex, "finding": finding},
-                        )
-
-            # Erase regions from previous analysis.
-            erase_analysis_regions(self.view)
-
-            redish = self.view.style_for_scope("region.redish")["foreground"]
-            orangish = self.view.style_for_scope("region.orangish")["foreground"]
-
-            self.view.add_regions(
-                "pg_pep_analysis_error",
-                error_region_set,
-                scope="region.redish",
-                annotations=error_minihtml_set,
-                annotation_color=redish,
-                flags=(
-                    sublime.DRAW_SQUIGGLY_UNDERLINE
-                    | sublime.DRAW_NO_FILL
-                    | sublime.DRAW_NO_OUTLINE
-                ),
-            )
-
-            self.view.add_regions(
-                "pg_pep_analysis_warning",
-                warning_region_set,
-                scope="region.orangish",
-                annotations=warning_minihtml_set,
-                annotation_color=orangish,
-                flags=(
-                    sublime.DRAW_SQUIGGLY_UNDERLINE
-                    | sublime.DRAW_NO_FILL
-                    | sublime.DRAW_NO_OUTLINE
-                ),
-            )
-
+            annotate_view(self.view)
         except Exception as e:
             print(f"Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
@@ -3844,12 +3842,18 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if self.analyzer:
             self.analyzer.cancel()
 
-        self.analyzer = threading.Timer(0.4, self.analyze)
+        analysis_delay_ = analysis_delay(self.view.window())
+
+        self.analyzer = threading.Timer(analysis_delay_, self.analyze)
         self.analyzer.start()
 
     def on_selection_modified_async(self):
         if automatically_highlight(self.view.window()):
             highlight_thingy(self.view)
+
+    def on_post_save_async(self):
+        if annotate_view_on_save(self.view.window()):
+            annotate_view(self.view)
 
     def on_close(self):
         """
