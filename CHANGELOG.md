@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.14.1 -
+- Fix `project_data` for `None` Window
+
 ## 0.14.0 - 2022-10-05
 - New command: **Annotate View** (`pg_pep_annotate_view`)
 - New command: **Clear View Annotations** (`pg_pep_clear_view_annotations`)
