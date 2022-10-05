@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.14.0 - 
+## 0.14.0 - 2022-10-05
 - New command: **Annotate View** (`pg_pep_annotate_view`)
 - New command: **Clear View Annotations** (`pg_pep_clear_view_annotations`)
 - New setting: `annotate_view_on_save`
