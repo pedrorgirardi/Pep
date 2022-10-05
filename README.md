@@ -21,7 +21,8 @@
 | `pg_pep_select` | Select occurrences of symbol or keyword under the cursor |
 | `pg_pep_replace` | Replace occurrences of symbol or keyword under the cursor |
 | `pg_pep_highlight` | Highlight occurrences of symbol or keyword under the cursor |
-| `pg_pep_annotate` | Annotate view (or lint view) |
+| `pg_pep_annotate_view` | Annotate view (show warnings/errors) |
+| `pg_pep_clear_view_annotations` | Clear view annotations (show warnings/errors) |
 | `pg_pep_copy_name` | Copy name of keyword or symbol to the clipboard |
 | `pg_pep_show_name` | Show name of keyword or symbol in a popup |
 
@@ -120,11 +121,11 @@ Default settings:
 
     // If you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view:
 
-    // True if it should be displayed right after the analysis is completed.
+    // True if warnings/errors should be displayed right after the analysis is completed.
     // It's a 'tighter feedback loop' to display warnings/errors after the analysis, but some might find it distracting.
     "annotate_view_after_analysis": false,
 
-    // True if it should be displayed only when a view is saved.
+    // True if warnings/errors should be displayed only when a view is saved.
     "annotate_view_on_save": false,
 
     // The font-size used by view analysis annotations.
