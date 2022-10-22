@@ -2335,12 +2335,12 @@ def highlight_thingy(view):
     """
     Highlight regions of thingy under cursor.
     """
-    analysis = view_analysis(view.id())
+    regions = []
 
     status_message = ""
 
     if not staled_analysis(view):
-        regions = []
+        analysis = view_analysis(view.id())
 
         for region in view.sel():
             if thingy := thingy_in_region(view, analysis, region):
@@ -2355,19 +2355,17 @@ def highlight_thingy(view):
 
                     regions.extend(regions_)
 
-        if regions:
-            window = view.window()
+    if regions:
+        window = view.window()
 
-            highlight_regions(view, view.sel(), regions)
+        highlight_regions(view, view.sel(), regions)
 
-            if view_status_show_highlighted(window):
-                prefix = view_status_show_highlighted_prefix(window)
+        if view_status_show_highlighted(window):
+            prefix = view_status_show_highlighted_prefix(window)
 
-                suffix = view_status_show_highlighted_suffix(window)
+            suffix = view_status_show_highlighted_suffix(window)
 
-                status_message = f"{prefix}{len(regions)}{suffix}"
-        else:
-            view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
+            status_message = f"{prefix}{len(regions)}{suffix}"
     else:
         view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
 
