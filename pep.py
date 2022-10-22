@@ -3822,7 +3822,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
 
     @classmethod
-    def is_applicable(_, settings):
+    def is_applicable(cls, settings):
         return settings.get("syntax") in set(
             analysis_applicable_to(sublime.active_window())
         )
