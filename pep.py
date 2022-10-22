@@ -2345,15 +2345,18 @@ def highlight_thingy(view):
         for region in view.sel():
             if thingy := thingy_in_region(view, analysis, region):
                 if regions_ := find_thingy_regions(view, analysis, thingy):
+                    # Exclude 'self'
+                    if not setting(view.window(), "highlight_self", None):
+                        regions_ = [
+                            region_
+                            for region_ in regions_
+                            if not region_.contains(region)
+                        ]
+
                     regions.extend(regions_)
 
         if regions:
             window = view.window()
-
-            if not setting(window, "highlight_self", None):
-                regions = [
-                    region_ for region_ in regions if not region_.contains(region)
-                ]
 
             highlight_regions(view, view.sel(), regions)
 
