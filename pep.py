@@ -1037,7 +1037,7 @@ def thingy_lang(thingy_data) -> Optional[str]:
         return thingy_extension(thingy_data)
 
 
-def thingy_data_list_dedupe(thingy_data_list) -> List:
+def thingy_dedupe(thingy_data_list) -> List:
     return list(
         {
             (
@@ -2115,7 +2115,7 @@ def thingy_in_region(view, analysis, region):
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
 
-def thingy_at_region(view, analysis, region) -> Optional[dict]:
+def thingy_at(view, analysis, region) -> Optional[dict]:
     """
     Returns Thingy at region (a region under the cursor, most likely) or None.
     """
@@ -2621,7 +2621,7 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
-        thingy_list = thingy_data_list_dedupe(
+        thingy_list = thingy_dedupe(
             [
                 *namespace_definitions(view_analysis_),
                 *var_definitions(view_analysis_),
@@ -2704,7 +2704,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         minihtmls = []
 
         for region in self.view.sel():
-            thingy = thingy_at_region(self.view, view_analysis_, region)
+            thingy = thingy_at(self.view, view_analysis_, region)
 
             thingy_semantic = thingy["_semantic"]
 
@@ -3037,7 +3037,7 @@ class PgPepInspect(sublime_plugin.TextCommand):
 
         analysis = view_analysis(self.view.id())
 
-        if thingy := thingy_at_region(self.view, analysis, region):
+        if thingy := thingy_at(self.view, analysis, region):
 
             items_html = ""
 
@@ -3089,7 +3089,7 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
 
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
 
-            thingy_list = thingy_data_list_dedupe(
+            thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(classpath_analysis_),
                     *var_definitions(classpath_analysis_),
@@ -3129,7 +3129,7 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
 
         if analysis_ := paths_analysis_ or view_analysis_:
 
-            thingy_list = thingy_data_list_dedupe(
+            thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(analysis_),
                     *var_definitions(analysis_),
@@ -3161,7 +3161,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         if analysis_ := paths_analysis(project_path_, not_found=None):
 
-            thingy_list = thingy_data_list_dedupe(namespace_definitions(analysis_))
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
             thingy_list = sorted(thingy_list, key=thingy_lexicographic)
 
@@ -3194,7 +3194,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         region = view.sel()[0]
 
-        if thingy := thingy_at_region(view, analysis, region):
+        if thingy := thingy_at(view, analysis, region):
 
             thingy_semantic = thingy["_semantic"]
 
@@ -3283,7 +3283,7 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
         thingy_list = []
 
         for region in self.view.sel():
-            if thingy := thingy_at_region(self.view, view_analysis_, region):
+            if thingy := thingy_at(self.view, view_analysis_, region):
 
                 thingy_semantic = thingy["_semantic"]
 
@@ -3367,7 +3367,7 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if thingy := thingy_at_region(self.view, view_analysis_, cursor_region):
+            if thingy := thingy_at(self.view, view_analysis_, cursor_region):
                 if cursor_namespace_usage := thingy.get("to"):
 
                     nindex_usages = analysis_nindex_usages(view_analysis_)
@@ -3531,7 +3531,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         thingy_usages_ = []
 
         for region in self.view.sel():
-            if thingy := thingy_at_region(self.view, view_analysis_, region):
+            if thingy := thingy_at(self.view, view_analysis_, region):
 
                 thingies.append(thingy)
 
@@ -3546,7 +3546,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         if thingy_usages_:
 
-            thingy_usages_ = thingy_data_list_dedupe(thingy_usages_)
+            thingy_usages_ = thingy_dedupe(thingy_usages_)
 
             if len(thingy_usages_) == 1:
                 location = thingy_location(thingy_usages_[0])
