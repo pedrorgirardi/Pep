@@ -2753,31 +2753,33 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         minihtmls = []
 
         for region in self.view.sel():
-            thingy = thingy_at(self.view, view_analysis_, region)
-
-            thingy_semantic = thingy["_semantic"]
-
             definition = None
 
-            if thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
-                # Try to find Var definition in view first,
-                # only if not found try paths and project analysis.
-                definition = (
-                    find_var_definition(view_analysis_, thingy)
-                    or find_var_definition(paths_analysis_, thingy)
-                    or find_var_definition(classpath_analysis_, thingy)
-                )
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                thingy_semantic = thingy["_semantic"]
 
-            elif (
-                thingy_semantic == TT_NAMESPACE_DEFINITION
-                or thingy_semantic == TT_NAMESPACE_USAGE
-                or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
-            ):
-                definition = (
-                    find_namespace_definition(view_analysis_, thingy)
-                    or find_namespace_definition(paths_analysis_, thingy)
-                    or find_namespace_definition(classpath_analysis_, thingy)
-                )
+                if (
+                    thingy_semantic == TT_VAR_DEFINITION
+                    or thingy_semantic == TT_VAR_USAGE
+                ):
+                    # Try to find Var definition in view first,
+                    # only if not found try paths and project analysis.
+                    definition = (
+                        find_var_definition(view_analysis_, thingy)
+                        or find_var_definition(paths_analysis_, thingy)
+                        or find_var_definition(classpath_analysis_, thingy)
+                    )
+
+                elif (
+                    thingy_semantic == TT_NAMESPACE_DEFINITION
+                    or thingy_semantic == TT_NAMESPACE_USAGE
+                    or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+                ):
+                    definition = (
+                        find_namespace_definition(view_analysis_, thingy)
+                        or find_namespace_definition(paths_analysis_, thingy)
+                        or find_namespace_definition(classpath_analysis_, thingy)
+                    )
 
             if definition:
                 # Name
