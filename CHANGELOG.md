@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.14.0 - 2022-11-01
+- Fixed a bug in show documentation
+- Improved `annotate_view_on_save`
+
 ## 0.14.1 - 2022-10-05
 - Fix `project_data` for `None` Window
 

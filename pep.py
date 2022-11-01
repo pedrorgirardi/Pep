@@ -64,12 +64,54 @@ STATUS_BAR_DOC_KEY = "pep_doc"
 CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
 
 
-## Mapping of filename to analysis data by semantic, e.g. var-definitions.
-_index_ = {}
+## -- Analysis Functions
 
-_view_analysis_ = {}
 
-_classpath_analysis_ = {}
+def af_annotate(context, analysis):
+    """
+    Analysis Function to annotate view.
+
+    Depends on setting to annotate on save.
+    """
+    if view := context["view"]:
+        if annotate_view_after_analysis(view.window()):
+            annotate_view(view)
+
+
+def af_annotate_on_save(context, analysis):
+    """
+    Analysis Function to annotate view on save.
+
+    Depends on setting to annotate on save.
+    """
+    if view := context["view"]:
+        if annotate_view_on_save(view.window()):
+            annotate_view(view)
+
+
+def af_highlight_thingy(context, analysis):
+    """
+    Analysis Function to highlight Thingy under the cursor.
+    """
+    if view := context["view"]:
+        if automatically_highlight(view.window()):
+            highlight_thingy(view)
+
+
+def af_status_summary(context, analysis):
+    """
+    Analysis Function to show findings summary in the status bar.
+    """
+    if view := context["view"]:
+        view.run_command("pg_pep_view_summary_status")
+
+
+def af_status_namespace(context, analysis):
+    """
+    Analysis Function to show a view's namespace in the status bar.
+    """
+    if view := context["view"]:
+        view.run_command("pg_pep_view_namespace_status")
 
 
 def project_index(project_path, not_found={}):
@@ -77,6 +119,23 @@ def project_index(project_path, not_found={}):
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
     """
     return _index_.get(project_path, not_found)
+
+
+# Default functions to run after analysis.
+DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
+    af_annotate,
+    af_highlight_thingy,
+    af_status_summary,
+    af_status_namespace,
+]
+
+
+## Mapping of filename to analysis data by semantic, e.g. var-definitions.
+_index_ = {}
+
+_view_analysis_ = {}
+
+_classpath_analysis_ = {}
 
 
 def update_project_index(project_path, index):
@@ -954,20 +1013,6 @@ def project_data_paths(window):
         return project_data.get("pep", {}).get("paths")
 
 
-def view_analysis_completed(view):
-    def on_completed(analysis):
-        view.run_command("pg_pep_view_summary_status")
-        view.run_command("pg_pep_view_namespace_status")
-
-        if annotate_view_after_analysis(view.window()):
-            annotate_view(view)
-
-        if automatically_highlight(view.window()):
-            highlight_thingy(view)
-
-    return on_completed
-
-
 # ---
 
 # Copied from https://github.com/eerohele/Tutkain
@@ -1037,7 +1082,7 @@ def thingy_lang(thingy_data) -> Optional[str]:
         return thingy_extension(thingy_data)
 
 
-def thingy_data_list_dedupe(thingy_data_list) -> List:
+def thingy_dedupe(thingy_data_list) -> List:
     return list(
         {
             (
@@ -1272,7 +1317,7 @@ def project_classpath(window):
 ## ---
 
 
-def analyze_view(view, on_completed=None):
+def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
 
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
@@ -1365,16 +1410,20 @@ def analyze_view(view, on_completed=None):
             if pathlib.Path(project_path_) in pathlib.Path(file_name).parents:
                 update_project_index(project_path_, index_analysis(analysis))
 
-    if on_completed:
-        on_completed(view_analysis_)
+    # Call Analysis Function(s) for side effects.
+    for f in afs:
+        context = {
+            "scope": "view",
+            "view": view,
+        }
+
+        f(context, view_analysis_)
 
     return True
 
 
-def analyze_view_async(view, on_completed=None):
-    threading.Thread(
-        target=lambda: analyze_view(view, on_completed=on_completed), daemon=True
-    ).start()
+def analyze_view_async(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
+    threading.Thread(target=lambda: analyze_view(view, afs=afs), daemon=True).start()
 
 
 def analyze_classpath(window):
@@ -2115,7 +2164,7 @@ def thingy_in_region(view, analysis, region):
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
 
-def thingy_at_region(view, analysis, region) -> Optional[dict]:
+def thingy_at(view, analysis, region) -> Optional[dict]:
     """
     Returns Thingy at region (a region under the cursor, most likely) or None.
     """
@@ -2335,36 +2384,37 @@ def highlight_thingy(view):
     """
     Highlight regions of thingy under cursor.
     """
-    analysis = view_analysis(view.id())
+    regions = []
 
     status_message = ""
 
     if not staled_analysis(view):
-        regions = []
+        analysis = view_analysis(view.id())
 
         for region in view.sel():
             if thingy := thingy_in_region(view, analysis, region):
                 if regions_ := find_thingy_regions(view, analysis, thingy):
+                    # Exclude 'self'
+                    if not setting(view.window(), "highlight_self", None):
+                        regions_ = [
+                            region_
+                            for region_ in regions_
+                            if not region_.contains(region)
+                        ]
+
                     regions.extend(regions_)
 
-        if regions:
-            window = view.window()
+    if regions:
+        window = view.window()
 
-            if not setting(window, "highlight_self", None):
-                regions = [
-                    region_ for region_ in regions if not region_.contains(region)
-                ]
+        highlight_regions(view, view.sel(), regions)
 
-            highlight_regions(view, view.sel(), regions)
+        if view_status_show_highlighted(window):
+            prefix = view_status_show_highlighted_prefix(window)
 
-            if view_status_show_highlighted(window):
-                prefix = view_status_show_highlighted_prefix(window)
+            suffix = view_status_show_highlighted_suffix(window)
 
-                suffix = view_status_show_highlighted_suffix(window)
-
-                status_message = f"{prefix}{len(regions)}{suffix}"
-        else:
-            view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
+            status_message = f"{prefix}{len(regions)}{suffix}"
     else:
         view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
 
@@ -2603,7 +2653,7 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
     def run(self, scope):
         if scope == "view":
             if view := self.window.active_view():
-                analyze_view_async(view, on_completed=view_analysis_completed(view))
+                analyze_view_async(view)
 
         elif scope == "paths":
             analyze_paths_async(self.window)
@@ -2620,7 +2670,7 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
-        thingy_list = thingy_data_list_dedupe(
+        thingy_list = thingy_dedupe(
             [
                 *namespace_definitions(view_analysis_),
                 *var_definitions(view_analysis_),
@@ -2703,31 +2753,33 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         minihtmls = []
 
         for region in self.view.sel():
-            thingy = thingy_at_region(self.view, view_analysis_, region)
-
-            thingy_semantic = thingy["_semantic"]
-
             definition = None
 
-            if thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
-                # Try to find Var definition in view first,
-                # only if not found try paths and project analysis.
-                definition = (
-                    find_var_definition(view_analysis_, thingy)
-                    or find_var_definition(paths_analysis_, thingy)
-                    or find_var_definition(classpath_analysis_, thingy)
-                )
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                thingy_semantic = thingy["_semantic"]
 
-            elif (
-                thingy_semantic == TT_NAMESPACE_DEFINITION
-                or thingy_semantic == TT_NAMESPACE_USAGE
-                or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
-            ):
-                definition = (
-                    find_namespace_definition(view_analysis_, thingy)
-                    or find_namespace_definition(paths_analysis_, thingy)
-                    or find_namespace_definition(classpath_analysis_, thingy)
-                )
+                if (
+                    thingy_semantic == TT_VAR_DEFINITION
+                    or thingy_semantic == TT_VAR_USAGE
+                ):
+                    # Try to find Var definition in view first,
+                    # only if not found try paths and project analysis.
+                    definition = (
+                        find_var_definition(view_analysis_, thingy)
+                        or find_var_definition(paths_analysis_, thingy)
+                        or find_var_definition(classpath_analysis_, thingy)
+                    )
+
+                elif (
+                    thingy_semantic == TT_NAMESPACE_DEFINITION
+                    or thingy_semantic == TT_NAMESPACE_USAGE
+                    or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+                ):
+                    definition = (
+                        find_namespace_definition(view_analysis_, thingy)
+                        or find_namespace_definition(paths_analysis_, thingy)
+                        or find_namespace_definition(classpath_analysis_, thingy)
+                    )
 
             if definition:
                 # Name
@@ -2797,7 +2849,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
             <body id='pg-pep-show-doc'>
 
                 {"<br/>".join(minihtmls)}
-                
+
             </body>
             """
 
@@ -3036,7 +3088,7 @@ class PgPepInspect(sublime_plugin.TextCommand):
 
         analysis = view_analysis(self.view.id())
 
-        if thingy := thingy_at_region(self.view, analysis, region):
+        if thingy := thingy_at(self.view, analysis, region):
 
             items_html = ""
 
@@ -3088,7 +3140,7 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
 
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
 
-            thingy_list = thingy_data_list_dedupe(
+            thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(classpath_analysis_),
                     *var_definitions(classpath_analysis_),
@@ -3128,7 +3180,7 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
 
         if analysis_ := paths_analysis_ or view_analysis_:
 
-            thingy_list = thingy_data_list_dedupe(
+            thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(analysis_),
                     *var_definitions(analysis_),
@@ -3160,7 +3212,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
         if analysis_ := paths_analysis(project_path_, not_found=None):
 
-            thingy_list = thingy_data_list_dedupe(namespace_definitions(analysis_))
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
             thingy_list = sorted(thingy_list, key=thingy_lexicographic)
 
@@ -3193,7 +3245,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         region = view.sel()[0]
 
-        if thingy := thingy_at_region(view, analysis, region):
+        if thingy := thingy_at(view, analysis, region):
 
             thingy_semantic = thingy["_semantic"]
 
@@ -3282,7 +3334,7 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
         thingy_list = []
 
         for region in self.view.sel():
-            if thingy := thingy_at_region(self.view, view_analysis_, region):
+            if thingy := thingy_at(self.view, view_analysis_, region):
 
                 thingy_semantic = thingy["_semantic"]
 
@@ -3366,7 +3418,7 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
 
             cursor_region = self.view.sel()[0]
 
-            if thingy := thingy_at_region(self.view, view_analysis_, cursor_region):
+            if thingy := thingy_at(self.view, view_analysis_, cursor_region):
                 if cursor_namespace_usage := thingy.get("to"):
 
                     nindex_usages = analysis_nindex_usages(view_analysis_)
@@ -3530,7 +3582,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         thingy_usages_ = []
 
         for region in self.view.sel():
-            if thingy := thingy_at_region(self.view, view_analysis_, region):
+            if thingy := thingy_at(self.view, view_analysis_, region):
 
                 thingies.append(thingy)
 
@@ -3545,7 +3597,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         if thingy_usages_:
 
-            thingy_usages_ = thingy_data_list_dedupe(thingy_usages_)
+            thingy_usages_ = thingy_dedupe(thingy_usages_)
 
             if len(thingy_usages_) == 1:
                 location = thingy_location(thingy_usages_[0])
@@ -3819,7 +3871,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
 
     @classmethod
-    def is_applicable(_, settings):
+    def is_applicable(cls, settings):
         return settings.get("syntax") in set(
             analysis_applicable_to(sublime.active_window())
         )
@@ -3827,6 +3879,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def __init__(self, view):
         self.view = view
         self.analyzer = None
+        self.afs = DEFAULT_VIEW_ANALYSIS_FUNCTIONS
 
     def analyze(self):
         analyze = True
@@ -3835,10 +3888,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             analyze = analyze_scratch_view(self.view.window())
 
         if analyze:
-            analyze_view_async(
-                self.view,
-                on_completed=view_analysis_completed(self.view),
-            )
+            analyze_view_async(self.view, afs=self.afs)
 
     def on_activated_async(self):
         self.analyze()
@@ -3857,8 +3907,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             highlight_thingy(self.view)
 
     def on_post_save_async(self):
-        if annotate_view_on_save(self.view.window()):
-            annotate_view(self.view)
+        # Include function to annotate view on save (if applicable).
+        self.afs = [*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save]
+        self.analyze()
 
     def on_close(self):
         """
