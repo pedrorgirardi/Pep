@@ -11,13 +11,11 @@ import tempfile
 import threading
 import time
 import traceback
-
-from typing import Optional, TypedDict, List
+from typing import List, Optional, TypedDict
 from zipfile import ZipFile
 
-import sublime_plugin
 import sublime
-
+import sublime_plugin
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
