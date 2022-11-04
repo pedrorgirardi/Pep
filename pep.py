@@ -969,7 +969,7 @@ def remove_empty_rows(thingies):
 
     This function is suitable for any thingy data - not only Var usages.
     """
-    return [thingy_data for thingy_data in thingies if thingy_data["row"] != None]
+    return [thingy_data for thingy_data in thingies if thingy_data["row"] is not None]
 
 
 def staled_analysis(view):
