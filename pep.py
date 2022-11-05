@@ -2550,7 +2550,7 @@ def annotate_view(view):
     def finding_minihtml(finding):
         return f"""
         <body>
-        <div">
+        <div>
             <span style="font-size:{annotation_font_size(view.window())}">{htmlify(finding["message"])}</span></div>
         </div>
         </body>
