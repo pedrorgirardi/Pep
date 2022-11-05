@@ -2640,7 +2640,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
         clear_cache()
 
         if is_debug(self.window):
-            print(f"Pep: Cleared cache")
+            print("Pep: Cleared cache")
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -2789,8 +2789,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ns = definition.get("ns", "")
                 ns = inspect.cleandoc(html.escape(ns))
 
-                filename = definition.get("filename")
-
                 qualified_name = f"{ns}/{name}" if ns else name
 
                 goto_command_url = sublime.command_url(
@@ -2924,11 +2922,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
         if thingy := thingy_in_region(self.view, state, region):
 
             thingy_type, thingy_region, thingy_data = thingy
-
-            # Navigation is a dictionary with keys:
-            # - thingy_id
-            # - thingy_findings
-            navigation = view_navigation(state)
 
             thingy_findings = []
 
@@ -3269,9 +3262,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 )
 
             elif thingy_semantic == TT_VAR_USAGE:
-                namespace_ = thingy.get("to", None)
-                name_ = thingy.get("name", None)
-
                 project_path_ = project_path(window)
 
                 paths_analysis_ = paths_analysis(project_path_)
@@ -3299,9 +3289,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             #     )
 
             elif thingy_semantic == TT_KEYWORD:
-                keyword_namespace = thingy.get("ns", None)
-                keyword_name = thingy.get("name", None)
-
                 project_path_ = project_path(window)
 
                 paths_analysis_ = paths_analysis(project_path_)
@@ -3402,7 +3389,7 @@ class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
             )
 
         except:
-            print(f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
+            print("Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
 
 
 class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
@@ -3438,7 +3425,7 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
                         goto(self.view.window(), thingy_location(class_usages[0]))
 
         except Exception as e:
-            print(f"Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
+            print("Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
 
 
 class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
@@ -3696,7 +3683,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
                 self.view.sel().add_all(regions)
 
         except Exception as e:
-            print(f"Pep: Error: PgPepSelectCommand", traceback.format_exc())
+            print("Pep: Error: PgPepSelectCommand", traceback.format_exc())
 
 
 class PgPepReplaceCommand(sublime_plugin.TextCommand):
@@ -3755,7 +3742,7 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
                     self.view.replace(edit, replace, text)
 
         except Exception as e:
-            print(f"Pep: Error: PgPepReplaceCommand", traceback.format_exc())
+            print("Pep: Error: PgPepReplaceCommand", traceback.format_exc())
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
@@ -3810,7 +3797,7 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             self.view.set_status("pg_pep_view_summary", status_message)
 
         except Exception as e:
-            print(f"Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
+            print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
 class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
@@ -3838,9 +3825,7 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             self.view.set_status("pg_pep_view_namespace", view_namespace)
 
         except Exception as e:
-            print(
-                f"Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc()
-            )
+            print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
 class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
@@ -3853,7 +3838,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
         try:
             annotate_view(self.view)
         except Exception as e:
-            print(f"Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
+            print("Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
 
 # ---
