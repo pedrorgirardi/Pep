@@ -3,7 +3,6 @@ import inspect
 import json
 import os
 import pathlib
-import pprint
 import re
 import shlex
 import subprocess
@@ -11,7 +10,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import List, Optional, TypedDict
+from typing import List, Optional
 from zipfile import ZipFile
 
 import sublime
@@ -604,7 +603,7 @@ def keyword_regs(analysis) -> List:
 
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
-            if reg := keyword_.get("reg"):
+            if keyword_.get("reg"):
                 l.append(keyword_)
 
     return l
@@ -1368,7 +1367,7 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
 
     try:
         clj_kondo_data = json.loads(analysis_completed_process.stdout)
-    except:
+    except Exception:
         clj_kondo_data = {}
 
     analysis = clj_kondo_data.get("analysis", {})
@@ -1458,7 +1457,7 @@ def analyze_classpath(window):
 
         try:
             output = json.loads(analysis_completed_process.stdout)
-        except:
+        except Exception:
             output = {}
 
         analysis = output.get("analysis", {})
@@ -1555,7 +1554,7 @@ def analyze_paths(window):
 
         try:
             output = json.loads(analysis_completed_process.stdout)
-        except:
+        except Exception:
             output = {}
 
         analysis = output.get("analysis", {})
@@ -1806,7 +1805,7 @@ def var_usage_namespace_region(view, var_usage):
         )
 
         return sublime.Region(name_start_point, name_end_point)
-    except:
+    except Exception:
         return None
 
 
@@ -3388,7 +3387,7 @@ class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
                 goto_side_by_side=False,
             )
 
-        except:
+        except Exception:
             print("Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
 
 
@@ -3424,7 +3423,7 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
                         # TODO: Show a QuickPanel if there are multiple options.
                         goto(self.view.window(), thingy_location(class_usages[0]))
 
-        except Exception as e:
+        except Exception:
             print("Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
 
 
@@ -3682,7 +3681,7 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
                 self.view.sel().clear()
                 self.view.sel().add_all(regions)
 
-        except Exception as e:
+        except Exception:
             print("Pep: Error: PgPepSelectCommand", traceback.format_exc())
 
 
@@ -3741,7 +3740,7 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
 
                     self.view.replace(edit, replace, text)
 
-        except Exception as e:
+        except Exception:
             print("Pep: Error: PgPepReplaceCommand", traceback.format_exc())
 
 
@@ -3796,7 +3795,7 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             # (Setting the value to the empty string will clear the status.)
             self.view.set_status("pg_pep_view_summary", status_message)
 
-        except Exception as e:
+        except Exception:
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
@@ -3824,7 +3823,7 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
 
             self.view.set_status("pg_pep_view_namespace", view_namespace)
 
-        except Exception as e:
+        except Exception:
             print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
@@ -3837,7 +3836,7 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
             annotate_view(self.view)
-        except Exception as e:
+        except Exception:
             print("Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
 
