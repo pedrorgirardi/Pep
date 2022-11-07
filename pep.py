@@ -990,6 +990,10 @@ def project_path(window):
     return window.extract_variables().get("project_path")
 
 
+def window_project(window):
+    return window.extract_variables().get('project')
+
+
 def project_data_classpath(window):
     """
     Example:
@@ -1432,7 +1436,7 @@ def analyze_classpath(window):
         t0 = time.time()
 
         if is_debug(window):
-            print(f"Pep: Analyzing classpath... (Project: {project_path(window)})")
+            print(f"Pep: Analyzing classpath... {window_project(window)}")
 
         analysis_config = "{:skip-lint true :output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false} :format :json :canonical-paths true}}"
 
@@ -1504,7 +1508,7 @@ def analyze_classpath(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Classpath analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
         return True
@@ -1530,7 +1534,7 @@ def analyze_paths(window):
 
         if is_debug(window):
             print(
-                f"Pep: Analyzing paths... (Project: {project_path(window)})"
+                f"Pep: Analyzing paths... {window_project(window)}"
             )
 
         analysis_subprocess_args = [
@@ -1569,7 +1573,7 @@ def analyze_paths(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Paths analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
 
