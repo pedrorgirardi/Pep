@@ -1530,7 +1530,7 @@ def analyze_paths(window):
 
         if is_debug(window):
             print(
-                f"Pep: Analyzing paths... (Project: {project_path(window)}, Paths: {paths})"
+                f"Pep: Analyzing paths... (Project: {project_path(window)})"
             )
 
         analysis_subprocess_args = [
@@ -1569,7 +1569,7 @@ def analyze_paths(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Paths analysis is completed (Project: {project_path_}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Paths analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
                 )
 
 
