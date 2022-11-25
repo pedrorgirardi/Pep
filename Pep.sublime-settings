@@ -35,7 +35,6 @@
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_load_project": true,
 
-    // If you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view:
 
     // True if warnings/errors should be displayed right after the analysis is completed.
     // It's a 'tighter feedback loop' to display warnings/errors after the analysis, but some might find it distracting.
