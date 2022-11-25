@@ -3,7 +3,6 @@ import inspect
 import json
 import os
 import pathlib
-import pprint
 import re
 import shlex
 import subprocess
@@ -11,13 +10,11 @@ import tempfile
 import threading
 import time
 import traceback
-
-from typing import Optional, TypedDict, List
+from typing import List, Optional
 from zipfile import ZipFile
 
-import sublime_plugin
 import sublime
-
+import sublime_plugin
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -606,7 +603,7 @@ def keyword_regs(analysis) -> List:
 
     for keywords_ in analysis_kindex(analysis).values():
         for keyword_ in keywords_:
-            if reg := keyword_.get("reg"):
+            if keyword_.get("reg"):
                 l.append(keyword_)
 
     return l
@@ -971,7 +968,7 @@ def remove_empty_rows(thingies):
 
     This function is suitable for any thingy data - not only Var usages.
     """
-    return [thingy_data for thingy_data in thingies if thingy_data["row"] != None]
+    return [thingy_data for thingy_data in thingies if thingy_data["row"] is not None]
 
 
 def staled_analysis(view):
@@ -991,6 +988,10 @@ def set_view_navigation(view_state, navigation):
 
 def project_path(window):
     return window.extract_variables().get("project_path")
+
+
+def window_project(window):
+    return window.extract_variables().get('project')
 
 
 def project_data_classpath(window):
@@ -1370,7 +1371,7 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
 
     try:
         clj_kondo_data = json.loads(analysis_completed_process.stdout)
-    except:
+    except Exception:
         clj_kondo_data = {}
 
     analysis = clj_kondo_data.get("analysis", {})
@@ -1435,7 +1436,7 @@ def analyze_classpath(window):
         t0 = time.time()
 
         if is_debug(window):
-            print(f"Pep: Analyzing classpath... (Project: {project_path(window)})")
+            print(f"Pep: Analyzing classpath... {window_project(window)}")
 
         analysis_config = "{:skip-lint true :output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false} :format :json :canonical-paths true}}"
 
@@ -1460,7 +1461,7 @@ def analyze_classpath(window):
 
         try:
             output = json.loads(analysis_completed_process.stdout)
-        except:
+        except Exception:
             output = {}
 
         analysis = output.get("analysis", {})
@@ -1507,7 +1508,7 @@ def analyze_classpath(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Classpath analysis is completed (Project: {project_path_}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
         return True
@@ -1533,7 +1534,7 @@ def analyze_paths(window):
 
         if is_debug(window):
             print(
-                f"Pep: Analyzing paths... (Project: {project_path(window)}, Paths: {paths})"
+                f"Pep: Analyzing paths... {window_project(window)}"
             )
 
         analysis_subprocess_args = [
@@ -1557,7 +1558,7 @@ def analyze_paths(window):
 
         try:
             output = json.loads(analysis_completed_process.stdout)
-        except:
+        except Exception:
             output = {}
 
         analysis = output.get("analysis", {})
@@ -1572,7 +1573,7 @@ def analyze_paths(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Paths analysis is completed (Project: {project_path_}, Paths: {paths}) [{time.time() - t0:,.2f} seconds]"
+                    f"Pep: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
 
@@ -1808,7 +1809,7 @@ def var_usage_namespace_region(view, var_usage):
         )
 
         return sublime.Region(name_start_point, name_end_point)
-    except:
+    except Exception:
         return None
 
 
@@ -2552,9 +2553,11 @@ def annotate_view(view):
     def finding_minihtml(finding):
         return f"""
         <body>
-        <div">
-            <span style="font-size:{annotation_font_size(view.window())}">{htmlify(finding["message"])}</span></div>
-        </div>
+            <div>
+                <span style="font-size:{annotation_font_size(view.window())}">
+                    {htmlify(finding["message"])}
+                </span>
+            </div>
         </body>
         """
 
@@ -2642,7 +2645,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
         clear_cache()
 
         if is_debug(self.window):
-            print(f"Pep: Cleared cache")
+            print("Pep: Cleared cache")
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -2791,8 +2794,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ns = definition.get("ns", "")
                 ns = inspect.cleandoc(html.escape(ns))
 
-                filename = definition.get("filename")
-
                 qualified_name = f"{ns}/{name}" if ns else name
 
                 goto_command_url = sublime.command_url(
@@ -2926,11 +2927,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
         if thingy := thingy_in_region(self.view, state, region):
 
             thingy_type, thingy_region, thingy_data = thingy
-
-            # Navigation is a dictionary with keys:
-            # - thingy_id
-            # - thingy_findings
-            navigation = view_navigation(state)
 
             thingy_findings = []
 
@@ -3271,9 +3267,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 )
 
             elif thingy_semantic == TT_VAR_USAGE:
-                namespace_ = thingy.get("to", None)
-                name_ = thingy.get("name", None)
-
                 project_path_ = project_path(window)
 
                 paths_analysis_ = paths_analysis(project_path_)
@@ -3301,9 +3294,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             #     )
 
             elif thingy_semantic == TT_KEYWORD:
-                keyword_namespace = thingy.get("ns", None)
-                keyword_name = thingy.get("name", None)
-
                 project_path_ = project_path(window)
 
                 paths_analysis_ = paths_analysis(project_path_)
@@ -3403,8 +3393,8 @@ class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
                 goto_side_by_side=False,
             )
 
-        except:
-            print(f"Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
+        except Exception:
+            print("Pep: Error: PgPepGotoWarningErrorCommand", traceback.format_exc())
 
 
 class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
@@ -3439,8 +3429,8 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
                         # TODO: Show a QuickPanel if there are multiple options.
                         goto(self.view.window(), thingy_location(class_usages[0]))
 
-        except Exception as e:
-            print(f"Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
+        except Exception:
+            print("Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
 
 
 class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
@@ -3697,8 +3687,8 @@ class PgPepSelectCommand(sublime_plugin.TextCommand):
                 self.view.sel().clear()
                 self.view.sel().add_all(regions)
 
-        except Exception as e:
-            print(f"Pep: Error: PgPepSelectCommand", traceback.format_exc())
+        except Exception:
+            print("Pep: Error: PgPepSelectCommand", traceback.format_exc())
 
 
 class PgPepReplaceCommand(sublime_plugin.TextCommand):
@@ -3756,8 +3746,8 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
 
                     self.view.replace(edit, replace, text)
 
-        except Exception as e:
-            print(f"Pep: Error: PgPepReplaceCommand", traceback.format_exc())
+        except Exception:
+            print("Pep: Error: PgPepReplaceCommand", traceback.format_exc())
 
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
@@ -3811,8 +3801,8 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             # (Setting the value to the empty string will clear the status.)
             self.view.set_status("pg_pep_view_summary", status_message)
 
-        except Exception as e:
-            print(f"Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
+        except Exception:
+            print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
 class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
@@ -3839,10 +3829,8 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
 
             self.view.set_status("pg_pep_view_namespace", view_namespace)
 
-        except Exception as e:
-            print(
-                f"Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc()
-            )
+        except Exception:
+            print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
 class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
@@ -3854,8 +3842,8 @@ class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
             annotate_view(self.view)
-        except Exception as e:
-            print(f"Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
+        except Exception:
+            print("Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
 
 # ---

@@ -2,7 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.14.0 - 2022-11-01
+## 0.16.0 - 2022-11-25
+- Support Clojure Sublimed
+
+## 0.15.0 - 2022-11-01
 - Fixed a bug in show documentation
 - Improved `annotate_view_on_save`
 
