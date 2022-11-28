@@ -80,7 +80,7 @@ Goto definition of a local binding, var, spec, re-frame handler.
 
 ## Settings
 
-Default settings:
+### Default settings
 
 ```jsonc
 {
@@ -169,7 +169,7 @@ Default settings:
 }
 ```
 
-Recommended settings:
+#### Recommended settings
 
 ```jsonc
 {
