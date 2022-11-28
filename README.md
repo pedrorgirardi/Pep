@@ -169,6 +169,24 @@ Default settings:
 }
 ```
 
+Recommended settings:
+
+```jsonc
+{
+    // True if warnings/errors should be displayed right after the analysis is completed.
+    "annotate_view_after_analysis": true,
+
+    // True if you would like to see the number of clj-kondo errors, if any, in the status bar.
+    "view_status_show_errors": true,
+
+    // True if you would like to see the number of clj-kondo warnings, if any, in the status bar.
+    "view_status_show_warnings": true,
+
+    // True if you would like to highlight vars, local bindings and keywords usages.
+    "automatically_highlight": true
+}
+```
+
 ## Sublime Project
 
 To analyse your project's classpath and paths (your files), you need to configure Pep in your Sublime Project.
