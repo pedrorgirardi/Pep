@@ -115,7 +115,7 @@ def project_index(project_path, not_found={}):
     """
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
     """
-    return _index_.get(project_path, not_found)
+    return _index_.get(project_path, not_found) if project_path else not_found
 
 
 # Default functions to run after analysis.
@@ -987,7 +987,7 @@ def set_view_navigation(view_state, navigation):
 
 
 def project_path(window):
-    return window.extract_variables().get("project_path")
+    return window.extract_variables().get("project_path") if window else None
 
 
 def window_project(window):
