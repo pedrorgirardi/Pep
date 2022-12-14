@@ -986,7 +986,7 @@ def set_view_navigation(view_state, navigation):
     view_state["navigation"] = navigation
 
 
-def project_path(window):
+def project_path(window) -> Optional[str]:
     return window.extract_variables().get("project_path") if window else None
 
 
