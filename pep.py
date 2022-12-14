@@ -990,11 +990,11 @@ def project_path(window) -> Optional[str]:
     return window.extract_variables().get("project_path") if window else None
 
 
-def window_project(window):
-    return window.extract_variables().get('project')
+def window_project(window) -> Optional[str]:
+    return window.extract_variables().get('project') if window else None
 
 
-def project_data_classpath(window):
+def project_data_classpath(window) -> Optional[str]:
     """
     Example:
 
@@ -1004,7 +1004,7 @@ def project_data_classpath(window):
         return project_data.get("pep", {}).get("classpath")
 
 
-def project_data_paths(window):
+def project_data_paths(window) -> Optional[str]:
     """
     Example:
 
