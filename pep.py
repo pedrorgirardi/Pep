@@ -233,7 +233,7 @@ def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
 
-def project_data(window):
+def project_data(window) -> dict:
     if window:
         return window.project_data().get("pep", {}) if window.project_data() else {}
     else:
@@ -1000,8 +1000,7 @@ def project_data_classpath(window) -> Optional[str]:
 
     ["clojure", "-Spath"]
     """
-    if project_data := window.project_data():
-        return project_data.get("pep", {}).get("classpath")
+    return project_data(window).get("classpath")
 
 
 def project_data_paths(window) -> Optional[str]:
@@ -1010,8 +1009,7 @@ def project_data_paths(window) -> Optional[str]:
 
     ["src", "test"]
     """
-    if project_data := window.project_data():
-        return project_data.get("pep", {}).get("paths")
+    return project_data(window).get("paths")
 
 
 # ---
