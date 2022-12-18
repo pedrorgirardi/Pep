@@ -3545,7 +3545,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 sheet = self.view.window().new_html_sheet(
                     "Trace Usages",
                     tree(trace),
-                    sublime.NewFileFlags.SEMI_TRANSIENT,
+                    sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
                 )
 
                 self.view.window().focus_sheet(sheet)
