@@ -234,6 +234,11 @@ def settings():
 
 
 def project_data(window) -> dict:
+    """
+    Returns Pep's project data - it's always a dict.
+
+    Pep's project data is data about paths, classpath and settings.
+    """
     if window:
         return window.project_data().get("pep", {}) if window.project_data() else {}
     else:
