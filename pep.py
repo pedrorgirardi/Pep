@@ -115,7 +115,7 @@ def project_index(project_path, not_found={}):
     """
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
     """
-    return _index_.get(project_path, not_found)
+    return _index_.get(project_path, not_found) if project_path else not_found
 
 
 # Default functions to run after analysis.
@@ -233,7 +233,12 @@ def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
 
-def project_data(window):
+def project_data(window) -> dict:
+    """
+    Returns Pep's project data - it's always a dict.
+
+    Pep's project data is data about paths, classpath and settings.
+    """
     if window:
         return window.project_data().get("pep", {}) if window.project_data() else {}
     else:
@@ -986,32 +991,30 @@ def set_view_navigation(view_state, navigation):
     view_state["navigation"] = navigation
 
 
-def project_path(window):
-    return window.extract_variables().get("project_path")
+def project_path(window) -> Optional[str]:
+    return window.extract_variables().get("project_path") if window else None
 
 
-def window_project(window):
-    return window.extract_variables().get('project')
+def window_project(window) -> Optional[str]:
+    return window.extract_variables().get('project') if window else None
 
 
-def project_data_classpath(window):
+def project_data_classpath(window) -> Optional[str]:
     """
     Example:
 
     ["clojure", "-Spath"]
     """
-    if project_data := window.project_data():
-        return project_data.get("pep", {}).get("classpath")
+    return project_data(window).get("classpath")
 
 
-def project_data_paths(window):
+def project_data_paths(window) -> Optional[str]:
     """
     Example:
 
     ["src", "test"]
     """
-    if project_data := window.project_data():
-        return project_data.get("pep", {}).get("paths")
+    return project_data(window).get("paths")
 
 
 # ---
@@ -3547,7 +3550,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 sheet = self.view.window().new_html_sheet(
                     "Trace Usages",
                     tree(trace),
-                    sublime.NewFileFlags.SEMI_TRANSIENT,
+                    sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
                 )
 
                 self.view.window().focus_sheet(sheet)

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.16.1 - 2022-12-22
+- Fix None Window in `project_path`
+- Fix **Trace Usages** Window flags
+
 ## 0.16.0 - 2022-11-25
 - Support Clojure Sublimed
 
