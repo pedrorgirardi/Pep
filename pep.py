@@ -35,6 +35,7 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 
 TT_FINDING = "finding"
 TT_KEYWORD = "keyword"
+TT_SYMBOL = "symbol"
 TT_LOCAL = "local"
 TT_LOCAL_BINDING = "local_binding"
 TT_LOCAL_USAGE = "local_usage"
@@ -904,6 +905,40 @@ def var_index(
     }
 
 
+def symbol_index(
+    analysis,
+    sindex=True,
+    srn=True,
+):
+    # Symbols indexed by row.
+    srn_ = {}
+
+    # Symbols indexed by symbol.
+    sindex_ = {}
+
+    if sindex or srn:
+        for sym in analysis.get("symbols", []):
+
+            # Ignore data missing row and col.
+            if sym.get("row") and sym.get("col"):
+
+                sym = {
+                    **sym,
+                    "_semantic": TT_SYMBOL,
+                }
+
+                if sindex:
+                    sindex_.setdefault(sym.get("symbol"), []).append(sym)
+
+                if srn:
+                    srn_.setdefault(sym.get("row"), []).append(sym)
+
+    return {
+        "sindex": sindex_,
+        "srn": srn_,
+    }
+
+
 def java_class_index(
     analysis,
     jindex=True,
@@ -1387,6 +1422,8 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
 
     keyword_index_ = keyword_index(analysis)
 
+    symbol_index_ = symbol_index(analysis)
+
     local_index_ = local_index(analysis)
 
     findings_ = [
@@ -1399,6 +1436,7 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
         **var_index_,
         **java_class_index_,
         **keyword_index_,
+        **symbol_index_,
         **local_index_,
         "view_change_count": view_change_count,
         "findings": findings_,
