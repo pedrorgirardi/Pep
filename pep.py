@@ -1716,20 +1716,12 @@ def symbol_region(view, thingy) -> sublime.Region:
     return thingy_to_region(view, thingy)
 
 
-def namespace_region(view, thingy) -> sublime.Region:
-    """
-    Returns Region for namespace - usage or definition.
-    """
-
-    return thingy_to_region(view, thingy)
-
-
 def namespace_definition_region(view, namespace_definition):
     """
     Returns a Region of a namespace definition.
     """
 
-    return namespace_region(view, namespace_definition)
+    return thingy_to_region(view, namespace_definition)
 
 
 def namespace_usage_region(view, namespace_usage):
@@ -1737,7 +1729,7 @@ def namespace_usage_region(view, namespace_usage):
     Returns a Region of a namespace usage.
     """
 
-    return namespace_region(view, namespace_usage)
+    return thingy_to_region(view, namespace_usage)
 
 
 def namespace_usage_alias_region(view, namespace_usage):
