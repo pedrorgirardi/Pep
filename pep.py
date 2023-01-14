@@ -387,6 +387,15 @@ def analysis_kindex(analysis):
     return analysis.get("kindex", {})
 
 
+def analysis_sindex(analysis):
+    """
+    Returns a dictionary of symbols by symbol.
+
+    'sindex' stands for 'symbol index'.
+    """
+    return analysis.get("sindex", {})
+
+
 def analysis_krn(analysis):
     """
     Returns a dictionary of keywords by row.
@@ -1671,6 +1680,23 @@ def erase_analysis_regions(view):
 # ---
 
 
+def thingy_basic_region(view, thingy) -> sublime.Region:
+    """
+    Returns Region for `thingy`.
+    """
+
+    row_start = thingy["row"]
+    col_start = thingy["col"]
+
+    row_end = thingy["end-row"]
+    col_end = thingy["end-col"]
+
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
+
+    return sublime.Region(start_point, end_point)
+
+
 def keyword_region(view, thingy) -> sublime.Region:
     """
     Returns Region for keyword.
@@ -1686,6 +1712,13 @@ def keyword_region(view, thingy) -> sublime.Region:
     end_point = view.text_point(row_end - 1, col_end - 1)
 
     return sublime.Region(start_point, end_point)
+
+
+def symbol_region(view, thingy) -> sublime.Region:
+    """
+    Returns Region for symbol.
+    """
+    return thingy_basic_region(view, thingy)
 
 
 def namespace_region(view, thingy) -> sublime.Region:
@@ -1860,6 +1893,9 @@ def thingy_region(view, thingy):
     if thingy_type == TT_KEYWORD:
         return keyword_region(view, thingy_data)
 
+    elif thingy_type == TT_SYMBOL:
+        return symbol_region(view, thingy_data)
+
     elif thingy_type == TT_LOCAL_BINDING:
         return local_binding_region(view, thingy_data)
 
@@ -1902,6 +1938,21 @@ def keyword_in_region(view, krn, region):
 
         if _region.contains(region):
             return (_region, keyword)
+
+def symbol_in_region(view, srn, region):
+    """
+    Try to find a symbol in region using the srn index.
+    """
+
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    symbols = srn.get(region_begin_row + 1, [])
+
+    for sym in symbols:
+        _region = symbol_region(view, sym)
+
+        if _region.contains(region):
+            return (_region, sym)
 
 
 def namespace_definition_in_region(view, nrn, region):
@@ -2205,6 +2256,14 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
+    # 10. Try symbols.
+    thingy_region, thingy_data = symbol_in_region(
+        view, analysis.get("srn", {}), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_SYMBOL, thingy_region, thingy_data)
+
 
 def thingy_at(view, analysis, region) -> Optional[dict]:
     """
@@ -2370,6 +2429,18 @@ def find_keyword_definition(analysis, keyword):
             return keyword_indexed
 
 
+def find_symbol_definition(analysis, sym):
+    """
+    Returns the definition for a symbol `sym`.
+    """
+    symbol_split = sym.get("symbol").split("/")
+
+    k = (symbol_split[0], symbol_split[1]) if len(symbol_split) > 1 else (None, symbol_split[0])
+
+    for var_definition in analysis_vindex(analysis).get(k, []):
+        return var_definition
+
+
 def find_usages(analysis, thingy) -> Optional[List]:
 
     thingy_semantic = thingy["_semantic"]
@@ -2500,6 +2571,9 @@ def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
 
             for keyword in keywords:
                 regions.append(keyword_region(view, keyword))
+
+    elif thingy_type == TT_SYMBOL:
+        regions.append(symbol_region(view, thingy_data))
 
     elif thingy_type == TT_LOCAL_BINDING:
         regions.append(local_binding_region(view, thingy_data))
@@ -3342,6 +3416,15 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 definition = find_keyword_definition(
                     analysis, thingy
                 ) or find_keyword_definition(paths_analysis_, thingy)
+
+            elif thingy_semantic == TT_SYMBOL:
+                project_path_ = project_path(window)
+
+                paths_analysis_ = paths_analysis(project_path_)
+
+                definition = find_symbol_definition(
+                    analysis, thingy
+                ) or find_symbol_definition(paths_analysis_, thingy)
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
