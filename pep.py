@@ -59,8 +59,15 @@ S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 STATUS_BAR_DOC_KEY = "pep_doc"
 
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
+CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true :var-usages true :arglists true :locals true :keywords true :symbols true :java-class-definitions false :java-class-usages true}"
+CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
+
+CLJ_KONDO_OUTPUT_JSON_CONFIG = "{:format :json :canonical-paths true}"
+
 # Analysis reference: https://github.com/clj-kondo/clj-kondo/tree/master/analysis
-CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :symbols true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
+CLJ_KONDO_VIEW_CONFIG = f"{{:analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
+CLJ_KONDO_PATHS_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
+CLJ_KONDO_CLASSPATH_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 
 
 ## -- Analysis Functions
@@ -1387,7 +1394,7 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
         cwd = os.path.dirname(view_file_name)
 
     analysis_config = (
-        view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_PATHS_CONFIG
+        view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_VIEW_CONFIG
     )
 
     # --lint <file>: a file can either be a normal file, directory or classpath.
@@ -1489,12 +1496,10 @@ def analyze_classpath(window):
         if is_debug(window):
             print(f"Pep: Analyzing classpath... {window_project(window)}")
 
-        analysis_config = "{:skip-lint true :output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false} :format :json :canonical-paths true}}"
-
         analysis_subprocess_args = [
             clj_kondo_path(window),
             "--config",
-            analysis_config,
+            CLJ_KONDO_CLASSPATH_CONFIG,
             "--parallel",
             "--lint",
             classpath,
