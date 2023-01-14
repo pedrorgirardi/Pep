@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.17.0 -
+- Goto Symbol definition
+- Find Symbol usages
+
 ## 0.16.1 - 2022-12-22
 - Fix None Window in `project_path`
 - Fix **Trace Usages** Window flags
