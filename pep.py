@@ -1048,7 +1048,7 @@ def project_path(window) -> Optional[str]:
 
 
 def window_project(window) -> Optional[str]:
-    return window.extract_variables().get('project') if window else None
+    return window.extract_variables().get("project") if window else None
 
 
 def project_data_classpath(window) -> Optional[str]:
@@ -1589,9 +1589,7 @@ def analyze_paths(window):
         paths = path_separator.join(paths)
 
         if is_debug(window):
-            print(
-                f"Pep: Analyzing paths... {window_project(window)}"
-            )
+            print(f"Pep: Analyzing paths... {window_project(window)}")
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
@@ -1686,16 +1684,16 @@ def erase_analysis_regions(view):
 # ---
 
 
-def thingy_basic_region(view, thingy) -> sublime.Region:
+def thingy_to_region(view, thingy) -> sublime.Region:
     """
     Returns Region for `thingy`.
     """
 
-    row_start = thingy["row"]
-    col_start = thingy["col"]
+    row_start = thingy.get("name-now", thingy.get("row"))
+    col_start = thingy.get("name-col", thingy.get("col"))
 
-    row_end = thingy["end-row"]
-    col_end = thingy["end-col"]
+    row_end = thingy.get("name-end-row", thingy.get("end-row"))
+    col_end = thingy.get("name-end-col", thingy.get("end-col"))
 
     start_point = view.text_point(row_start - 1, col_start - 1)
     end_point = view.text_point(row_end - 1, col_end - 1)
@@ -1708,23 +1706,14 @@ def keyword_region(view, thingy) -> sublime.Region:
     Returns Region for keyword.
     """
 
-    row_start = thingy["row"]
-    col_start = thingy["col"]
-
-    row_end = thingy["end-row"]
-    col_end = thingy["end-col"]
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, thingy)
 
 
 def symbol_region(view, thingy) -> sublime.Region:
     """
     Returns Region for symbol.
     """
-    return thingy_basic_region(view, thingy)
+    return thingy_to_region(view, thingy)
 
 
 def namespace_region(view, thingy) -> sublime.Region:
@@ -1732,16 +1721,7 @@ def namespace_region(view, thingy) -> sublime.Region:
     Returns Region for namespace - usage or definition.
     """
 
-    row_start = thingy.get("name-row")
-    col_start = thingy.get("name-col")
-
-    row_end = thingy.get("name-end-row")
-    col_end = thingy.get("name-end-col")
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, thingy)
 
 
 def namespace_definition_region(view, namespace_definition):
@@ -1783,16 +1763,7 @@ def local_usage_region(view, local_usage):
     Returns the Region of a local usage.
     """
 
-    name_row_start = local_usage["name-row"]
-    name_col_start = local_usage["name-col"]
-
-    name_row_end = local_usage["name-end-row"]
-    name_col_end = local_usage["name-end-col"]
-
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
-
-    return sublime.Region(name_start_point, name_end_point)
+    return thingy_to_region(view, local_usage)
 
 
 def local_binding_region(view, local_binding):
@@ -1800,16 +1771,7 @@ def local_binding_region(view, local_binding):
     Returns the Region of a local binding.
     """
 
-    row_start = local_binding.get("name-row") or local_binding.get("row")
-    col_start = local_binding.get("name-col") or local_binding.get("col")
-
-    row_end = local_binding.get("name-end-row") or local_binding.get("end-row")
-    col_end = local_binding.get("name-end-col") or local_binding.get("end-col")
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, local_binding)
 
 
 def var_definition_region(view, var_definition):
@@ -1817,16 +1779,7 @@ def var_definition_region(view, var_definition):
     Returns the Region of a Var definition.
     """
 
-    name_row_start = var_definition["name-row"]
-    name_col_start = var_definition["name-col"]
-
-    name_row_end = var_definition["name-end-row"]
-    name_col_end = var_definition["name-end-col"]
-
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
-
-    return sublime.Region(name_start_point, name_end_point)
+    return thingy_to_region(view, var_definition)
 
 
 def var_usage_region(view, var_usage):
@@ -1834,16 +1787,7 @@ def var_usage_region(view, var_usage):
     Returns the Region of a Var usage.
     """
 
-    name_row_start = var_usage.get("name-row") or var_usage.get("row")
-    name_col_start = var_usage.get("name-col") or var_usage.get("col")
-
-    name_row_end = var_usage.get("name-end-row") or var_usage.get("end-row")
-    name_col_end = var_usage.get("name-end-col") or var_usage.get("end-col")
-
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
-
-    return sublime.Region(name_start_point, name_end_point)
+    return thingy_to_region(view, var_usage)
 
 
 def java_class_usage_region(view, java_class_usage):
@@ -1851,16 +1795,7 @@ def java_class_usage_region(view, java_class_usage):
     Returns the Region of a Java class usage.
     """
 
-    row_start = java_class_usage.get("row")
-    col_start = java_class_usage.get("col")
-
-    row_end = java_class_usage.get("end-row")
-    col_end = java_class_usage.get("end-col")
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, java_class_usage)
 
 
 def var_usage_namespace_region(view, var_usage):
@@ -1944,6 +1879,7 @@ def keyword_in_region(view, krn, region):
 
         if _region.contains(region):
             return (_region, keyword)
+
 
 def symbol_in_region(view, srn, region):
     """
@@ -2441,7 +2377,11 @@ def find_symbol_definition(analysis, sym):
     """
     symbol_split = sym.get("symbol").split("/")
 
-    k = (symbol_split[0], symbol_split[1]) if len(symbol_split) > 1 else (None, symbol_split[0])
+    k = (
+        (symbol_split[0], symbol_split[1])
+        if len(symbol_split) > 1
+        else (None, symbol_split[0])
+    )
 
     for var_definition in analysis_vindex(analysis).get(k, []):
         return var_definition
