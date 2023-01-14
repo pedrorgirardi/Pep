@@ -2899,6 +2899,13 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                         or find_namespace_definition(classpath_analysis_, thingy)
                     )
 
+                elif thingy_semantic == TT_SYMBOL:
+                    definition = (
+                        find_symbol_definition(view_analysis_, thingy)
+                        or find_symbol_definition(paths_analysis_, thingy)
+                        or find_symbol_definition(classpath_analysis_, thingy)
+                    )
+
             if definition:
                 # Name
                 # ---
