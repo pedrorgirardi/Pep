@@ -2388,7 +2388,7 @@ def find_keyword_definition(analysis, keyword):
         if keyword_indexed.get("reg", None):
             return keyword_indexed
 
-# TODO: Use find_var_definition instead.
+
 def find_symbol_definition(analysis, sym):
     """
     Returns the definition for a symbol `sym`.
