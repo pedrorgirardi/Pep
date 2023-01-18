@@ -1069,6 +1069,26 @@ def project_data_paths(window) -> Optional[str]:
     return project_data(window).get("paths")
 
 
+def symbol_namespace(thingy):
+    symbol_split = thingy.get("symbol").split("/")
+
+    if len(symbol_split) > 1:
+        return symbol_split[0]
+    else:
+        return None
+
+    return symbol_split[0]
+
+
+def symbol_name(thingy):
+    symbol_split = thingy.get("symbol").split("/")
+
+    if len(symbol_split) > 1:
+        return symbol_split[1]
+    else:
+        return symbol_split[0]
+
+
 # ---
 
 # Copied from https://github.com/eerohele/Tutkain
@@ -2267,16 +2287,11 @@ def find_var_usages(analysis, thingy_data) -> List:
     `thingy_data` can be a Var definition, usage or a symbol.
     """
 
+    # A tuple of namespace and name.
     k = None
 
     if thingy_data["_semantic"] == TT_SYMBOL:
-        symbol_split = thingy_data.get("symbol").split("/")
-
-        k = (
-            (symbol_split[0], symbol_split[1])
-            if len(symbol_split) > 1
-            else (None, symbol_split[0])
-        )
+        k = (symbol_namespace(thingy_data), symbol_name(thingy_data))
 
     else:
         k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
@@ -2373,18 +2388,12 @@ def find_keyword_definition(analysis, keyword):
         if keyword_indexed.get("reg", None):
             return keyword_indexed
 
-
+# TODO: Use find_var_definition instead.
 def find_symbol_definition(analysis, sym):
     """
     Returns the definition for a symbol `sym`.
     """
-    symbol_split = sym.get("symbol").split("/")
-
-    k = (
-        (symbol_split[0], symbol_split[1])
-        if len(symbol_split) > 1
-        else (None, symbol_split[0])
-    )
+    k = (symbol_namespace(sym), symbol_name(sym))
 
     for var_definition in analysis_vindex(analysis).get(k, []):
         return var_definition
