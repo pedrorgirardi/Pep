@@ -46,7 +46,10 @@ x
 
 :person/age
 
-(defn foo [x] x)
+(defn foo
+  "Foo."
+  [x]
+  x)
 
 (defn bar [x]
   (foo x))
