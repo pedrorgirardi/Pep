@@ -1,0 +1,5 @@
+[;; Classpath
+ clojure.core/map
+
+ ;; Paths
+ example/foo]

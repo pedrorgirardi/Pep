@@ -2264,13 +2264,24 @@ def find_var_usages(analysis, thingy_data) -> List:
     """
     Returns a list of var_usage.
 
-    `thingy_data` can be either a var_definirion or var_usage.
+    `thingy_data` can be a Var definition, usage or a symbol.
     """
-    var_ns = thingy_data.get("ns") or thingy_data.get("to")
 
-    var_name = thingy_data.get("name")
+    k = None
 
-    return analysis_vindex_usages(analysis).get((var_ns, var_name), [])
+    if thingy_data["_semantic"] == TT_SYMBOL:
+        symbol_split = thingy_data.get("symbol").split("/")
+
+        k = (
+            (symbol_split[0], symbol_split[1])
+            if len(symbol_split) > 1
+            else (None, symbol_split[0])
+        )
+
+    else:
+        k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
+
+    return analysis_vindex_usages(analysis).get(k, [])
 
 
 def find_java_class_definition(analysis, thingy_data):
@@ -2400,6 +2411,9 @@ def find_usages(analysis, thingy) -> Optional[List]:
         return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_USAGE:
+        return find_var_usages(analysis, thingy)
+
+    elif thingy_semantic == TT_SYMBOL:
         return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_JAVA_CLASS_USAGE:
@@ -3367,9 +3381,13 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
                 paths_analysis_ = paths_analysis(project_path_)
 
-                definition = find_symbol_definition(
-                    analysis, thingy
-                ) or find_symbol_definition(paths_analysis_, thingy)
+                classpath_analysis_ = classpath_analysis(project_path_)
+
+                definition = (
+                    find_symbol_definition(analysis, thingy)
+                    or find_symbol_definition(paths_analysis_, thingy)
+                    or find_symbol_definition(classpath_analysis_, thingy)
+                )
 
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
