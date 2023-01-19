@@ -2382,6 +2382,7 @@ def find_keyword_definition(analysis, keyword):
             return keyword_indexed
 
 
+# TODO: Change to definitions.
 def find_symbol_definition(analysis, sym):
     """
     Returns Var definition for symbol `sym`.
