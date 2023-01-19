@@ -2287,14 +2287,7 @@ def find_var_usages(analysis, thingy_data) -> List:
     `thingy_data` can be a Var definition, usage or a symbol.
     """
 
-    # A tuple of namespace and name.
-    k = None
-
-    if thingy_data["_semantic"] == TT_SYMBOL:
-        k = (symbol_namespace(thingy_data), symbol_name(thingy_data))
-
-    else:
-        k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
+    k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
 
     return analysis_vindex_usages(analysis).get(k, [])
 
@@ -2391,12 +2384,21 @@ def find_keyword_definition(analysis, keyword):
 
 def find_symbol_definition(analysis, sym):
     """
-    Returns the definition for a symbol `sym`.
+    Returns Var definition for symbol `sym`.
     """
     k = (symbol_namespace(sym), symbol_name(sym))
 
     for var_definition in analysis_vindex(analysis).get(k, []):
         return var_definition
+
+
+def find_symbol_usages(analysis, sym):
+    """
+    Returns Var usages for symbol `sym`.
+    """
+    k = (symbol_namespace(sym), symbol_name(sym))
+
+    return analysis_vindex_usages(analysis).get(k, [])
 
 
 def find_usages(analysis, thingy) -> Optional[List]:
@@ -2423,7 +2425,7 @@ def find_usages(analysis, thingy) -> Optional[List]:
         return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_SYMBOL:
-        return find_var_usages(analysis, thingy)
+        return find_symbol_usages(analysis, thingy)
 
     elif thingy_semantic == TT_JAVA_CLASS_USAGE:
         return find_java_class_usages(analysis, thingy)
