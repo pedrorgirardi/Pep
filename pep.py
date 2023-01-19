@@ -2413,16 +2413,10 @@ def find_usages(analysis, thingy) -> Optional[List]:
 
         return find_keyword_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_LOCAL:
+    elif thingy_semantic == TT_LOCAL or thingy_semantic == TT_LOCAL_USAGE:
         return find_local_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_LOCAL_USAGE:
-        return find_local_usages(analysis, thingy)
-
-    elif thingy_semantic == TT_VAR_DEFINITION:
-        return find_var_usages(analysis, thingy)
-
-    elif thingy_semantic == TT_VAR_USAGE:
+    elif thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
         return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_SYMBOL:
@@ -2431,11 +2425,9 @@ def find_usages(analysis, thingy) -> Optional[List]:
     elif thingy_semantic == TT_JAVA_CLASS_USAGE:
         return find_java_class_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_NAMESPACE_DEFINITION:
-        return find_namespace_usages(analysis, thingy)
-
     elif (
-        thingy_semantic == TT_NAMESPACE_USAGE
+        thingy_semantic == TT_NAMESPACE_DEFINITION
+        or thingy_semantic == TT_NAMESPACE_USAGE
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
         return find_namespace_usages(analysis, thingy)
