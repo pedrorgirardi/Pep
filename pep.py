@@ -2417,6 +2417,9 @@ def find_usages(analysis, thingy) -> Optional[List]:
         return find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
+
+        # TODO: Search symbols too.
+
         return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_SYMBOL:
