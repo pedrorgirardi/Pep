@@ -1,5 +1,4 @@
 import sublime
-import pprint
 
 from unittest import TestCase
 

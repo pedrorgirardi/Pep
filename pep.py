@@ -35,6 +35,7 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 
 TT_FINDING = "finding"
 TT_KEYWORD = "keyword"
+TT_SYMBOL = "symbol"
 TT_LOCAL = "local"
 TT_LOCAL_BINDING = "local_binding"
 TT_LOCAL_USAGE = "local_usage"
@@ -58,7 +59,15 @@ S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 STATUS_BAR_DOC_KEY = "pep_doc"
 
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
-CLJ_KONDO_PATHS_CONFIG = "{:skip-lint true :analysis {:var-definitions true :var-usages true :arglists true :locals true :keywords true :java-class-definitions false :java-class-usages true} :output {:format :json :canonical-paths true} }"
+CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true :var-usages true :arglists true :locals true :keywords true :symbols true :java-class-definitions false :java-class-usages true}"
+CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
+
+CLJ_KONDO_OUTPUT_JSON_CONFIG = "{:format :json :canonical-paths true}"
+
+# Analysis reference: https://github.com/clj-kondo/clj-kondo/tree/master/analysis
+CLJ_KONDO_VIEW_CONFIG = f"{{:analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
+CLJ_KONDO_PATHS_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
+CLJ_KONDO_CLASSPATH_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 
 
 ## -- Analysis Functions
@@ -115,7 +124,7 @@ def project_index(project_path, not_found={}):
     """
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
     """
-    return _index_.get(project_path, not_found)
+    return _index_.get(project_path, not_found) if project_path else not_found
 
 
 # Default functions to run after analysis.
@@ -233,7 +242,12 @@ def settings():
     return sublime.load_settings("Pep.sublime-settings")
 
 
-def project_data(window):
+def project_data(window) -> dict:
+    """
+    Returns Pep's project data - it's always a dict.
+
+    Pep's project data is data about paths, classpath and settings.
+    """
     if window:
         return window.project_data().get("pep", {}) if window.project_data() else {}
     else:
@@ -379,6 +393,15 @@ def analysis_kindex(analysis):
     'kindex' stands for 'keyword index'.
     """
     return analysis.get("kindex", {})
+
+
+def analysis_sindex(analysis):
+    """
+    Returns a dictionary of symbols by symbol.
+
+    'sindex' stands for 'symbol index'.
+    """
+    return analysis.get("sindex", {})
 
 
 def analysis_krn(analysis):
@@ -899,6 +922,40 @@ def var_index(
     }
 
 
+def symbol_index(
+    analysis,
+    sindex=True,
+    srn=True,
+):
+    # Symbols indexed by row.
+    srn_ = {}
+
+    # Symbols indexed by symbol.
+    sindex_ = {}
+
+    if sindex or srn:
+        for sym in analysis.get("symbols", []):
+
+            # Ignore data missing row and col.
+            if sym.get("row") and sym.get("col"):
+
+                sym = {
+                    **sym,
+                    "_semantic": TT_SYMBOL,
+                }
+
+                if sindex:
+                    sindex_.setdefault(sym.get("symbol"), []).append(sym)
+
+                if srn:
+                    srn_.setdefault(sym.get("row"), []).append(sym)
+
+    return {
+        "sindex": sindex_,
+        "srn": srn_,
+    }
+
+
 def java_class_index(
     analysis,
     jindex=True,
@@ -986,32 +1043,50 @@ def set_view_navigation(view_state, navigation):
     view_state["navigation"] = navigation
 
 
-def project_path(window):
-    return window.extract_variables().get("project_path")
+def project_path(window) -> Optional[str]:
+    return window.extract_variables().get("project_path") if window else None
 
 
-def window_project(window):
-    return window.extract_variables().get('project')
+def window_project(window) -> Optional[str]:
+    return window.extract_variables().get("project") if window else None
 
 
-def project_data_classpath(window):
+def project_data_classpath(window) -> Optional[str]:
     """
     Example:
 
     ["clojure", "-Spath"]
     """
-    if project_data := window.project_data():
-        return project_data.get("pep", {}).get("classpath")
+    return project_data(window).get("classpath")
 
 
-def project_data_paths(window):
+def project_data_paths(window) -> Optional[str]:
     """
     Example:
 
     ["src", "test"]
     """
-    if project_data := window.project_data():
-        return project_data.get("pep", {}).get("paths")
+    return project_data(window).get("paths")
+
+
+def symbol_namespace(thingy):
+    symbol_split = thingy.get("symbol").split("/")
+
+    if len(symbol_split) > 1:
+        return symbol_split[0]
+    else:
+        return None
+
+    return symbol_split[0]
+
+
+def symbol_name(thingy):
+    symbol_split = thingy.get("symbol").split("/")
+
+    if len(symbol_split) > 1:
+        return symbol_split[1]
+    else:
+        return symbol_split[0]
 
 
 # ---
@@ -1339,7 +1414,7 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
         cwd = os.path.dirname(view_file_name)
 
     analysis_config = (
-        view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_PATHS_CONFIG
+        view.settings().get(S_PEP_CLJ_KONDO_CONFIG) or CLJ_KONDO_VIEW_CONFIG
     )
 
     # --lint <file>: a file can either be a normal file, directory or classpath.
@@ -1384,6 +1459,8 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
 
     keyword_index_ = keyword_index(analysis)
 
+    symbol_index_ = symbol_index(analysis)
+
     local_index_ = local_index(analysis)
 
     findings_ = [
@@ -1396,6 +1473,7 @@ def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
         **var_index_,
         **java_class_index_,
         **keyword_index_,
+        **symbol_index_,
         **local_index_,
         "view_change_count": view_change_count,
         "findings": findings_,
@@ -1438,12 +1516,10 @@ def analyze_classpath(window):
         if is_debug(window):
             print(f"Pep: Analyzing classpath... {window_project(window)}")
 
-        analysis_config = "{:skip-lint true :output {:analysis {:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false} :format :json :canonical-paths true}}"
-
         analysis_subprocess_args = [
             clj_kondo_path(window),
             "--config",
-            analysis_config,
+            CLJ_KONDO_CLASSPATH_CONFIG,
             "--parallel",
             "--lint",
             classpath,
@@ -1533,9 +1609,7 @@ def analyze_paths(window):
         paths = path_separator.join(paths)
 
         if is_debug(window):
-            print(
-                f"Pep: Analyzing paths... {window_project(window)}"
-            )
+            print(f"Pep: Analyzing paths... {window_project(window)}")
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
@@ -1630,38 +1704,36 @@ def erase_analysis_regions(view):
 # ---
 
 
+def thingy_to_region(view, thingy) -> sublime.Region:
+    """
+    Returns Region for `thingy`.
+    """
+
+    row_start = thingy.get("name-now", thingy.get("row"))
+    col_start = thingy.get("name-col", thingy.get("col"))
+
+    row_end = thingy.get("name-end-row", thingy.get("end-row"))
+    col_end = thingy.get("name-end-col", thingy.get("end-col"))
+
+    start_point = view.text_point(row_start - 1, col_start - 1)
+    end_point = view.text_point(row_end - 1, col_end - 1)
+
+    return sublime.Region(start_point, end_point)
+
+
 def keyword_region(view, thingy) -> sublime.Region:
     """
     Returns Region for keyword.
     """
 
-    row_start = thingy["row"]
-    col_start = thingy["col"]
-
-    row_end = thingy["end-row"]
-    col_end = thingy["end-col"]
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, thingy)
 
 
-def namespace_region(view, thingy) -> sublime.Region:
+def symbol_region(view, thingy) -> sublime.Region:
     """
-    Returns Region for namespace - usage or definition.
+    Returns Region for symbol.
     """
-
-    row_start = thingy.get("name-row")
-    col_start = thingy.get("name-col")
-
-    row_end = thingy.get("name-end-row")
-    col_end = thingy.get("name-end-col")
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, thingy)
 
 
 def namespace_definition_region(view, namespace_definition):
@@ -1669,7 +1741,7 @@ def namespace_definition_region(view, namespace_definition):
     Returns a Region of a namespace definition.
     """
 
-    return namespace_region(view, namespace_definition)
+    return thingy_to_region(view, namespace_definition)
 
 
 def namespace_usage_region(view, namespace_usage):
@@ -1677,7 +1749,7 @@ def namespace_usage_region(view, namespace_usage):
     Returns a Region of a namespace usage.
     """
 
-    return namespace_region(view, namespace_usage)
+    return thingy_to_region(view, namespace_usage)
 
 
 def namespace_usage_alias_region(view, namespace_usage):
@@ -1703,16 +1775,7 @@ def local_usage_region(view, local_usage):
     Returns the Region of a local usage.
     """
 
-    name_row_start = local_usage["name-row"]
-    name_col_start = local_usage["name-col"]
-
-    name_row_end = local_usage["name-end-row"]
-    name_col_end = local_usage["name-end-col"]
-
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
-
-    return sublime.Region(name_start_point, name_end_point)
+    return thingy_to_region(view, local_usage)
 
 
 def local_binding_region(view, local_binding):
@@ -1720,16 +1783,7 @@ def local_binding_region(view, local_binding):
     Returns the Region of a local binding.
     """
 
-    row_start = local_binding.get("name-row") or local_binding.get("row")
-    col_start = local_binding.get("name-col") or local_binding.get("col")
-
-    row_end = local_binding.get("name-end-row") or local_binding.get("end-row")
-    col_end = local_binding.get("name-end-col") or local_binding.get("end-col")
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, local_binding)
 
 
 def var_definition_region(view, var_definition):
@@ -1737,16 +1791,7 @@ def var_definition_region(view, var_definition):
     Returns the Region of a Var definition.
     """
 
-    name_row_start = var_definition["name-row"]
-    name_col_start = var_definition["name-col"]
-
-    name_row_end = var_definition["name-end-row"]
-    name_col_end = var_definition["name-end-col"]
-
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
-
-    return sublime.Region(name_start_point, name_end_point)
+    return thingy_to_region(view, var_definition)
 
 
 def var_usage_region(view, var_usage):
@@ -1754,16 +1799,7 @@ def var_usage_region(view, var_usage):
     Returns the Region of a Var usage.
     """
 
-    name_row_start = var_usage.get("name-row") or var_usage.get("row")
-    name_col_start = var_usage.get("name-col") or var_usage.get("col")
-
-    name_row_end = var_usage.get("name-end-row") or var_usage.get("end-row")
-    name_col_end = var_usage.get("name-end-col") or var_usage.get("end-col")
-
-    name_start_point = view.text_point(name_row_start - 1, name_col_start - 1)
-    name_end_point = view.text_point(name_row_end - 1, name_col_end - 1)
-
-    return sublime.Region(name_start_point, name_end_point)
+    return thingy_to_region(view, var_usage)
 
 
 def java_class_usage_region(view, java_class_usage):
@@ -1771,16 +1807,7 @@ def java_class_usage_region(view, java_class_usage):
     Returns the Region of a Java class usage.
     """
 
-    row_start = java_class_usage.get("row")
-    col_start = java_class_usage.get("col")
-
-    row_end = java_class_usage.get("end-row")
-    col_end = java_class_usage.get("end-col")
-
-    start_point = view.text_point(row_start - 1, col_start - 1)
-    end_point = view.text_point(row_end - 1, col_end - 1)
-
-    return sublime.Region(start_point, end_point)
+    return thingy_to_region(view, java_class_usage)
 
 
 def var_usage_namespace_region(view, var_usage):
@@ -1818,6 +1845,9 @@ def thingy_region(view, thingy):
 
     if thingy_type == TT_KEYWORD:
         return keyword_region(view, thingy_data)
+
+    elif thingy_type == TT_SYMBOL:
+        return symbol_region(view, thingy_data)
 
     elif thingy_type == TT_LOCAL_BINDING:
         return local_binding_region(view, thingy_data)
@@ -1861,6 +1891,22 @@ def keyword_in_region(view, krn, region):
 
         if _region.contains(region):
             return (_region, keyword)
+
+
+def symbol_in_region(view, srn, region):
+    """
+    Try to find a symbol in region using the srn index.
+    """
+
+    region_begin_row, _ = view.rowcol(region.begin())
+
+    symbols = srn.get(region_begin_row + 1, [])
+
+    for sym in symbols:
+        _region = symbol_region(view, sym)
+
+        if _region.contains(region):
+            return (_region, sym)
 
 
 def namespace_definition_in_region(view, nrn, region):
@@ -2164,6 +2210,14 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
+    # 10. Try symbols.
+    thingy_region, thingy_data = symbol_in_region(
+        view, analysis.get("srn", {}), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_SYMBOL, thingy_region, thingy_data)
+
 
 def thingy_at(view, analysis, region) -> Optional[dict]:
     """
@@ -2230,13 +2284,12 @@ def find_var_usages(analysis, thingy_data) -> List:
     """
     Returns a list of var_usage.
 
-    `thingy_data` can be either a var_definirion or var_usage.
+    `thingy_data` can be a Var definition, usage or a symbol.
     """
-    var_ns = thingy_data.get("ns") or thingy_data.get("to")
 
-    var_name = thingy_data.get("name")
+    k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
 
-    return analysis_vindex_usages(analysis).get((var_ns, var_name), [])
+    return analysis_vindex_usages(analysis).get(k, [])
 
 
 def find_java_class_definition(analysis, thingy_data):
@@ -2329,6 +2382,26 @@ def find_keyword_definition(analysis, keyword):
             return keyword_indexed
 
 
+# TODO: Change to definitions.
+def find_symbol_definition(analysis, sym):
+    """
+    Returns Var definition for symbol `sym`.
+    """
+    k = (symbol_namespace(sym), symbol_name(sym))
+
+    for var_definition in analysis_vindex(analysis).get(k, []):
+        return var_definition
+
+
+def find_symbol_usages(analysis, sym):
+    """
+    Returns Var usages for symbol `sym`.
+    """
+    k = (symbol_namespace(sym), symbol_name(sym))
+
+    return analysis_vindex_usages(analysis).get(k, [])
+
+
 def find_usages(analysis, thingy) -> Optional[List]:
 
     thingy_semantic = thingy["_semantic"]
@@ -2340,26 +2413,24 @@ def find_usages(analysis, thingy) -> Optional[List]:
 
         return find_keyword_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_LOCAL:
+    elif thingy_semantic == TT_LOCAL or thingy_semantic == TT_LOCAL_USAGE:
         return find_local_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_LOCAL_USAGE:
-        return find_local_usages(analysis, thingy)
+    elif thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
 
-    elif thingy_semantic == TT_VAR_DEFINITION:
+        # TODO: Search symbols too.
+
         return find_var_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_VAR_USAGE:
-        return find_var_usages(analysis, thingy)
+    elif thingy_semantic == TT_SYMBOL:
+        return find_symbol_usages(analysis, thingy)
 
     elif thingy_semantic == TT_JAVA_CLASS_USAGE:
         return find_java_class_usages(analysis, thingy)
 
-    elif thingy_semantic == TT_NAMESPACE_DEFINITION:
-        return find_namespace_usages(analysis, thingy)
-
     elif (
-        thingy_semantic == TT_NAMESPACE_USAGE
+        thingy_semantic == TT_NAMESPACE_DEFINITION
+        or thingy_semantic == TT_NAMESPACE_USAGE
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
         return find_namespace_usages(analysis, thingy)
@@ -2459,6 +2530,9 @@ def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
 
             for keyword in keywords:
                 regions.append(keyword_region(view, keyword))
+
+    elif thingy_type == TT_SYMBOL:
+        regions.append(symbol_region(view, thingy_data))
 
     elif thingy_type == TT_LOCAL_BINDING:
         regions.append(local_binding_region(view, thingy_data))
@@ -2782,6 +2856,13 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                         find_namespace_definition(view_analysis_, thingy)
                         or find_namespace_definition(paths_analysis_, thingy)
                         or find_namespace_definition(classpath_analysis_, thingy)
+                    )
+
+                elif thingy_semantic == TT_SYMBOL:
+                    definition = (
+                        find_symbol_definition(view_analysis_, thingy)
+                        or find_symbol_definition(paths_analysis_, thingy)
+                        or find_symbol_definition(classpath_analysis_, thingy)
                     )
 
             if definition:
@@ -3302,6 +3383,19 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     analysis, thingy
                 ) or find_keyword_definition(paths_analysis_, thingy)
 
+            elif thingy_semantic == TT_SYMBOL:
+                project_path_ = project_path(window)
+
+                paths_analysis_ = paths_analysis(project_path_)
+
+                classpath_analysis_ = classpath_analysis(project_path_)
+
+                definition = (
+                    find_symbol_definition(analysis, thingy)
+                    or find_symbol_definition(paths_analysis_, thingy)
+                    or find_symbol_definition(classpath_analysis_, thingy)
+                )
+
             if definition:
                 flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
 
@@ -3547,7 +3641,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 sheet = self.view.window().new_html_sheet(
                     "Trace Usages",
                     tree(trace),
-                    sublime.NewFileFlags.SEMI_TRANSIENT,
+                    sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
                 )
 
                 self.view.window().focus_sheet(sheet)
