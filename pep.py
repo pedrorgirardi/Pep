@@ -205,7 +205,6 @@ def paths_analysis(project_path, not_found={}):
     """
 
     if project_index_ := project_index(project_path, not_found=not_found):
-
         analysis = unify_analysis(project_index_)
 
         keyword_index_ = keyword_index(analysis)
@@ -675,10 +674,8 @@ def namespace_index(
 
     if nindex or nrn:
         for namespace_definition in namespace_definitions:
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if namespace_definition.get("row") and namespace_definition.get("col"):
-
                 namespace_definition = {
                     **namespace_definition,
                     "_semantic": TT_NAMESPACE_DEFINITION,
@@ -702,10 +699,8 @@ def namespace_index(
 
     if nindex_usages or nrn_usages:
         for namespace_usage in analysis.get("namespace-usages", []):
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if namespace_usage.get("row") and namespace_usage.get("col"):
-
                 namespace_usage = {
                     **namespace_usage,
                     "_semantic": TT_NAMESPACE_USAGE,
@@ -759,10 +754,8 @@ def local_index(
 
     if lindex or lrn:
         for local_binding in analysis.get("locals", []):
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if local_binding.get("row") and local_binding.get("col"):
-
                 local_binding = {
                     **local_binding,
                     "_semantic": TT_LOCAL,
@@ -785,10 +778,8 @@ def local_index(
 
     if lindex_usages or lrn_usages:
         for local_usage in analysis.get("local-usages", []):
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if local_usage.get("row") and local_usage.get("col"):
-
                 local_usage = {
                     **local_usage,
                     "_semantic": TT_LOCAL_USAGE,
@@ -824,10 +815,8 @@ def keyword_index(
 
     if kindex or krn:
         for keyword in analysis.get("keywords", []):
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if keyword.get("row") and keyword.get("col"):
-
                 keyword = {
                     **keyword,
                     "_semantic": TT_KEYWORD,
@@ -864,10 +853,8 @@ def var_index(
 
     if vindex or vrn:
         for var_definition in analysis.get("var-definitions", []):
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if var_definition.get("row") and var_definition.get("col"):
-
                 var_definition = {
                     **var_definition,
                     "_semantic": TT_VAR_DEFINITION,
@@ -893,10 +880,8 @@ def var_index(
 
     if vindex_usages or vrn_usages:
         for var_usage in analysis.get("var-usages", []):
-
             # Ignore data missing row and col - it seems like a clj-kondo bug.
             if var_usage.get("row") and var_usage.get("col"):
-
                 var_usage = {
                     **var_usage,
                     "_semantic": TT_VAR_USAGE,
@@ -935,10 +920,8 @@ def symbol_index(
 
     if sindex or srn:
         for sym in analysis.get("symbols", []):
-
             # Ignore data missing row and col.
             if sym.get("row") and sym.get("col"):
-
                 sym = {
                     **sym,
                     "_semantic": TT_SYMBOL,
@@ -986,9 +969,7 @@ def java_class_index(
 
     if jindex_usages or jrn_usages:
         for java_class_usage in analysis.get("java-class-usages", []):
-
             if java_class_usage.get("row") and java_class_usage.get("col"):
-
                 java_class_usage = {
                     **java_class_usage,
                     "_semantic": TT_JAVA_CLASS_USAGE,
@@ -1114,7 +1095,6 @@ def open_jar(filename, f):
 
     with ZipFile(filename_jar) as jar:
         with jar.open(filename_file) as jar_file:
-
             tmp_path = pathlib.Path(filename_file)
             tmp_file_suffix = "." + tmp_path.name
 
@@ -1375,7 +1355,6 @@ def project_classpath(window):
     }
     """
     if classpath := project_data_classpath(window):
-
         classpath = classpath if isinstance(classpath, list) else shlex.split(classpath)
 
         classpath_completed_process = subprocess.run(
@@ -1394,7 +1373,6 @@ def project_classpath(window):
 
 
 def analyze_view(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
-
     # Change count right before analyzing the view.
     # This will be stored in the analysis.
     view_change_count = view.change_count()
@@ -1673,7 +1651,6 @@ def index_analysis(analysis):
     index = {}
 
     for semantic, thingies in analysis.items():
-
         for thingy in thingies:
             filename = thingy["filename"]
 
@@ -1686,7 +1663,6 @@ def unify_analysis(index):
     analysis = {}
 
     for _, analysis_ in index.items():
-
         for semantic, thingies in analysis_.items():
             analysis.setdefault(semantic, []).extend(thingies)
 
@@ -2320,7 +2296,6 @@ def find_namespace_definition(analysis, thingy_data) -> Optional[dict]:
     file_extensions = thingy_file_extensions(thingy_data)
 
     for namespace_definition in nindex.get(name, []):
-
         definition_file_extension = None
 
         if file_extension_ := file_extension(namespace_definition.get("filename")):
@@ -2403,7 +2378,6 @@ def find_symbol_usages(analysis, sym):
 
 
 def find_usages(analysis, thingy) -> Optional[List]:
-
     thingy_semantic = thingy["_semantic"]
 
     if thingy_semantic == TT_KEYWORD:
@@ -2417,7 +2391,6 @@ def find_usages(analysis, thingy) -> Optional[List]:
         return find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
-
         # TODO: Search symbols too.
 
         return find_var_usages(analysis, thingy)
@@ -2926,7 +2899,6 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 )
 
         if minihtmls:
-
             content = f"""
             <body id='pg-pep-show-doc'>
 
@@ -2970,7 +2942,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
             )
 
     def find_position(self, thingy_data, thingy_findings):
-
         for position, finding in enumerate(thingy_findings):
             if finding == thingy_data:
                 return position
@@ -3006,7 +2977,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
         region = self.view.sel()[0]
 
         if thingy := thingy_in_region(self.view, state, region):
-
             thingy_type, thingy_region, thingy_data = thingy
 
             thingy_findings = []
@@ -3118,7 +3088,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_id = (thingy_data.get("to"), thingy_data.get("name"))
 
                 if thingy_id:
-
                     self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     position = self.find_position(thingy_data, thingy_findings)
@@ -3130,7 +3099,6 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_findings = find_java_class_usages(state, thingy_data)
 
                 if thingy_id := thingy_data.get("class"):
-
                     self.initialize_navigation(state, thingy_id, thingy_findings)
 
                     position = self.find_position(thingy_data, thingy_findings)
@@ -3142,14 +3110,12 @@ class PgPepJumpCommand(sublime_plugin.TextCommand):
                 thingy_type == TT_NAMESPACE_USAGE
                 or thingy_type == TT_NAMESPACE_USAGE_ALIAS
             ):
-
                 # Jumping from a namespace usage, or alias, moves the caret
                 # to the first var usage of the namespace.
 
                 if thingy_findings := find_namespace_vars_usages(
                     state, thingy_data["to"]
                 ):
-
                     # ID is the namespace name.
                     thingy_id = thingy_data.get("to")
 
@@ -3166,7 +3132,6 @@ class PgPepInspect(sublime_plugin.TextCommand):
         analysis = view_analysis(self.view.id())
 
         if thingy := thingy_at(self.view, analysis, region):
-
             items_html = ""
 
             for k, v in thingy.items():
@@ -3216,7 +3181,6 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
         project_path_ = project_path(self.window)
 
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
-
             thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(classpath_analysis_),
@@ -3256,7 +3220,6 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
         paths_analysis_ = paths_analysis(project_path_, not_found=None)
 
         if analysis_ := paths_analysis_ or view_analysis_:
-
             thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(analysis_),
@@ -3288,7 +3251,6 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         project_path_ = project_path(self.window)
 
         if analysis_ := paths_analysis(project_path_, not_found=None):
-
             thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
             thingy_list = sorted(thingy_list, key=thingy_lexicographic)
@@ -3313,7 +3275,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
     """
 
     def run(self, edit, side_by_side=False):
-
         window = self.view.window()
 
         view = self.view
@@ -3323,7 +3284,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         region = view.sel()[0]
 
         if thingy := thingy_at(view, analysis, region):
-
             thingy_semantic = thingy["_semantic"]
 
             definition = None
@@ -3419,7 +3379,6 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-
                 thingy_semantic = thingy["_semantic"]
 
                 namespace = None
@@ -3442,7 +3401,6 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
                     )
 
         if thingy_list:
-
             thingy_list = sorted(
                 thingy_list,
                 key=lambda thingy: (
@@ -3504,21 +3462,17 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
 
             if thingy := thingy_at(self.view, view_analysis_, cursor_region):
                 if cursor_namespace_usage := thingy.get("to"):
-
                     nindex_usages = analysis_nindex_usages(view_analysis_)
 
                     if namespace_usages := nindex_usages.get(cursor_namespace_usage):
-
                         # Goto first usage only.
                         # TODO: Show a QuickPanel if there are multiple options.
                         goto(self.view.window(), thingy_location(namespace_usages[0]))
 
                 elif cursor_class_usage := thingy.get("class"):
-
                     jindex_usages = analysis_jindex_usages(view_analysis_)
 
                     if class_usages := jindex_usages.get(cursor_class_usage):
-
                         # Goto first usage only.
                         # TODO: Show a QuickPanel if there are multiple options.
                         goto(self.view.window(), thingy_location(class_usages[0]))
@@ -3667,7 +3621,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-
                 thingies.append(thingy)
 
                 if thingy_usages := find_usages(
@@ -3680,7 +3633,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     thingy_usages_.extend(thingy_usages)
 
         if thingy_usages_:
-
             thingy_usages_ = thingy_dedupe(thingy_usages_)
 
             if len(thingy_usages_) == 1:
@@ -3703,7 +3655,6 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 quick_panel_items = []
 
                 for index, thingy_usage in enumerate(thingy_usages_sorted):
-
                     # Select Thingy under the cursor:
                     for thingy in thingies:
                         if thingy_usage == thingy:
@@ -3873,7 +3824,6 @@ class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
 class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
-
             analysis = view_analysis(self.view.id())
 
             status_messages = []
@@ -3902,7 +3852,6 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
-
             analysis = view_analysis(self.view.id())
 
             view_namespace = ""
