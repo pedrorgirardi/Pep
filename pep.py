@@ -2229,6 +2229,8 @@ def find_local_usages(analysis, local_binding_or_usage):
     return analysis.get("lindex_usages", {}).get(local_binding_or_usage.get("id"), [])
 
 
+# Deprecated
+# See `find_var_definitions`
 def find_var_definition(analysis, thingy_data) -> Optional[dict]:
     """
     Returns a var_definition or None.
@@ -2254,6 +2256,18 @@ def find_var_definition(analysis, thingy_data) -> Optional[dict]:
 
         if definition_file_extension in file_extensions:
             return var_definition
+
+
+def find_var_definitions(analysis, thingy_data) -> List:
+    """
+    Returns a list of var_definition.
+
+    `thingy_data` can be either a var_definirion or var_usage.
+    """
+
+    k = (thingy_data.get("ns", thingy_data.get("to")), thingy_data.get("name"))
+
+    return analysis_vindex(analysis).get(k, [])
 
 
 def find_var_usages(analysis, thingy_data) -> List:
@@ -2282,6 +2296,8 @@ def find_java_class_usages(analysis, thingy_data) -> List:
     return analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
 
 
+# Deprecated
+# See `find_namespace_definitions`
 def find_namespace_definition(analysis, thingy_data) -> Optional[dict]:
     """
     Returns a namespace_definition or None.
@@ -2305,6 +2321,18 @@ def find_namespace_definition(analysis, thingy_data) -> Optional[dict]:
 
         if definition_file_extension in file_extensions:
             return namespace_definition
+
+
+def find_namespace_definitions(analysis, thingy_data) -> List:
+    """
+    Returns a list of namespace_definition.
+
+    `thingy_data` can be either a namespace_definition or namespace_usage.
+    """
+
+    k = thingy_data.get("name", thingy_data.get("to"))
+
+    return analysis_nindex(analysis).get(k, [])
 
 
 def find_namespace_usages(analysis, thingy_data) -> List:
@@ -2344,6 +2372,8 @@ def find_namespace_vars_usages(analysis, namespace):
     return usages
 
 
+# Deprecated
+# See `find_keyword_definitions`
 def find_keyword_definition(analysis, keyword):
     """
     Returns a keyword which has "definition semantics":
@@ -2357,7 +2387,23 @@ def find_keyword_definition(analysis, keyword):
             return keyword_indexed
 
 
-# TODO: Change to definitions.
+def find_keyword_definitions(analysis, keyword):
+    """
+    Returns a list of keyword which has "definition semantics":
+    - Clojure Spec
+    - re-frame
+    """
+    k = (keyword.get("ns"), keyword.get("name"))
+
+    return [
+        keyword_
+        for keyword_ in analysis_kindex(analysis).get(k, [])
+        if keyword_.get("reg")
+    ]
+
+
+# Deprecated
+# See `find_symbol_definitions`
 def find_symbol_definition(analysis, sym):
     """
     Returns Var definition for symbol `sym`.
@@ -2366,6 +2412,15 @@ def find_symbol_definition(analysis, sym):
 
     for var_definition in analysis_vindex(analysis).get(k, []):
         return var_definition
+
+
+def find_symbol_definitions(analysis, sym):
+    """
+    Returns a list of Var definition for symbol `sym`.
+    """
+    k = (symbol_namespace(sym), symbol_name(sym))
+
+    return analysis_vindex(analysis).get(k, [])
 
 
 def find_symbol_usages(analysis, sym):
@@ -2407,6 +2462,29 @@ def find_usages(analysis, thingy) -> Optional[List]:
         or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
     ):
         return find_namespace_usages(analysis, thingy)
+
+
+def find_definitions(analysis, thingy) -> Optional[List]:
+    thingy_semantic = thingy["_semantic"]
+
+    if thingy_semantic == TT_LOCAL_USAGE:
+        if local_binding := find_local_binding(analysis, thingy):
+            return [local_binding]
+
+    elif (
+        thingy_semantic == TT_NAMESPACE_USAGE
+        or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
+    ):
+        return find_namespace_definitions(analysis, thingy)
+
+    elif thingy_semantic == TT_VAR_USAGE:
+        return find_var_definitions(analysis, thingy)
+
+    elif thingy_semantic == TT_KEYWORD:
+        return find_keyword_definitions(analysis, thingy)
+
+    elif thingy_semantic == TT_SYMBOL:
+        return find_symbol_definitions(analysis, thingy)
 
 
 # ---
@@ -3363,6 +3441,122 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             else:
                 print("Pep: Unable to find definition")
+
+
+class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
+    def run(self, edit):
+        project_path_ = project_path(self.view.window())
+
+        view_analysis_ = view_analysis(self.view.id())
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        classpath_analysis_ = classpath_analysis(project_path_)
+
+        # Remember current viewport position so it can be restored afterwards.
+        viewport_position = self.view.viewport_position()
+
+        # Store Thingy found at region(s).
+        # Used to find the QuickPanel selected index.
+        thingies = []
+
+        # Store usages of Thingy at region(s).
+        thingy_definitions_ = []
+
+        for region in self.view.sel():
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                thingies.append(thingy)
+
+                if (
+                    thingy_definitions := find_definitions(
+                        analysis=view_analysis_,
+                        thingy=thingy,
+                    )
+                    or find_definitions(
+                        analysis=paths_analysis_,
+                        thingy=thingy,
+                    )
+                    or find_definitions(
+                        analysis=classpath_analysis_,
+                        thingy=thingy,
+                    )
+                ):
+                    thingy_definitions_.extend(thingy_definitions)
+
+        if thingy_definitions_:
+            thingy_definitions_ = thingy_dedupe(thingy_definitions_)
+
+            if len(thingy_definitions_) == 1:
+                location = thingy_location(thingy_definitions_[0])
+
+                goto(self.view.window(), location)
+
+            else:
+                thingy_definitions_sorted = sorted(
+                    thingy_definitions_,
+                    key=lambda thingy_definition: [
+                        thingy_definition.get("filename"),
+                        thingy_definition.get("row"),
+                        thingy_definition.get("col"),
+                    ],
+                )
+
+                selected_index = 0
+
+                quick_panel_items = []
+
+                for index, thingy_definition in enumerate(thingy_definitions_sorted):
+                    # Select Thingy under caret:
+                    for thingy in thingies:
+                        if thingy_definition == thingy:
+                            selected_index = index
+
+                    definition_filename = os.path.basename(
+                        thingy_definition.get("filename")
+                    )
+
+                    definition_line = thingy_definition.get("row", "-")
+
+                    definition_column = thingy_definition.get("col", "-")
+
+                    definition_trigger = (
+                        f"{definition_filename}:{definition_line}:{definition_column}"
+                    )
+
+                    quick_panel_items.append(sublime.QuickPanelItem(definition_trigger))
+
+                def loc(index):
+                    return thingy_location(thingy_definitions_sorted[index])
+
+                def on_done(index, _):
+                    if index == -1:
+                        # Restore selection and viewport position:
+
+                        self.view.sel().clear()
+
+                        self.view.sel().add(region)
+
+                        self.view.window().focus_view(self.view)
+
+                        self.view.set_viewport_position(viewport_position, True)
+
+                    else:
+                        goto(self.view.window(), loc(index))
+
+                def on_highlighted(index):
+                    goto(
+                        self.view.window(),
+                        loc(index),
+                        flags=GOTO_TRANSIENT_FLAGS,
+                    )
+
+                self.view.window().show_quick_panel(
+                    quick_panel_items,
+                    on_done,
+                    sublime.WANT_EVENT,
+                    selected_index,
+                    on_highlighted,
+                )
 
 
 class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
