@@ -120,13 +120,6 @@ def af_status_namespace(context, analysis):
         view.run_command("pg_pep_view_namespace_status")
 
 
-def project_index(project_path, not_found={}):
-    """
-    Mapping of filename to analysis data by semantic, e.g. var-definitions.
-    """
-    return _index_.get(project_path, not_found) if project_path else not_found
-
-
 # Default functions to run after analysis.
 DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
     af_annotate,
@@ -142,6 +135,13 @@ _index_ = {}
 _view_analysis_ = {}
 
 _classpath_analysis_ = {}
+
+
+def project_index(project_path, not_found={}):
+    """
+    Mapping of filename to analysis data by semantic, e.g. var-definitions.
+    """
+    return _index_.get(project_path, not_found) if project_path else not_found
 
 
 def update_project_index(project_path, index):
