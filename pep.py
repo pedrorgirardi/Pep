@@ -59,7 +59,7 @@ S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 STATUS_BAR_DOC_KEY = "pep_doc"
 
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
-CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true :var-usages true :arglists true :locals true :keywords true :symbols true :java-class-definitions false :java-class-usages true}"
+CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true, :var-usages true, :arglists true, :locals true, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
 CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
 
 CLJ_KONDO_OUTPUT_JSON_CONFIG = "{:format :json :canonical-paths true}"
