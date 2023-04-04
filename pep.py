@@ -2707,15 +2707,15 @@ def annotate_view(view):
     # Erase regions from previous analysis.
     erase_analysis_regions(view)
 
-    redish = view.style_for_scope("region.redish")["foreground"]
-    orangish = view.style_for_scope("region.orangish")["foreground"]
+    redish = view.style_for_scope("region.redish").get("foreground")
+    orangish = view.style_for_scope("region.orangish").get("foreground")
 
     view.add_regions(
         "pg_pep_analysis_error",
         error_region_set,
         scope="region.redish",
         annotations=error_minihtml_set,
-        annotation_color=redish,
+        annotation_color=redish or "red",
         flags=(
             sublime.DRAW_SQUIGGLY_UNDERLINE
             | sublime.DRAW_NO_FILL
@@ -2728,7 +2728,7 @@ def annotate_view(view):
         warning_region_set,
         scope="region.orangish",
         annotations=warning_minihtml_set,
-        annotation_color=orangish,
+        annotation_color=orangish or "orange",
         flags=(
             sublime.DRAW_SQUIGGLY_UNDERLINE
             | sublime.DRAW_NO_FILL
