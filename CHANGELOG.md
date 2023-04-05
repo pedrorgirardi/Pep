@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.18.0 -2023-04-05
+- New **Goto Definition** command `pg_pep_goto_definition2` to handle multiple definitions
+- Fix warning/error annotation color - fallback to orange and red, respectively.
+
 ## 0.17.0 - 2023-02-25
 - Goto Symbol definition
 - Find Symbol usages

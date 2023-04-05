@@ -1,6 +1,12 @@
 (ns example
   "Pep example namespace."
-  (:require [clojure.pprint :as pp :refer [pprint]]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [clojure.pprint :as pp :refer [pprint]]))
+
+(s/def :person/name string?)
+
+:person/name
 
 x
 
