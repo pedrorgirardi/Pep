@@ -232,6 +232,8 @@ def paths_analysis(project_path, not_found={}):
             **var_index_,
             **java_class_index_,
         }
+    else:
+        return not_found
 
 
 # -- Settings
