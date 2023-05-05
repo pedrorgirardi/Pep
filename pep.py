@@ -3446,7 +3446,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, side_by_side=False):
         project_path_ = project_path(self.view.window())
 
         view_analysis_ = view_analysis(self.view.id())
@@ -3491,7 +3491,11 @@ class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
             if len(thingy_definitions_) == 1:
                 location = thingy_location(thingy_definitions_[0])
 
-                goto(self.view.window(), location)
+                goto(
+                    self.view.window(),
+                    location,
+                    GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS,
+                )
 
             else:
                 thingy_definitions_sorted = sorted(
@@ -3543,7 +3547,13 @@ class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
                         self.view.set_viewport_position(viewport_position, True)
 
                     else:
-                        goto(self.view.window(), loc(index))
+                        goto(
+                            self.view.window(),
+                            loc(index),
+                            GOTO_SIDE_BY_SIDE_FLAGS
+                            if side_by_side
+                            else GOTO_DEFAULT_FLAGS,
+                        )
 
                 def on_highlighted(index):
                     goto(
