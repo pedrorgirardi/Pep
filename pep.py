@@ -55,9 +55,6 @@ HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 # Setting used to override the clj-kondo config for a view analysis.
 S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 
-# Status bar key used to show documentation.
-STATUS_BAR_DOC_KEY = "pep_doc"
-
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
 CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true, :var-usages true, :arglists true, :locals true, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
 CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
@@ -1493,6 +1490,8 @@ def analyze_classpath(window):
     if classpath := project_classpath(window):
         t0 = time.time()
 
+        sublime.status_message("Analyzing classpath...")
+
         if is_debug(window):
             print(f"Pep: Analyzing classpath... {window_project(window)}")
 
@@ -1587,6 +1586,8 @@ def analyze_paths(window):
         path_separator = ";" if os.name == "nt" else ":"
 
         paths = path_separator.join(paths)
+
+        sublime.status_message("Analyzing paths...")
 
         if is_debug(window):
             print(f"Pep: Analyzing paths... {window_project(window)}")
