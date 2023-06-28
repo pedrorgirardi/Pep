@@ -3866,8 +3866,11 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
                 ],
             )
 
-            minihtmls.append(f"<b>{thingy_name_}</b><br/>")
-            minihtmls.append(f"<p>Usages: {len(thingy_usages_)}</p>")
+            name_usages_minihtmls = []
+            name_usages_minihtmls.append(f"<h3>{thingy_name_}</h3>")
+            name_usages_minihtmls.append(f"<h4>Usages: {len(thingy_usages_)}</h4>")
+
+            name_usages_minihtmls.append("<ul>")
 
             for thingy_usage in thingy_usages_sorted:
                 usage_from = (
@@ -3887,24 +3890,29 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
                     {"location": thingy_location(thingy_usage)},
                 )
 
-                usage_minihtml = f"""
+                name_usages_minihtmls.append(
+                    f"""
                 <li>
                     <a href="{goto_command_url}">{usage_from}:{usage_line}:{usage_column}</a>
                 </li>
                 """
+                )
 
-                minihtmls.append(usage_minihtml)
+            name_usages_minihtmls.append("</ul>")
+            name_usages_minihtmls.append("<br/>")
 
-            minihtmls.append("<br/><br/>")
+            minihtmls.append("".join(name_usages_minihtmls))
 
         content = f"""
         <body>
+            <h2>Find Usages</h2>
+
             {"".join(minihtmls)}
         </body>
         """
 
         sheet = self.view.window().new_html_sheet(
-            "Find",
+            "Find Usages",
             content,
             sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
         )
