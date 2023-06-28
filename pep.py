@@ -3887,6 +3887,8 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
             content = f"""
             <body>
+                <p>Found {len(thingy_usages_sorted)} usages:</p>
+
                 <ul>
                 {"".join(minihtmls)}
                 </ul>
