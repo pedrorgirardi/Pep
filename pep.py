@@ -3872,14 +3872,24 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
                 usage_column = thingy_usage.get("col", "-")
 
-                minihtmls.append(f"<li>{usage_from}:{usage_line}:{usage_column}</li>")
+                goto_command_url = sublime.command_url(
+                    "pg_pep_open_file",
+                    {"location": thingy_location(thingy_usage)},
+                )
+
+                usage_minihtml = f"""
+                <li>
+                    <a href="{goto_command_url}">{usage_from}:{usage_line}:{usage_column}</a>
+                </li>
+                """
+
+                minihtmls.append(usage_minihtml)
 
             content = f"""
-            <body id='pg-pep-find'>
+            <body>
                 <ul>
                 {"".join(minihtmls)}
                 </ul>
-
             </body>
             """
 
