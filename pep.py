@@ -2001,12 +2001,15 @@ def thingy_name(thingy):
     return thingy_qualified_name
 
 
-def thingy_lexicographic(thingy):
-    thingy_namespace = thingy.get("ns") or thingy.get("to")
+def thingy_name2(thingy_data):
+    namespace_ = thingy_data.get("ns") or thingy_data.get("to")
 
-    thingy_name = thingy.get("name")
+    name_ = thingy_data.get("name")
 
-    return f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+    if name_:
+        return f"{namespace_}/{name_}" if namespace_ else name_
+    else:
+        return namespace_
 
 
 def thingy_location(thingy_data):
@@ -3831,8 +3834,8 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
         paths_analysis_ = paths_analysis(project_path_)
 
-        # Store usages of Thingy at region(s).
-        thingy_usages_ = []
+        # Mapping of Thingy's name to its usages.
+        thingy_name_to_usages = {}
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
@@ -3843,9 +3846,15 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
                     analysis=view_analysis_,
                     thingy=thingy,
                 ):
-                    thingy_usages_.extend(thingy_usages)
+                    thingy_name_to_usages[thingy_name2(thingy)] = thingy_usages
 
-        if thingy_usages_:
+        # No usage found, return.
+        if not thingy_name_to_usages:
+            return
+
+        minihtmls = []
+
+        for thingy_name_, thingy_usages_ in thingy_name_to_usages.items():
             thingy_usages_ = thingy_dedupe(thingy_usages_)
 
             thingy_usages_sorted = sorted(
@@ -3857,14 +3866,15 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
                 ],
             )
 
-            minihtmls = []
+            minihtmls.append(f"<b>{thingy_name_}</b><br/>")
+            minihtmls.append(f"<p>Usages: {len(thingy_usages_)}</p>")
 
             for thingy_usage in thingy_usages_sorted:
                 usage_from = (
-                        thingy_usage.get("from")
-                        or thingy_usage.get("ns")
-                        or os.path.basename(thingy_usage.get("filename"))
-                    )
+                    thingy_usage.get("from")
+                    or thingy_usage.get("ns")
+                    or os.path.basename(thingy_usage.get("filename"))
+                )
 
                 usage_from = inspect.cleandoc(html.escape(usage_from))
 
@@ -3885,23 +3895,21 @@ class PgPepFindCommand(sublime_plugin.TextCommand):
 
                 minihtmls.append(usage_minihtml)
 
-            content = f"""
-            <body>
-                <p>Found {len(thingy_usages_sorted)} usages:</p>
+            minihtmls.append("<br/><br/>")
 
-                <ul>
-                {"".join(minihtmls)}
-                </ul>
-            </body>
-            """
+        content = f"""
+        <body>
+            {"".join(minihtmls)}
+        </body>
+        """
 
-            sheet = self.view.window().new_html_sheet(
-                "Find",
-                content,
-                sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
-            )
+        sheet = self.view.window().new_html_sheet(
+            "Find",
+            content,
+            sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
+        )
 
-            self.view.window().focus_sheet(sheet)
+        self.view.window().focus_sheet(sheet)
 
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
