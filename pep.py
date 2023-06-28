@@ -3823,6 +3823,75 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 )
 
 
+class PgPepFindCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        project_path_ = project_path(self.view.window())
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        # Store usages of Thingy at region(s).
+        thingy_usages_ = []
+
+        for region in self.view.sel():
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                if thingy_usages := find_usages(
+                    analysis=paths_analysis_,
+                    thingy=thingy,
+                ) or find_usages(
+                    analysis=view_analysis_,
+                    thingy=thingy,
+                ):
+                    thingy_usages_.extend(thingy_usages)
+
+        if thingy_usages_:
+            thingy_usages_ = thingy_dedupe(thingy_usages_)
+
+            thingy_usages_sorted = sorted(
+                thingy_usages_,
+                key=lambda thingy_usage: [
+                    thingy_usage.get("filename"),
+                    thingy_usage.get("row"),
+                    thingy_usage.get("col"),
+                ],
+            )
+
+            minihtmls = []
+
+            for thingy_usage in thingy_usages_sorted:
+                usage_from = (
+                        thingy_usage.get("from")
+                        or thingy_usage.get("ns")
+                        or os.path.basename(thingy_usage.get("filename"))
+                    )
+
+                usage_from = inspect.cleandoc(html.escape(usage_from))
+
+                usage_line = thingy_usage.get("row", "-")
+
+                usage_column = thingy_usage.get("col", "-")
+
+                minihtmls.append(f"<li>{usage_from}:{usage_line}:{usage_column}</li>")
+
+            content = f"""
+            <body id='pg-pep-find'>
+                <ul>
+                {"".join(minihtmls)}
+                </ul>
+
+            </body>
+            """
+
+            sheet = self.view.window().new_html_sheet(
+                "Find",
+                content,
+                sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
+            )
+
+            self.view.window().focus_sheet(sheet)
+
+
 class PgPepSelectCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
