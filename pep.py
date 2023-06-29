@@ -3273,7 +3273,7 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+            thingy_list = sorted(thingy_list, key=thingy_name2)
 
             show_thingy_quick_panel(
                 self.window,
@@ -3312,7 +3312,7 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+            thingy_list = sorted(thingy_list, key=thingy_name2)
 
             show_thingy_quick_panel(
                 self.window,
@@ -3337,7 +3337,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
         if analysis_ := paths_analysis(project_path_, not_found=None):
             thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
-            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+            thingy_list = sorted(thingy_list, key=thingy_name2)
 
             show_thingy_quick_panel(
                 self.window,
