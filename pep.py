@@ -2956,7 +2956,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     arglists_minihtml = """<p class="arglists">"""
 
                     for arglist in arglists:
-                        arglists_minihtml += f"<code>{htmlify(arglist)}</code>"
+                        arglists_minihtml += f"<code>{htmlify(arglist)}</code><br/>"
 
                     arglists_minihtml += """</p>"""
 
