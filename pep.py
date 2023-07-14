@@ -2299,7 +2299,16 @@ def find_java_class_usages(analysis, thingy_data) -> List:
     """
     Returns a list of java_class_usage.
     """
-    return analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
+    class_usages = analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
+
+    if thingy_data.get("method-name"):
+        class_usages = [
+            class_usage
+            for class_usage in class_usages
+            if class_usage.get("method-name") == thingy_data.get("method-name")
+        ]
+
+    return class_usages
 
 
 # Deprecated
@@ -4150,7 +4159,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self):
         # Include function to annotate view on save (if applicable).
-        self.analyze(afs = [*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save])
+        self.analyze(afs=[*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save])
 
     def on_close(self):
         """

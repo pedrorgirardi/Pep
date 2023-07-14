@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - `pg_pep_find` new command to find usages
 - Tweak documentation UI - add a line break after function arity
 - Status messages: 'Analyzing classpath...', 'Anayzing paths...'
+- Fix Java class method usage
 
 ## 0.18.0 - 2023-04-05
 - New **Goto Definition** command `pg_pep_goto_definition2` to handle multiple definitions
