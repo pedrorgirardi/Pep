@@ -4122,16 +4122,15 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def __init__(self, view):
         self.view = view
         self.analyzer = None
-        self.afs = DEFAULT_VIEW_ANALYSIS_FUNCTIONS
 
-    def analyze(self):
-        analyze = True
+    def analyze(self, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
+        analyze_view = True
 
         if self.view.is_scratch():
-            analyze = analyze_scratch_view(self.view.window())
+            analyze_view = analyze_scratch_view(self.view.window())
 
-        if analyze:
-            analyze_view_async(self.view, afs=self.afs)
+        if analyze_view:
+            analyze_view_async(self.view, afs)
 
     def on_activated_async(self):
         self.analyze()
@@ -4151,8 +4150,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self):
         # Include function to annotate view on save (if applicable).
-        self.afs = [*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save]
-        self.analyze()
+        self.analyze(afs = [*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save])
 
     def on_close(self):
         """
