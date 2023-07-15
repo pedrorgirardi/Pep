@@ -3296,7 +3296,7 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
             )
 
 
-class PgPepGotoAnythingInPathsCommand(sublime_plugin.WindowCommand):
+class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
     """
     Goto namespace, var or keyword in paths or view.
     """
