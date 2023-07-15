@@ -3744,7 +3744,7 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
 
-class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
+class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
