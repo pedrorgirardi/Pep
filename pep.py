@@ -3745,15 +3745,17 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(
+        self,
+        edit,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+    ):
         view_analysis_ = view_analysis(self.view.id())
 
         project_path_ = project_path(self.view.window())
 
         paths_analysis_ = paths_analysis(project_path_)
-
-        # Remember current viewport position so it can be restored afterwards.
-        viewport_position = self.view.viewport_position()
 
         # Store Thingy found at region(s).
         # Used to find the QuickPanel selected index.
@@ -3793,61 +3795,15 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     ],
                 )
 
-                selected_index = 0
-
-                quick_panel_items = []
-
-                for index, thingy_usage in enumerate(thingy_usages_sorted):
-                    # Select Thingy under the cursor:
-                    for thingy in thingies:
-                        if thingy_usage == thingy:
-                            selected_index = index
-
-                    usage_trigger = (
-                        thingy_usage.get("from")
-                        or thingy_usage.get("ns")
-                        or os.path.basename(thingy_usage.get("filename"))
-                    )
-
-                    usage_line = thingy_usage.get("row", "-")
-
-                    usage_column = thingy_usage.get("col", "-")
-
-                    usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
-
-                    quick_panel_items.append(sublime.QuickPanelItem(usage_trigger))
-
-                def usage_location(index):
-                    return thingy_location(thingy_usages_sorted[index])
-
-                def on_done(index, _):
-                    if index == -1:
-                        # Restore selection and viewport position:
-
-                        self.view.sel().clear()
-
-                        self.view.sel().add(region)
-
-                        self.view.window().focus_view(self.view)
-
-                        self.view.set_viewport_position(viewport_position, True)
-
-                    else:
-                        goto(self.view.window(), usage_location(index))
-
-                def on_highlighted(index):
-                    goto(
-                        self.view.window(),
-                        usage_location(index),
-                        flags=GOTO_TRANSIENT_FLAGS,
-                    )
-
-                self.view.window().show_quick_panel(
-                    quick_panel_items,
-                    on_done,
-                    sublime.WANT_EVENT,
-                    selected_index,
-                    on_highlighted,
+                show_thingy_quick_panel(
+                    self.view.window(),
+                    thingy_usages_sorted,
+                    goto_on_highlight=goto_on_highlight,
+                    goto_side_by_side=goto_side_by_side,
+                    quick_panel_item_opts={
+                        "show_namespace": True,
+                        "show_row_col": False,
+                    },
                 )
 
 
