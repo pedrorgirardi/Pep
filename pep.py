@@ -3342,8 +3342,36 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
                 },
             )
 
+class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
+    """
+    Goto namespace in paths or view.
+    """
 
-class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+    ):
+        project_path_ = project_path(self.window)
+
+        if analysis_ := classpath_analysis(project_path_, not_found=None):
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+
+            thingy_list = sorted(thingy_list, key=thingy_name2)
+
+            goto_thingy(
+                self.window,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
+            )
+
+
+class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
     """
     Goto namespace in paths or view.
     """
