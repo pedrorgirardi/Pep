@@ -3379,7 +3379,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
     In case of a keyword, it works for re-frame handlers and Clojure Spec.
     """
 
-    def run(self, edit, side_by_side=False):
+    def run(
+        self,
+        edit,
+        goto_on_highlight=True,
+        goto_side_by_side=False,
+    ):
         project_path_ = project_path(self.view.window())
 
         view_analysis_ = view_analysis(self.view.id())
@@ -3387,9 +3392,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         paths_analysis_ = paths_analysis(project_path_)
 
         classpath_analysis_ = classpath_analysis(project_path_)
-
-        # Remember current viewport position so it can be restored afterwards.
-        viewport_position = self.view.viewport_position()
 
         # Store Thingy found at region(s).
         # Used to find the QuickPanel selected index.
@@ -3427,7 +3429,9 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto(
                     self.view.window(),
                     location,
-                    GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS,
+                    GOTO_SIDE_BY_SIDE_FLAGS
+                    if goto_side_by_side
+                    else GOTO_DEFAULT_FLAGS,
                 )
 
             else:
@@ -3440,67 +3444,15 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     ],
                 )
 
-                selected_index = 0
-
-                quick_panel_items = []
-
-                for index, thingy_definition in enumerate(thingy_definitions_sorted):
-                    # Select Thingy under caret:
-                    for thingy in thingies:
-                        if thingy_definition == thingy:
-                            selected_index = index
-
-                    definition_filename = os.path.basename(
-                        thingy_definition.get("filename")
-                    )
-
-                    definition_line = thingy_definition.get("row", "-")
-
-                    definition_column = thingy_definition.get("col", "-")
-
-                    definition_trigger = (
-                        f"{definition_filename}:{definition_line}:{definition_column}"
-                    )
-
-                    quick_panel_items.append(sublime.QuickPanelItem(definition_trigger))
-
-                def loc(index):
-                    return thingy_location(thingy_definitions_sorted[index])
-
-                def on_done(index, _):
-                    if index == -1:
-                        # Restore selection and viewport position:
-
-                        self.view.sel().clear()
-
-                        self.view.sel().add(region)
-
-                        self.view.window().focus_view(self.view)
-
-                        self.view.set_viewport_position(viewport_position, True)
-
-                    else:
-                        goto(
-                            self.view.window(),
-                            loc(index),
-                            GOTO_SIDE_BY_SIDE_FLAGS
-                            if side_by_side
-                            else GOTO_DEFAULT_FLAGS,
-                        )
-
-                def on_highlighted(index):
-                    goto(
-                        self.view.window(),
-                        loc(index),
-                        flags=GOTO_TRANSIENT_FLAGS,
-                    )
-
-                self.view.window().show_quick_panel(
-                    quick_panel_items,
-                    on_done,
-                    sublime.WANT_EVENT,
-                    selected_index,
-                    on_highlighted,
+                show_thingy_quick_panel(
+                    self.view.window(),
+                    thingy_definitions_sorted,
+                    goto_on_highlight=goto_on_highlight,
+                    goto_side_by_side=goto_side_by_side,
+                    quick_panel_item_opts={
+                        "show_namespace": True,
+                        "show_row_col": False,
+                    },
                 )
 
 
@@ -3783,7 +3735,13 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
             if len(thingy_usages_) == 1:
                 location = thingy_location(thingy_usages_[0])
 
-                goto(self.view.window(), location)
+                goto(
+                    self.view.window(),
+                    location,
+                    GOTO_SIDE_BY_SIDE_FLAGS
+                    if goto_side_by_side
+                    else GOTO_DEFAULT_FLAGS,
+                )
 
             else:
                 thingy_usages_sorted = sorted(
