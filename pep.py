@@ -1989,7 +1989,15 @@ def thingy_name2(thingy_data):
     name_ = thingy_data.get("name")
 
     if name_:
-        return f"{namespace_}/{name_}" if namespace_ else name_
+        prefix = ""
+
+        if thingy_data["_semantic"] == TT_KEYWORD:
+            prefix = ":"
+
+        s = f"{namespace_}/{name_}" if namespace_ else name_
+        s = prefix + s
+
+        return s
     else:
         return namespace_
 
