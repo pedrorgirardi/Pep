@@ -3340,7 +3340,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
     Goto namespace in paths or view.
     """
 
-    def run(self, side_by_side=False):
+    def run(self, goto_on_highlight=False, goto_side_by_side=False):
         project_path_ = project_path(self.window)
 
         if analysis_ := paths_analysis(project_path_, not_found=None):
@@ -3351,8 +3351,8 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
             show_thingy_quick_panel(
                 self.window,
                 thingy_list,
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
                     "show_namespace": True,
                     "show_row_col": False,
