@@ -1250,7 +1250,7 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
         return finding_quick_panel_item(thingy)
 
 
-def show_thingy_quick_panel(
+def goto_thingy(
     window,
     thingy_list,
     goto_on_highlight=False,
@@ -2829,7 +2829,7 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
             ),
         )
 
-        show_thingy_quick_panel(
+        goto_thingy(
             self.view.window(),
             thingy_list,
             goto_on_highlight=True,
@@ -3288,7 +3288,7 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name2)
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
@@ -3331,7 +3331,7 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name2)
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
@@ -3360,7 +3360,7 @@ class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name2)
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
@@ -3444,7 +3444,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     ],
                 )
 
-                show_thingy_quick_panel(
+                goto_thingy(
                     self.view.window(),
                     thingy_definitions_sorted,
                     goto_on_highlight=goto_on_highlight,
@@ -3500,7 +3500,7 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
                 ),
             )
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.view.window(),
                 thingy_list,
                 goto_on_highlight=True,
@@ -3533,7 +3533,7 @@ class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
@@ -3753,7 +3753,7 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     ],
                 )
 
-                show_thingy_quick_panel(
+                goto_thingy(
                     self.view.window(),
                     thingy_usages_sorted,
                     goto_on_highlight=goto_on_highlight,
