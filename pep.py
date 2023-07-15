@@ -3393,17 +3393,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
-        # Store Thingy found at region(s).
-        # Used to find the QuickPanel selected index.
-        thingies = []
-
         # Store usages of Thingy at region(s).
         thingy_definitions_ = []
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-                thingies.append(thingy)
-
                 if (
                     thingy_definitions := find_definitions(
                         analysis=view_analysis_,
@@ -3709,17 +3703,11 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
 
         paths_analysis_ = paths_analysis(project_path_)
 
-        # Store Thingy found at region(s).
-        # Used to find the QuickPanel selected index.
-        thingies = []
-
         # Store usages of Thingy at region(s).
         thingy_usages_ = []
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-                thingies.append(thingy)
-
                 if thingy_usages := find_usages(
                     analysis=paths_analysis_,
                     thingy=thingy,
