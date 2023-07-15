@@ -3265,12 +3265,12 @@ class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
         goto(self.window, location, flags)
 
 
-class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
+class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
     """
-    Browse the classpath/go to anything in the classpath.
+    Goto namespace, Var, Keyword in classpath.
     """
 
-    def run(self):
+    def run(self, side_by_side=False):
         project_path_ = project_path(self.window)
 
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
@@ -3287,8 +3287,8 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
             show_thingy_quick_panel(
                 self.window,
                 thingy_list,
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=True,
+                goto_side_by_side=side_by_side,
                 quick_panel_item_opts={
                     "show_namespace": True,
                     "show_row_col": False,
@@ -3296,7 +3296,7 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
             )
 
 
-class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
+class PgPepGotoAnythingInPathsCommand(sublime_plugin.WindowCommand):
     """
     Goto namespace, var or keyword in paths or view.
     """
@@ -3326,8 +3326,8 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
             show_thingy_quick_panel(
                 self.window,
                 thingy_list,
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=True,
+                goto_side_by_side=side_by_side,
                 quick_panel_item_opts={
                     "show_namespace": True,
                     "show_row_col": False,
