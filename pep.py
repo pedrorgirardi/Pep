@@ -3851,7 +3851,7 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                 )
 
 
-class PgPepFindCommand(sublime_plugin.TextCommand):
+class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_analysis_ = view_analysis(self.view.id())
 
