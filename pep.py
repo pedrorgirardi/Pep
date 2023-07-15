@@ -1983,24 +1983,6 @@ def thingy_text(view, thingy):
         return view.substr(tregion)
 
 
-def thingy_name(thingy):
-    thingy_type, _, thingy_data = thingy
-
-    thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
-
-    thingy_name = thingy_data.get("name")
-
-    thingy_qualified_name = (
-        f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
-    )
-
-    # Prefix ':' to a Keyword Thingy.
-    if thingy_type == TT_KEYWORD:
-        thingy_qualified_name = ":" + thingy_qualified_name
-
-    return thingy_qualified_name
-
-
 def thingy_name2(thingy_data):
     namespace_ = thingy_data.get("ns") or thingy_data.get("to")
 
@@ -2851,10 +2833,10 @@ class PgPepCopyNameCommand(sublime_plugin.TextCommand):
 
         region = thingy_sel_region(self.view)
 
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
-            sublime.set_clipboard(thingy_name(thingy))
+        if thingy := thingy_at(self.view, view_analysis_, region):
+            sublime.set_clipboard(thingy_name2(thingy))
 
-            self.view.window().status_message("Copied")
+            self.view.window().status_message("Copied " + thingy_name2(thingy))
 
 
 class PgPepShowNameCommand(sublime_plugin.TextCommand):
@@ -2867,11 +2849,11 @@ class PgPepShowNameCommand(sublime_plugin.TextCommand):
 
         region = thingy_sel_region(self.view)
 
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
+        if thingy := thingy_at(self.view, view_analysis_, region):
             content = f"""
                     <body id='pg-pep-show-name'>
 
-                        {htmlify(thingy_name(thingy))}
+                        {htmlify(thingy_name2(thingy))}
 
                     </body>
                     """
@@ -3341,6 +3323,7 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
                     "show_row_col": False,
                 },
             )
+
 
 class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
     """
