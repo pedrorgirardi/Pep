@@ -1207,6 +1207,29 @@ def var_quick_panel_item(thingy_data, opts={}):
     )
 
 
+def var_usage_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a Var usage.
+    """
+    var_namespace = thingy_data.get("from", "")
+    var_name = thingy_data.get("from-var", "")
+
+    trigger = f"{var_namespace}/{var_name}" if opts.get("show_namespace") else var_name
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    annotation = "Var"
+
+    if extension := thingy_extension(thingy_data):
+        annotation = f"{annotation} ({extension})"
+
+    return sublime.QuickPanelItem(
+        trigger,
+        annotation=annotation,
+    )
+
+
 def finding_quick_panel_item(thingy_data, opts={}):
     return sublime.QuickPanelItem(
         thingy_data["message"],
@@ -1253,8 +1276,11 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
     if semantic == TT_NAMESPACE_DEFINITION or semantic == TT_NAMESPACE_USAGE:
         return namespace_quick_panel_item(thingy, opts)
 
-    elif semantic == TT_VAR_DEFINITION or semantic == TT_VAR_USAGE:
+    elif semantic == TT_VAR_DEFINITION:
         return var_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_VAR_USAGE:
+        return var_usage_quick_panel_item(thingy, opts)
 
     elif semantic == TT_KEYWORD:
         return keyword_quick_panel_item(thingy, opts)
