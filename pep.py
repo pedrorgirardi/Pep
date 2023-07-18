@@ -1214,7 +1214,12 @@ def var_usage_quick_panel_item(thingy_data, opts={}):
     var_namespace = thingy_data.get("from", "")
     var_name = thingy_data.get("from-var", "")
 
-    trigger = f"{var_namespace}/{var_name}" if opts.get("show_namespace") else var_name
+    trigger = ""
+
+    if opts.get("show_namespace"):
+        trigger = f"{var_namespace}/{var_name}" if var_name else var_namespace
+    else:
+        trigger = var_name
 
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
