@@ -1235,6 +1235,26 @@ def var_usage_quick_panel_item(thingy_data, opts={}):
     )
 
 
+def local_usage_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a local usage.
+    """
+    trigger = thingy_data.get("name", "")
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    annotation = "Local"
+
+    if extension := thingy_extension(thingy_data):
+        annotation = f"{annotation} ({extension})"
+
+    return sublime.QuickPanelItem(
+        trigger,
+        annotation=annotation,
+    )
+
+
 def finding_quick_panel_item(thingy_data, opts={}):
     return sublime.QuickPanelItem(
         thingy_data["message"],
@@ -1286,6 +1306,9 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
 
     elif semantic == TT_VAR_USAGE:
         return var_usage_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_LOCAL_USAGE:
+        return local_usage_quick_panel_item(thingy, opts)
 
     elif semantic == TT_KEYWORD:
         return keyword_quick_panel_item(thingy, opts)
