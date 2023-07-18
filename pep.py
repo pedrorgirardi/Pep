@@ -1207,7 +1207,7 @@ def var_quick_panel_item(thingy_data, opts={}):
     )
 
 
-def finding_quick_panel_item(thingy_data):
+def finding_quick_panel_item(thingy_data, opts={}):
     return sublime.QuickPanelItem(
         thingy_data["message"],
         annotation=thingy_data["type"],
@@ -1219,7 +1219,7 @@ def finding_quick_panel_item(thingy_data):
     )
 
 
-def keyword_quick_panel_item(thingy_data):
+def keyword_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a keyword thingy.
     """
@@ -1231,6 +1231,9 @@ def keyword_quick_panel_item(thingy_data):
     trigger = ":" + (
         f"{keyword_namespace}/{keyword_name}" if keyword_namespace else keyword_name
     )
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
     annotation = "Keyword"
 
@@ -1254,10 +1257,10 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
         return var_quick_panel_item(thingy, opts)
 
     elif semantic == TT_KEYWORD:
-        return keyword_quick_panel_item(thingy)
+        return keyword_quick_panel_item(thingy, opts)
 
     elif semantic == TT_FINDING:
-        return finding_quick_panel_item(thingy)
+        return finding_quick_panel_item(thingy, opts)
 
 
 def goto_thingy(
