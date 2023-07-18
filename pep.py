@@ -1153,12 +1153,22 @@ def thingy_dedupe(thingy_data_list) -> List:
     )
 
 
-def namespace_quick_panel_item(thingy_data):
+def namespace_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a namespace, usage or definition, thingy.
     """
 
-    namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
+    namespace_name = (
+        thingy_data.get("from")
+        or thingy_data.get("to")
+        or thingy_data.get("name")
+        or ""
+    )
+
+    if opts.get("show_row_col"):
+        namespace_name = (
+            f"{namespace_name}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+        )
 
     annotation = "Namespace"
 
@@ -1238,7 +1248,7 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
     semantic = thingy["_semantic"]
 
     if semantic == TT_NAMESPACE_DEFINITION or semantic == TT_NAMESPACE_USAGE:
-        return namespace_quick_panel_item(thingy)
+        return namespace_quick_panel_item(thingy, opts)
 
     elif semantic == TT_VAR_DEFINITION or semantic == TT_VAR_USAGE:
         return var_quick_panel_item(thingy, opts)
@@ -3767,7 +3777,7 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     goto_side_by_side=goto_side_by_side,
                     quick_panel_item_opts={
                         "show_namespace": True,
-                        "show_row_col": False,
+                        "show_row_col": True,
                     },
                 )
 
