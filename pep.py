@@ -1158,26 +1158,34 @@ def namespace_quick_panel_item(thingy_data, opts={}):
     Returns a QuickPanelItem for a namespace, usage or definition, thingy.
     """
 
-    namespace_name = (
-        thingy_data.get("from")
-        or thingy_data.get("to")
-        or thingy_data.get("name")
-        or ""
-    )
+    trigger = thingy_data.get("name")
 
     if opts.get("show_row_col"):
-        namespace_name = (
-            f"{namespace_name}:{thingy_data.get('row')}:{thingy_data.get('col')}"
-        )
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    annotation = "Namespace"
-
-    if extension := thingy_extension(thingy_data):
-        annotation = f"{annotation} ({extension})"
+    details = thingy_data.get("filename", "")
 
     return sublime.QuickPanelItem(
-        namespace_name,
-        annotation=annotation,
+        trigger,
+        details=details,
+    )
+
+
+def namespace_usage_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a namespace, usage or definition, thingy.
+    """
+
+    trigger = thingy_data.get("from")
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    details = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        trigger,
+        details=details,
     )
 
 
@@ -1285,8 +1293,11 @@ def keyword_quick_panel_item(thingy_data, opts={}):
 def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]:
     semantic = thingy["_semantic"]
 
-    if semantic == TT_NAMESPACE_DEFINITION or semantic == TT_NAMESPACE_USAGE:
+    if semantic == TT_NAMESPACE_DEFINITION:
         return namespace_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_NAMESPACE_USAGE:
+        return namespace_usage_quick_panel_item(thingy, opts)
 
     elif semantic == TT_VAR_DEFINITION:
         return var_quick_panel_item(thingy, opts)
