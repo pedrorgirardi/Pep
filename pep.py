@@ -1271,16 +1271,24 @@ def keyword_quick_panel_item(thingy_data, opts={}):
     Returns a QuickPanelItem for a keyword thingy.
     """
 
-    trigger = pathlib.Path(thingy_data.get("filename")).name
+    trigger = ""
+
+    if namespace := thingy_data.get("ns"):
+        trigger = f":{namespace}/{thingy_data.get('name')}"
+    else:
+        trigger = f":{thingy_data.get('name')}"
 
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    details = os.path.dirname(thingy_data.get("filename"))
+    details = thingy_data.get("filename")
+
+    annotation = thingy_data.get("reg", "")
 
     return sublime.QuickPanelItem(
         trigger,
         details=details,
+        annotation=annotation,
     )
 
 
