@@ -819,7 +819,9 @@ def keyword_index(
             if keyword.get("row") and keyword.get("col"):
                 keyword = {
                     **keyword,
-                    "_semantic": TT_KEYWORD_DEFINITION if keyword.get("reg") else  TT_KEYWORD,
+                    "_semantic": TT_KEYWORD_DEFINITION
+                    if keyword.get("reg")
+                    else TT_KEYWORD,
                 }
 
                 ns = keyword.get("ns")
@@ -1282,7 +1284,7 @@ def keyword_quick_panel_item(thingy_data, opts={}):
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    details = thingy_data.get("filename")
+    details = thingy_data.get("filename") if opts.get("show_filename") else ""
 
     annotation = thingy_data.get("reg", "")
 
@@ -3401,6 +3403,76 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
                 quick_panel_item_opts={
                     "show_namespace": True,
                     "show_row_col": False,
+                },
+            )
+
+
+class PgPepGotoKeywordInClasspathCommand(sublime_plugin.WindowCommand):
+    """
+    Goto Keyword in classpath.
+    """
+
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=True,
+        show_row_col=False,
+    ):
+        project_path_ = project_path(self.window)
+
+        if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
+            thingy_list = thingy_dedupe(keyword_regs(classpath_analysis_))
+
+            thingy_list = sorted(thingy_list, key=thingy_name2)
+
+            goto_thingy(
+                self.window,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_row_col": show_row_col,
+                    "show_filename": show_filename,
+                },
+            )
+
+
+class PgPepGotoKeywordInViewPathsCommand(sublime_plugin.WindowCommand):
+    """
+    Goto to keyword in paths or view.
+    """
+
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
+    ):
+        active_view = self.window.active_view()
+
+        view_analysis_ = (
+            view_analysis(active_view.id(), not_found=None) if active_view else None
+        )
+
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_, not_found=None)
+
+        if analysis_ := paths_analysis_ or view_analysis_:
+            thingy_list = thingy_dedupe(keyword_regs(analysis_))
+
+            thingy_list = sorted(thingy_list, key=thingy_name2)
+
+            goto_thingy(
+                self.window,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_row_col": show_row_col,
+                    "show_filename": show_filename,
                 },
             )
 
