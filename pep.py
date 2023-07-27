@@ -35,7 +35,6 @@ GOTO_SIDE_BY_SIDE_FLAGS = (
 
 TT_FINDING = "finding"
 TT_KEYWORD = "keyword"
-TT_KEYWORD_DEFINITION = "keyword_definition"
 TT_SYMBOL = "symbol"
 TT_LOCAL = "local"
 TT_LOCAL_BINDING = "local_binding"
@@ -819,9 +818,7 @@ def keyword_index(
             if keyword.get("row") and keyword.get("col"):
                 keyword = {
                     **keyword,
-                    "_semantic": TT_KEYWORD_DEFINITION
-                    if keyword.get("reg")
-                    else TT_KEYWORD,
+                    "_semantic": TT_KEYWORD,
                 }
 
                 ns = keyword.get("ns")
@@ -1314,9 +1311,6 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
         return local_usage_quick_panel_item(thingy, opts)
 
     elif semantic == TT_KEYWORD:
-        return keyword_quick_panel_item(thingy, opts)
-
-    elif semantic == TT_KEYWORD_DEFINITION:
         return keyword_quick_panel_item(thingy, opts)
 
     elif semantic == TT_FINDING:
