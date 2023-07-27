@@ -1243,19 +1243,14 @@ def local_usage_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a local usage.
     """
-    trigger = thingy_data.get("name", "")
 
-    if opts.get("show_row_col"):
-        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+    trigger = f"{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    annotation = "Local"
-
-    if extension := thingy_extension(thingy_data):
-        annotation = f"{annotation} ({extension})"
+    details = thingy_data.get("filename", "")
 
     return sublime.QuickPanelItem(
         trigger,
-        annotation=annotation,
+        details=details,
     )
 
 
