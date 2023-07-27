@@ -3902,6 +3902,8 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     ],
                 )
 
+                # TODO: Quick Panel Item options per semantic.
+
                 goto_thingy(
                     self.view.window(),
                     thingy_usages_sorted,
