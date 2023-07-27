@@ -1163,7 +1163,7 @@ def namespace_quick_panel_item(thingy_data, opts={}):
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    details = thingy_data.get("filename", "")
+    details = thingy_data.get("filename", "") if opts.get("show_filename") else ""
 
     return sublime.QuickPanelItem(
         trigger,
@@ -1181,7 +1181,7 @@ def namespace_usage_quick_panel_item(thingy_data, opts={}):
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    details = thingy_data.get("filename", "")
+    details = thingy_data.get("filename", "") if opts.get("show_filename") else ""
 
     return sublime.QuickPanelItem(
         trigger,
@@ -1316,6 +1316,7 @@ def goto_thingy(
     goto_side_by_side=False,
     quick_panel_item_opts={
         "show_namespace": True,
+        "show_filename": True,
         "show_row_col": False,
     },
 ):
@@ -3401,6 +3402,8 @@ class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
         self,
         goto_on_highlight=False,
         goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
     ):
         project_path_ = project_path(self.window)
 
@@ -3415,8 +3418,8 @@ class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
+                    "show_filename": show_filename,
+                    "show_row_col": show_row_col,
                 },
             )
 
@@ -3430,6 +3433,8 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
         self,
         goto_on_highlight=False,
         goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
     ):
         project_path_ = project_path(self.window)
 
@@ -3444,8 +3449,8 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
+                    "show_filename": show_filename,
+                    "show_row_col": show_row_col,
                 },
             )
 
