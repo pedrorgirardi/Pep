@@ -1203,7 +1203,10 @@ def var_quick_panel_item(thingy_data, opts={}):
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    details = thingy_data.get("filename", "")
+    details = ""
+
+    if opts.get("show_filename"):
+        details = thingy_data.get("filename", "")
 
     annotation = " ".join(var_arglist)
 
@@ -2895,6 +2898,7 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
             quick_panel_item_opts={
                 "show_namespace": False,
                 "show_row_col": False,
+                "show_filename": False
             },
         )
 
