@@ -3916,6 +3916,7 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     quick_panel_item_opts={
                         "show_namespace": True,
                         "show_row_col": True,
+                        "show_filename": True
                     },
                 )
 
