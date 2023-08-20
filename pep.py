@@ -2184,15 +2184,7 @@ def thingy_in_region(view, analysis, region):
         - The thingy itself - clj-kondo data.
     """
 
-    # 1. Try keywords.
-    thingy_region, thingy_data = keyword_in_region(
-        view, analysis.get("krn", {}), region
-    ) or (None, None)
-
-    if thingy_data:
-        return (TT_KEYWORD, thingy_region, thingy_data)
-
-    # 2. Try local usages.
+    # Try local usages.
     thingy_region, thingy_data = local_usage_in_region(
         view, analysis.get("lrn_usages", {}), region
     ) or (None, None)
@@ -2200,15 +2192,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_LOCAL_USAGE, thingy_region, thingy_data)
 
-    # 3. Try Var usages.
-    thingy_region, thingy_data = var_usage_in_region(
-        view, analysis.get("vrn_usages", {}), region
-    ) or (None, None)
-
-    if thingy_data:
-        return (TT_VAR_USAGE, thingy_region, thingy_data)
-
-    # 4. Try local bindings.
+    # Try local bindings.
     thingy_region, thingy_data = local_binding_in_region(
         view, analysis.get("lrn", {}), region
     ) or (None, None)
@@ -2216,7 +2200,15 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_LOCAL_BINDING, thingy_region, thingy_data)
 
-    # 5. Try Var definitions.
+    # Try Var usages.
+    thingy_region, thingy_data = var_usage_in_region(
+        view, analysis.get("vrn_usages", {}), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_VAR_USAGE, thingy_region, thingy_data)
+
+    # Try Var definitions.
     thingy_region, thingy_data = var_definition_in_region(
         view, analysis.get("vrn", {}), region
     ) or (None, None)
@@ -2224,7 +2216,15 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_VAR_DEFINITION, thingy_region, thingy_data)
 
-    # 6. Try namespace usages.
+    # Try keywords.
+    thingy_region, thingy_data = keyword_in_region(
+        view, analysis.get("krn", {}), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_KEYWORD, thingy_region, thingy_data)
+
+    # Try namespace usages.
     thingy_region, thingy_data = namespace_usage_in_region(
         view, analysis.get("nrn_usages", {}), region
     ) or (None, None)
@@ -2232,7 +2232,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_NAMESPACE_USAGE, thingy_region, thingy_data)
 
-    # 7. Try namespace usages alias.
+    # Try namespace usages alias.
     thingy_region, thingy_data = namespace_usage_alias_in_region(
         view, analysis.get("nrn_usages", {}), region
     ) or (None, None)
@@ -2240,7 +2240,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_NAMESPACE_USAGE_ALIAS, thingy_region, thingy_data)
 
-    # 8. Try namespace definitions.
+    # Try namespace definitions.
     thingy_region, thingy_data = namespace_definition_in_region(
         view, analysis.get("nrn", {}), region
     ) or (None, None)
@@ -2248,7 +2248,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_NAMESPACE_DEFINITION, thingy_region, thingy_data)
 
-    # 9. Try Java class usages.
+    # Try Java class usages.
     thingy_region, thingy_data = java_class_usage_in_region(
         view, analysis_jrn_usages(analysis), region
     ) or (None, None)
@@ -2256,7 +2256,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
-    # 10. Try symbols.
+    # Try symbols.
     thingy_region, thingy_data = symbol_in_region(
         view, analysis.get("srn", {}), region
     ) or (None, None)
@@ -2511,10 +2511,6 @@ def find_usages(analysis, thingy) -> Optional[List]:
     thingy_semantic = thingy["_semantic"]
 
     if thingy_semantic == TT_KEYWORD:
-        # To be considered:
-        # If the keyword is a destructuring key,
-        # should it show its local usages?
-
         return find_keyword_usages(analysis, thingy)
 
     elif thingy_semantic == TT_LOCAL or thingy_semantic == TT_LOCAL_USAGE:
