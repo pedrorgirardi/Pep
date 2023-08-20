@@ -2217,6 +2217,13 @@ def thingy_in_region(view, analysis, region):
         return (TT_VAR_DEFINITION, thingy_region, thingy_data)
 
     # Try keywords.
+    #
+    # Note:
+    # Keyword is checked after locals because
+    # destructuring introduces a local binding.
+    # If keyword is placed before locals,
+    # a command like 'Find Usages' finds
+    # keyword usages instead of locals.
     thingy_region, thingy_data = keyword_in_region(
         view, analysis.get("krn", {}), region
     ) or (None, None)
