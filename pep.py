@@ -1234,7 +1234,10 @@ def var_usage_quick_panel_item(thingy_data, opts={}):
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    details = thingy_data.get("filename", "")
+    details = ""
+
+    if opts.get("show_filename"):
+        details = thingy_data.get("filename", "")
 
     return sublime.QuickPanelItem(
         trigger,
@@ -3916,7 +3919,7 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     quick_panel_item_opts={
                         "show_namespace": True,
                         "show_row_col": True,
-                        "show_filename": True,
+                        "show_filename": False,
                     },
                 )
 
