@@ -2459,9 +2459,7 @@ def find_keyword_definition(analysis, keyword):
     - Clojure Spec
     - re-frame
     """
-    k = (keyword.get("ns"), keyword.get("name"))
-
-    for keyword_indexed in analysis_kindex(analysis).get(k, []):
+    for keyword_indexed in find_keywords(analysis, keyword):
         if keyword_indexed.get("reg", None):
             return keyword_indexed
 
@@ -2472,11 +2470,9 @@ def find_keyword_definitions(analysis, keyword):
     - Clojure Spec
     - re-frame
     """
-    k = (keyword.get("ns"), keyword.get("name"))
-
     return [
         keyword_
-        for keyword_ in analysis_kindex(analysis).get(k, [])
+        for keyword_ in find_keywords(analysis, keyword)
         if keyword_.get("reg")
     ]
 
