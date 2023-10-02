@@ -2478,9 +2478,7 @@ def find_keyword_definitions(analysis, keyword):
     - re-frame
     """
     return [
-        keyword_
-        for keyword_ in find_keywords(analysis, keyword)
-        if keyword_.get("reg")
+        keyword_ for keyword_ in find_keywords(analysis, keyword) if keyword_.get("reg")
     ]
 
 
