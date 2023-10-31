@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.19.0 -
+## 0.19.0 - 2023-10-31
 There were many internal changes in this version and I'm sorry I made some breaking changes.
 
 Breaking:
