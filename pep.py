@@ -2157,6 +2157,7 @@ def thingy_sel_region(view):
     return view.sel()[0]
 
 
+# TODO: Replace with `thingy_at`.
 def thingy_in_region(view, analysis, region):
     """
     Tuple of type, region and data.
