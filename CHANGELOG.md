@@ -2,7 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.18.0 -2023-04-05
+## 0.19.0 - 2023-10-31
+There were many internal changes in this version and I'm sorry I made some breaking changes.
+
+Breaking:
+- `pg_pep_find` is now `pg_pep_find_usages`
+- `pg_pep_goto_definition2` is now the default, but as `pg_pep_goto_definition`
+
+New:
+- `pg_pep_goto_usage`
+
+Other:
+- Tweak documentation UI - add a line break after function arity
+- Status messages: 'Analyzing classpath...', 'Anayzing paths...'
+- Fix Java static class method usage
+
+## 0.18.0 - 2023-04-05
 - New **Goto Definition** command `pg_pep_goto_definition2` to handle multiple definitions
 - Fix warning/error annotation color - fallback to orange and red, respectively.
 

@@ -55,9 +55,6 @@ HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 # Setting used to override the clj-kondo config for a view analysis.
 S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 
-# Status bar key used to show documentation.
-STATUS_BAR_DOC_KEY = "pep_doc"
-
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
 CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true, :var-usages true, :arglists true, :locals true, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
 CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
@@ -232,6 +229,8 @@ def paths_analysis(project_path, not_found={}):
             **var_index_,
             **java_class_index_,
         }
+    else:
+        return not_found
 
 
 # -- Settings
@@ -1154,21 +1153,39 @@ def thingy_dedupe(thingy_data_list) -> List:
     )
 
 
-def namespace_quick_panel_item(thingy_data):
+def namespace_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a namespace, usage or definition, thingy.
     """
 
-    namespace_name = thingy_data.get("name", thingy_data.get("to", ""))
+    trigger = thingy_data.get("name")
 
-    annotation = "Namespace"
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    if extension := thingy_extension(thingy_data):
-        annotation = f"{annotation} ({extension})"
+    details = thingy_data.get("filename", "") if opts.get("show_filename") else ""
 
     return sublime.QuickPanelItem(
-        namespace_name,
-        annotation=annotation,
+        trigger,
+        details=details,
+    )
+
+
+def namespace_usage_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a namespace, usage or definition, thingy.
+    """
+
+    trigger = thingy_data.get("from")
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    details = thingy_data.get("filename", "") if opts.get("show_filename") else ""
+
+    return sublime.QuickPanelItem(
+        trigger,
+        details=details,
     )
 
 
@@ -1186,19 +1203,64 @@ def var_quick_panel_item(thingy_data, opts={}):
     if opts.get("show_row_col"):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    annotation = "Var"
+    details = ""
 
-    if extension := thingy_extension(thingy_data):
-        annotation = f"{annotation} ({extension})"
+    if opts.get("show_filename"):
+        details = thingy_data.get("filename", "")
+
+    annotation = " ".join(var_arglist)
 
     return sublime.QuickPanelItem(
         trigger,
-        details=" ".join(var_arglist),
+        details=details,
         annotation=annotation,
     )
 
 
-def finding_quick_panel_item(thingy_data):
+def var_usage_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a Var usage.
+    """
+    var_namespace = thingy_data.get("from", "")
+    var_name = thingy_data.get("from-var", "")
+
+    trigger = ""
+
+    if opts.get("show_namespace"):
+        trigger = f"{var_namespace}/{var_name}" if var_name else var_namespace
+    else:
+        trigger = var_name
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    details = ""
+
+    if opts.get("show_filename"):
+        details = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        trigger,
+        details=details,
+    )
+
+
+def local_usage_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a local usage.
+    """
+
+    trigger = f"{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    details = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        trigger,
+        details=details,
+    )
+
+
+def finding_quick_panel_item(thingy_data, opts={}):
     return sublime.QuickPanelItem(
         thingy_data["message"],
         annotation=thingy_data["type"],
@@ -1210,27 +1272,28 @@ def finding_quick_panel_item(thingy_data):
     )
 
 
-def keyword_quick_panel_item(thingy_data):
+def keyword_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a keyword thingy.
     """
 
-    keyword_namespace = thingy_data.get("ns", "")
-    keyword_name = thingy_data.get("name", "")
-    keyword_reg = thingy_data.get("reg", "")
+    trigger = ""
 
-    trigger = ":" + (
-        f"{keyword_namespace}/{keyword_name}" if keyword_namespace else keyword_name
-    )
+    if namespace := thingy_data.get("ns"):
+        trigger = f":{namespace}/{thingy_data.get('name')}"
+    else:
+        trigger = f":{thingy_data.get('name')}"
 
-    annotation = "Keyword"
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
-    if extension := thingy_extension(thingy_data):
-        annotation = f"{annotation} ({extension})"
+    details = thingy_data.get("filename") if opts.get("show_filename") else ""
+
+    annotation = thingy_data.get("reg", "")
 
     return sublime.QuickPanelItem(
         trigger,
-        details=keyword_reg,
+        details=details,
         annotation=annotation,
     )
 
@@ -1238,26 +1301,36 @@ def keyword_quick_panel_item(thingy_data):
 def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]:
     semantic = thingy["_semantic"]
 
-    if semantic == TT_NAMESPACE_DEFINITION or semantic == TT_NAMESPACE_USAGE:
-        return namespace_quick_panel_item(thingy)
+    if semantic == TT_NAMESPACE_DEFINITION:
+        return namespace_quick_panel_item(thingy, opts)
 
-    elif semantic == TT_VAR_DEFINITION or semantic == TT_VAR_USAGE:
+    elif semantic == TT_NAMESPACE_USAGE:
+        return namespace_usage_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_VAR_DEFINITION:
         return var_quick_panel_item(thingy, opts)
 
+    elif semantic == TT_VAR_USAGE:
+        return var_usage_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_LOCAL_USAGE:
+        return local_usage_quick_panel_item(thingy, opts)
+
     elif semantic == TT_KEYWORD:
-        return keyword_quick_panel_item(thingy)
+        return keyword_quick_panel_item(thingy, opts)
 
     elif semantic == TT_FINDING:
-        return finding_quick_panel_item(thingy)
+        return finding_quick_panel_item(thingy, opts)
 
 
-def show_thingy_quick_panel(
+def goto_thingy(
     window,
     thingy_list,
     goto_on_highlight=False,
     goto_side_by_side=False,
     quick_panel_item_opts={
         "show_namespace": True,
+        "show_filename": True,
         "show_row_col": False,
     },
 ):
@@ -1491,6 +1564,8 @@ def analyze_classpath(window):
     if classpath := project_classpath(window):
         t0 = time.time()
 
+        sublime.status_message("Analyzing classpath...")
+
         if is_debug(window):
             print(f"Pep: Analyzing classpath... {window_project(window)}")
 
@@ -1585,6 +1660,8 @@ def analyze_paths(window):
         path_separator = ";" if os.name == "nt" else ":"
 
         paths = path_separator.join(paths)
+
+        sublime.status_message("Analyzing paths...")
 
         if is_debug(window):
             print(f"Pep: Analyzing paths... {window_project(window)}")
@@ -1980,30 +2057,23 @@ def thingy_text(view, thingy):
         return view.substr(tregion)
 
 
-def thingy_name(thingy):
-    thingy_type, _, thingy_data = thingy
+def thingy_name2(thingy_data):
+    namespace_ = thingy_data.get("ns") or thingy_data.get("to")
 
-    thingy_namespace = thingy_data.get("ns") or thingy_data.get("to")
+    name_ = thingy_data.get("name")
 
-    thingy_name = thingy_data.get("name")
+    if name_:
+        prefix = ""
 
-    thingy_qualified_name = (
-        f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
-    )
+        if thingy_data["_semantic"] == TT_KEYWORD:
+            prefix = ":"
 
-    # Prefix ':' to a Keyword Thingy.
-    if thingy_type == TT_KEYWORD:
-        thingy_qualified_name = ":" + thingy_qualified_name
+        s = f"{namespace_}/{name_}" if namespace_ else name_
+        s = prefix + s
 
-    return thingy_qualified_name
-
-
-def thingy_lexicographic(thingy):
-    thingy_namespace = thingy.get("ns") or thingy.get("to")
-
-    thingy_name = thingy.get("name")
-
-    return f"{thingy_namespace}/{thingy_name}" if thingy_namespace else thingy_name
+        return s
+    else:
+        return namespace_
 
 
 def thingy_location(thingy_data):
@@ -2087,6 +2157,7 @@ def thingy_sel_region(view):
     return view.sel()[0]
 
 
+# TODO: Replace with `thingy_at`.
 def thingy_in_region(view, analysis, region):
     """
     Tuple of type, region and data.
@@ -2114,15 +2185,7 @@ def thingy_in_region(view, analysis, region):
         - The thingy itself - clj-kondo data.
     """
 
-    # 1. Try keywords.
-    thingy_region, thingy_data = keyword_in_region(
-        view, analysis.get("krn", {}), region
-    ) or (None, None)
-
-    if thingy_data:
-        return (TT_KEYWORD, thingy_region, thingy_data)
-
-    # 2. Try local usages.
+    # Try local usages.
     thingy_region, thingy_data = local_usage_in_region(
         view, analysis.get("lrn_usages", {}), region
     ) or (None, None)
@@ -2130,15 +2193,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_LOCAL_USAGE, thingy_region, thingy_data)
 
-    # 3. Try Var usages.
-    thingy_region, thingy_data = var_usage_in_region(
-        view, analysis.get("vrn_usages", {}), region
-    ) or (None, None)
-
-    if thingy_data:
-        return (TT_VAR_USAGE, thingy_region, thingy_data)
-
-    # 4. Try local bindings.
+    # Try local bindings.
     thingy_region, thingy_data = local_binding_in_region(
         view, analysis.get("lrn", {}), region
     ) or (None, None)
@@ -2146,7 +2201,15 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_LOCAL_BINDING, thingy_region, thingy_data)
 
-    # 5. Try Var definitions.
+    # Try Var usages.
+    thingy_region, thingy_data = var_usage_in_region(
+        view, analysis.get("vrn_usages", {}), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_VAR_USAGE, thingy_region, thingy_data)
+
+    # Try Var definitions.
     thingy_region, thingy_data = var_definition_in_region(
         view, analysis.get("vrn", {}), region
     ) or (None, None)
@@ -2154,7 +2217,20 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_VAR_DEFINITION, thingy_region, thingy_data)
 
-    # 6. Try namespace usages.
+    # Try keywords.
+    #
+    # Note:
+    # Keyword is checked after locals because destructuring introduces a local binding.
+    # If keyword is placed before locals, a command like 'Find Usages'
+    # finds keyword usages instead of locals.
+    thingy_region, thingy_data = keyword_in_region(
+        view, analysis.get("krn", {}), region
+    ) or (None, None)
+
+    if thingy_data:
+        return (TT_KEYWORD, thingy_region, thingy_data)
+
+    # Try namespace usages.
     thingy_region, thingy_data = namespace_usage_in_region(
         view, analysis.get("nrn_usages", {}), region
     ) or (None, None)
@@ -2162,7 +2238,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_NAMESPACE_USAGE, thingy_region, thingy_data)
 
-    # 7. Try namespace usages alias.
+    # Try namespace usages alias.
     thingy_region, thingy_data = namespace_usage_alias_in_region(
         view, analysis.get("nrn_usages", {}), region
     ) or (None, None)
@@ -2170,7 +2246,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_NAMESPACE_USAGE_ALIAS, thingy_region, thingy_data)
 
-    # 8. Try namespace definitions.
+    # Try namespace definitions.
     thingy_region, thingy_data = namespace_definition_in_region(
         view, analysis.get("nrn", {}), region
     ) or (None, None)
@@ -2178,7 +2254,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_NAMESPACE_DEFINITION, thingy_region, thingy_data)
 
-    # 9. Try Java class usages.
+    # Try Java class usages.
     thingy_region, thingy_data = java_class_usage_in_region(
         view, analysis_jrn_usages(analysis), region
     ) or (None, None)
@@ -2186,7 +2262,7 @@ def thingy_in_region(view, analysis, region):
     if thingy_data:
         return (TT_JAVA_CLASS_USAGE, thingy_region, thingy_data)
 
-    # 10. Try symbols.
+    # Try symbols.
     thingy_region, thingy_data = symbol_in_region(
         view, analysis.get("srn", {}), region
     ) or (None, None)
@@ -2293,7 +2369,16 @@ def find_java_class_usages(analysis, thingy_data) -> List:
     """
     Returns a list of java_class_usage.
     """
-    return analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
+    class_usages = analysis_jindex_usages(analysis).get(thingy_data.get("class"), [])
+
+    if thingy_data.get("method-name"):
+        class_usages = [
+            class_usage
+            for class_usage in class_usages
+            if class_usage.get("method-name") == thingy_data.get("method-name")
+        ]
+
+    return class_usages
 
 
 # Deprecated
@@ -2380,9 +2465,7 @@ def find_keyword_definition(analysis, keyword):
     - Clojure Spec
     - re-frame
     """
-    k = (keyword.get("ns"), keyword.get("name"))
-
-    for keyword_indexed in analysis_kindex(analysis).get(k, []):
+    for keyword_indexed in find_keywords(analysis, keyword):
         if keyword_indexed.get("reg", None):
             return keyword_indexed
 
@@ -2393,12 +2476,8 @@ def find_keyword_definitions(analysis, keyword):
     - Clojure Spec
     - re-frame
     """
-    k = (keyword.get("ns"), keyword.get("name"))
-
     return [
-        keyword_
-        for keyword_ in analysis_kindex(analysis).get(k, [])
-        if keyword_.get("reg")
+        keyword_ for keyword_ in find_keywords(analysis, keyword) if keyword_.get("reg")
     ]
 
 
@@ -2436,10 +2515,6 @@ def find_usages(analysis, thingy) -> Optional[List]:
     thingy_semantic = thingy["_semantic"]
 
     if thingy_semantic == TT_KEYWORD:
-        # To be considered:
-        # If the keyword is a destructuring key,
-        # should it show its local usages?
-
         return find_keyword_usages(analysis, thingy)
 
     elif thingy_semantic == TT_LOCAL or thingy_semantic == TT_LOCAL_USAGE:
@@ -2814,7 +2889,7 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
             ),
         )
 
-        show_thingy_quick_panel(
+        goto_thingy(
             self.view.window(),
             thingy_list,
             goto_on_highlight=True,
@@ -2822,6 +2897,7 @@ class PgPepOutlineCommand(sublime_plugin.TextCommand):
             quick_panel_item_opts={
                 "show_namespace": False,
                 "show_row_col": False,
+                "show_filename": False,
             },
         )
 
@@ -2836,10 +2912,10 @@ class PgPepCopyNameCommand(sublime_plugin.TextCommand):
 
         region = thingy_sel_region(self.view)
 
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
-            sublime.set_clipboard(thingy_name(thingy))
+        if thingy := thingy_at(self.view, view_analysis_, region):
+            sublime.set_clipboard(thingy_name2(thingy))
 
-            self.view.window().status_message("Copied")
+            self.view.window().status_message("Copied " + thingy_name2(thingy))
 
 
 class PgPepShowNameCommand(sublime_plugin.TextCommand):
@@ -2852,11 +2928,11 @@ class PgPepShowNameCommand(sublime_plugin.TextCommand):
 
         region = thingy_sel_region(self.view)
 
-        if thingy := thingy_in_region(self.view, view_analysis_, region):
+        if thingy := thingy_at(self.view, view_analysis_, region):
             content = f"""
                     <body id='pg-pep-show-name'>
 
-                        {htmlify(thingy_name(thingy))}
+                        {htmlify(thingy_name2(thingy))}
 
                     </body>
                     """
@@ -2950,7 +3026,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     arglists_minihtml = """<p class="arglists">"""
 
                     for arglist in arglists:
-                        arglists_minihtml += f"<code>{htmlify(arglist)}</code>"
+                        arglists_minihtml += f"<code>{htmlify(arglist)}</code><br/>"
 
                     arglists_minihtml += """</p>"""
 
@@ -3250,12 +3326,16 @@ class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
         goto(self.window, location, flags)
 
 
-class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
+class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
     """
-    Browse the classpath/go to anything in the classpath.
+    Goto namespace, Var, Keyword in classpath.
     """
 
-    def run(self):
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+    ):
         project_path_ = project_path(self.window)
 
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
@@ -3267,13 +3347,13 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+            thingy_list = sorted(thingy_list, key=thingy_name2)
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
                     "show_namespace": True,
                     "show_row_col": False,
@@ -3281,12 +3361,16 @@ class PgPepBrowseClasspathCommand(sublime_plugin.WindowCommand):
             )
 
 
-class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
+class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
     """
     Goto namespace, var or keyword in paths or view.
     """
 
-    def run(self, side_by_side=False):
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+    ):
         active_view = self.window.active_view()
 
         view_analysis_ = (
@@ -3306,13 +3390,13 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+            thingy_list = sorted(thingy_list, key=thingy_name2)
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
                     "show_namespace": True,
                     "show_row_col": False,
@@ -3320,27 +3404,134 @@ class PgPepGotoAnythingCommand(sublime_plugin.WindowCommand):
             )
 
 
-class PgPepGotoNamespaceCommand(sublime_plugin.WindowCommand):
+class PgPepGotoKeywordInClasspathCommand(sublime_plugin.WindowCommand):
+    """
+    Goto Keyword in classpath.
+    """
+
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=True,
+        show_row_col=False,
+    ):
+        project_path_ = project_path(self.window)
+
+        if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
+            thingy_list = thingy_dedupe(keyword_regs(classpath_analysis_))
+
+            thingy_list = sorted(thingy_list, key=thingy_name2)
+
+            goto_thingy(
+                self.window,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_row_col": show_row_col,
+                    "show_filename": show_filename,
+                },
+            )
+
+
+class PgPepGotoKeywordInViewPathsCommand(sublime_plugin.WindowCommand):
+    """
+    Goto to keyword in paths or view.
+    """
+
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
+    ):
+        active_view = self.window.active_view()
+
+        view_analysis_ = (
+            view_analysis(active_view.id(), not_found=None) if active_view else None
+        )
+
+        project_path_ = project_path(self.window)
+
+        paths_analysis_ = paths_analysis(project_path_, not_found=None)
+
+        if analysis_ := paths_analysis_ or view_analysis_:
+            thingy_list = thingy_dedupe(keyword_regs(analysis_))
+
+            thingy_list = sorted(thingy_list, key=thingy_name2)
+
+            goto_thingy(
+                self.window,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_row_col": show_row_col,
+                    "show_filename": show_filename,
+                },
+            )
+
+
+class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
     """
     Goto namespace in paths or view.
     """
 
-    def run(self, side_by_side=False):
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
+    ):
+        project_path_ = project_path(self.window)
+
+        if analysis_ := classpath_analysis(project_path_, not_found=None):
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+
+            thingy_list = sorted(thingy_list, key=thingy_name2)
+
+            goto_thingy(
+                self.window,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_filename": show_filename,
+                    "show_row_col": show_row_col,
+                },
+            )
+
+
+class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
+    """
+    Goto namespace in paths or view.
+    """
+
+    def run(
+        self,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
+    ):
         project_path_ = project_path(self.window)
 
         if analysis_ := paths_analysis(project_path_, not_found=None):
             thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
-            thingy_list = sorted(thingy_list, key=thingy_lexicographic)
+            thingy_list = sorted(thingy_list, key=thingy_name2)
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
+                    "show_filename": show_filename,
+                    "show_row_col": show_row_col,
                 },
             )
 
@@ -3352,99 +3543,12 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
     In case of a keyword, it works for re-frame handlers and Clojure Spec.
     """
 
-    def run(self, edit, side_by_side=False):
-        window = self.view.window()
-
-        view = self.view
-
-        analysis = view_analysis(view.id())
-
-        region = view.sel()[0]
-
-        if thingy := thingy_at(view, analysis, region):
-            thingy_semantic = thingy["_semantic"]
-
-            definition = None
-
-            if thingy_semantic == TT_LOCAL_USAGE:
-                definition = find_local_binding(analysis, thingy)
-
-            elif (
-                thingy_semantic == TT_NAMESPACE_USAGE
-                or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
-            ):
-                project_path_ = project_path(window)
-
-                paths_analysis_ = paths_analysis(project_path_)
-
-                classpath_analysis_ = classpath_analysis(project_path_)
-
-                definition = (
-                    find_namespace_definition(analysis, thingy)
-                    or find_namespace_definition(paths_analysis_, thingy)
-                    or find_namespace_definition(classpath_analysis_, thingy)
-                )
-
-            elif thingy_semantic == TT_VAR_USAGE:
-                project_path_ = project_path(window)
-
-                paths_analysis_ = paths_analysis(project_path_)
-
-                classpath_analysis_ = classpath_analysis(project_path_)
-
-                definition = (
-                    find_var_definition(analysis, thingy)
-                    or find_var_definition(paths_analysis_, thingy)
-                    or find_var_definition(classpath_analysis_, thingy)
-                )
-
-            # TODO
-            # elif thingy_semantic == TT_JAVA_CLASS_USAGE:
-            #     project_path_ = project_path(window)
-
-            #     paths_analysis_ = paths_analysis(project_path_)
-
-            #     classpath_analysis_ = classpath_analysis(project_path_)
-
-            #     definition = (
-            #         find_java_class_definition(analysis, thingy)
-            #         or find_java_class_definition(paths_analysis_, thingy)
-            #         or find_java_class_definition(classpath_analysis_, thingy)
-            #     )
-
-            elif thingy_semantic == TT_KEYWORD:
-                project_path_ = project_path(window)
-
-                paths_analysis_ = paths_analysis(project_path_)
-
-                definition = find_keyword_definition(
-                    analysis, thingy
-                ) or find_keyword_definition(paths_analysis_, thingy)
-
-            elif thingy_semantic == TT_SYMBOL:
-                project_path_ = project_path(window)
-
-                paths_analysis_ = paths_analysis(project_path_)
-
-                classpath_analysis_ = classpath_analysis(project_path_)
-
-                definition = (
-                    find_symbol_definition(analysis, thingy)
-                    or find_symbol_definition(paths_analysis_, thingy)
-                    or find_symbol_definition(classpath_analysis_, thingy)
-                )
-
-            if definition:
-                flags = GOTO_SIDE_BY_SIDE_FLAGS if side_by_side else GOTO_DEFAULT_FLAGS
-
-                goto(window, thingy_location(definition), flags)
-
-            else:
-                print("Pep: Unable to find definition")
-
-
-class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(
+        self,
+        edit,
+        goto_on_highlight=True,
+        goto_side_by_side=False,
+    ):
         project_path_ = project_path(self.view.window())
 
         view_analysis_ = view_analysis(self.view.id())
@@ -3453,20 +3557,11 @@ class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
-        # Remember current viewport position so it can be restored afterwards.
-        viewport_position = self.view.viewport_position()
-
-        # Store Thingy found at region(s).
-        # Used to find the QuickPanel selected index.
-        thingies = []
-
         # Store usages of Thingy at region(s).
         thingy_definitions_ = []
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-                thingies.append(thingy)
-
                 if (
                     thingy_definitions := find_definitions(
                         analysis=view_analysis_,
@@ -3489,7 +3584,13 @@ class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
             if len(thingy_definitions_) == 1:
                 location = thingy_location(thingy_definitions_[0])
 
-                goto(self.view.window(), location)
+                goto(
+                    self.view.window(),
+                    location,
+                    GOTO_SIDE_BY_SIDE_FLAGS
+                    if goto_side_by_side
+                    else GOTO_DEFAULT_FLAGS,
+                )
 
             else:
                 thingy_definitions_sorted = sorted(
@@ -3501,61 +3602,15 @@ class PgPepGotoDefinition2Command(sublime_plugin.TextCommand):
                     ],
                 )
 
-                selected_index = 0
-
-                quick_panel_items = []
-
-                for index, thingy_definition in enumerate(thingy_definitions_sorted):
-                    # Select Thingy under caret:
-                    for thingy in thingies:
-                        if thingy_definition == thingy:
-                            selected_index = index
-
-                    definition_filename = os.path.basename(
-                        thingy_definition.get("filename")
-                    )
-
-                    definition_line = thingy_definition.get("row", "-")
-
-                    definition_column = thingy_definition.get("col", "-")
-
-                    definition_trigger = (
-                        f"{definition_filename}:{definition_line}:{definition_column}"
-                    )
-
-                    quick_panel_items.append(sublime.QuickPanelItem(definition_trigger))
-
-                def loc(index):
-                    return thingy_location(thingy_definitions_sorted[index])
-
-                def on_done(index, _):
-                    if index == -1:
-                        # Restore selection and viewport position:
-
-                        self.view.sel().clear()
-
-                        self.view.sel().add(region)
-
-                        self.view.window().focus_view(self.view)
-
-                        self.view.set_viewport_position(viewport_position, True)
-
-                    else:
-                        goto(self.view.window(), loc(index))
-
-                def on_highlighted(index):
-                    goto(
-                        self.view.window(),
-                        loc(index),
-                        flags=GOTO_TRANSIENT_FLAGS,
-                    )
-
-                self.view.window().show_quick_panel(
-                    quick_panel_items,
-                    on_done,
-                    sublime.WANT_EVENT,
-                    selected_index,
-                    on_highlighted,
+                goto_thingy(
+                    self.view.window(),
+                    thingy_definitions_sorted,
+                    goto_on_highlight=goto_on_highlight,
+                    goto_side_by_side=goto_side_by_side,
+                    quick_panel_item_opts={
+                        "show_namespace": True,
+                        "show_row_col": False,
+                    },
                 )
 
 
@@ -3603,7 +3658,7 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
                 ),
             )
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.view.window(),
                 thingy_list,
                 goto_on_highlight=True,
@@ -3616,7 +3671,11 @@ class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
 
 
 class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
-    def run(self):
+    def run(
+        self,
+        goto_on_highlight=True,
+        goto_side_by_side=False,
+    ):
         try:
             active_view = self.window.active_view()
 
@@ -3632,11 +3691,11 @@ class PgPepGotoWarningErrorInViewCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            show_thingy_quick_panel(
+            goto_thingy(
                 self.window,
                 thingy_list,
-                goto_on_highlight=True,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
             )
 
         except Exception:
@@ -3795,28 +3854,24 @@ class PgPepTraceUsagesCommand(sublime_plugin.TextCommand):
                 self.view.window().focus_sheet(sheet)
 
 
-class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
+    def run(
+        self,
+        edit,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+    ):
         view_analysis_ = view_analysis(self.view.id())
 
         project_path_ = project_path(self.view.window())
 
         paths_analysis_ = paths_analysis(project_path_)
 
-        # Remember current viewport position so it can be restored afterwards.
-        viewport_position = self.view.viewport_position()
-
-        # Store Thingy found at region(s).
-        # Used to find the QuickPanel selected index.
-        thingies = []
-
         # Store usages of Thingy at region(s).
         thingy_usages_ = []
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-                thingies.append(thingy)
-
                 if thingy_usages := find_usages(
                     analysis=paths_analysis_,
                     thingy=thingy,
@@ -3832,7 +3887,13 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             if len(thingy_usages_) == 1:
                 location = thingy_location(thingy_usages_[0])
 
-                goto(self.view.window(), location)
+                goto(
+                    self.view.window(),
+                    location,
+                    GOTO_SIDE_BY_SIDE_FLAGS
+                    if goto_side_by_side
+                    else GOTO_DEFAULT_FLAGS,
+                )
 
             else:
                 thingy_usages_sorted = sorted(
@@ -3844,62 +3905,113 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     ],
                 )
 
-                selected_index = 0
+                # TODO: Quick Panel Item options per semantic.
 
-                quick_panel_items = []
-
-                for index, thingy_usage in enumerate(thingy_usages_sorted):
-                    # Select Thingy under the cursor:
-                    for thingy in thingies:
-                        if thingy_usage == thingy:
-                            selected_index = index
-
-                    usage_trigger = (
-                        thingy_usage.get("from")
-                        or thingy_usage.get("ns")
-                        or os.path.basename(thingy_usage.get("filename"))
-                    )
-
-                    usage_line = thingy_usage.get("row", "-")
-
-                    usage_column = thingy_usage.get("col", "-")
-
-                    usage_trigger = f"{usage_trigger}:{usage_line}:{usage_column}"
-
-                    quick_panel_items.append(sublime.QuickPanelItem(usage_trigger))
-
-                def usage_location(index):
-                    return thingy_location(thingy_usages_sorted[index])
-
-                def on_done(index, _):
-                    if index == -1:
-                        # Restore selection and viewport position:
-
-                        self.view.sel().clear()
-
-                        self.view.sel().add(region)
-
-                        self.view.window().focus_view(self.view)
-
-                        self.view.set_viewport_position(viewport_position, True)
-
-                    else:
-                        goto(self.view.window(), usage_location(index))
-
-                def on_highlighted(index):
-                    goto(
-                        self.view.window(),
-                        usage_location(index),
-                        flags=GOTO_TRANSIENT_FLAGS,
-                    )
-
-                self.view.window().show_quick_panel(
-                    quick_panel_items,
-                    on_done,
-                    sublime.WANT_EVENT,
-                    selected_index,
-                    on_highlighted,
+                goto_thingy(
+                    self.view.window(),
+                    thingy_usages_sorted,
+                    goto_on_highlight=goto_on_highlight,
+                    goto_side_by_side=goto_side_by_side,
+                    quick_panel_item_opts={
+                        "show_namespace": True,
+                        "show_row_col": True,
+                        "show_filename": False,
+                    },
                 )
+
+
+class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        project_path_ = project_path(self.view.window())
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        # Mapping of Thingy's name to its usages.
+        thingy_name_to_usages = {}
+
+        for region in self.view.sel():
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                if thingy_usages := find_usages(
+                    analysis=paths_analysis_,
+                    thingy=thingy,
+                ) or find_usages(
+                    analysis=view_analysis_,
+                    thingy=thingy,
+                ):
+                    thingy_name_to_usages[thingy_name2(thingy)] = thingy_usages
+
+        # No usage found, return.
+        if not thingy_name_to_usages:
+            return
+
+        minihtmls = []
+
+        for thingy_name_, thingy_usages_ in thingy_name_to_usages.items():
+            thingy_usages_ = thingy_dedupe(thingy_usages_)
+
+            thingy_usages_sorted = sorted(
+                thingy_usages_,
+                key=lambda thingy_usage: [
+                    thingy_usage.get("filename"),
+                    thingy_usage.get("row"),
+                    thingy_usage.get("col"),
+                ],
+            )
+
+            name_usages_minihtmls = []
+            name_usages_minihtmls.append(f"<h3>{thingy_name_}</h3>")
+            name_usages_minihtmls.append(f"<h4>Usages: {len(thingy_usages_)}</h4>")
+
+            name_usages_minihtmls.append("<ul>")
+
+            for thingy_usage in thingy_usages_sorted:
+                usage_from = (
+                    thingy_usage.get("from")
+                    or thingy_usage.get("ns")
+                    or os.path.basename(thingy_usage.get("filename"))
+                )
+
+                usage_from = inspect.cleandoc(html.escape(usage_from))
+
+                usage_line = thingy_usage.get("row", "-")
+
+                usage_column = thingy_usage.get("col", "-")
+
+                goto_command_url = sublime.command_url(
+                    "pg_pep_open_file",
+                    {"location": thingy_location(thingy_usage)},
+                )
+
+                name_usages_minihtmls.append(
+                    f"""
+                <li>
+                    <a href="{goto_command_url}">{usage_from}:{usage_line}:{usage_column}</a>
+                </li>
+                """
+                )
+
+            name_usages_minihtmls.append("</ul>")
+            name_usages_minihtmls.append("<br/>")
+
+            minihtmls.append("".join(name_usages_minihtmls))
+
+        content = f"""
+        <body>
+            <h2>Find Usages</h2>
+
+            {"".join(minihtmls)}
+        </body>
+        """
+
+        sheet = self.view.window().new_html_sheet(
+            "Find Usages",
+            content,
+            sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
+        )
+
+        self.view.window().focus_sheet(sheet)
 
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
@@ -4104,16 +4216,15 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def __init__(self, view):
         self.view = view
         self.analyzer = None
-        self.afs = DEFAULT_VIEW_ANALYSIS_FUNCTIONS
 
-    def analyze(self):
-        analyze = True
+    def analyze(self, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
+        analyze_view = True
 
         if self.view.is_scratch():
-            analyze = analyze_scratch_view(self.view.window())
+            analyze_view = analyze_scratch_view(self.view.window())
 
-        if analyze:
-            analyze_view_async(self.view, afs=self.afs)
+        if analyze_view:
+            analyze_view_async(self.view, afs)
 
     def on_activated_async(self):
         self.analyze()
@@ -4133,8 +4244,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def on_post_save_async(self):
         # Include function to annotate view on save (if applicable).
-        self.afs = [*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save]
-        self.analyze()
+        self.analyze(afs=[*DEFAULT_VIEW_ANALYSIS_FUNCTIONS, af_annotate_on_save])
 
     def on_close(self):
         """
