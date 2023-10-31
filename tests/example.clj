@@ -68,3 +68,6 @@ x
 (foo 1)
 
 (foo 1)
+
+;; TODO: It should highlight `foo` too.
+'example/foo
