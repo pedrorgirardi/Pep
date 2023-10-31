@@ -3,8 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.19.0 -
+There were many internal changes in this version and I'm sorry I made some breaking changes.
+
+Breaking:
+- `pg_pep_find` is now `pg_pep_find_usages`
 - `pg_pep_goto_definition2` is now the default, but as `pg_pep_goto_definition`
-- `pg_pep_find` new command to find usages
+
+New:
+- `pg_pep_goto_usage`
+
+Other:
 - Tweak documentation UI - add a line break after function arity
 - Status messages: 'Analyzing classpath...', 'Anayzing paths...'
 - Fix Java static class method usage
