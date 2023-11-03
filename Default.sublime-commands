@@ -16,10 +16,6 @@
         "command": "pg_pep_annotate"
     },
     {
-        "caption": "Pep: Toggle Highlighting",
-        "command": "pg_pep_toggle_highlight"
-    },
-    {
         "caption": "Pep: Toggle View Annotations",
         "command": "pg_pep_toggle_view_annotations"
     },

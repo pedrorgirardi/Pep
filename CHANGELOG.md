@@ -3,8 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.20.0 - in development
+New:
 - [Command to Toggle View Annotations #70](https://github.com/pedrorgirardi/Pep/issues/70)
+
+Breaking:
 - Removed Command to Clear a View's Annotations
+- Deleted Commands `PgPepClearHighlightedCommand` and `PgPepToggleHighlightCommand`
 
 ## 0.19.0 - 2023-10-31
 There were many internal changes in this version and I'm sorry I made some breaking changes.

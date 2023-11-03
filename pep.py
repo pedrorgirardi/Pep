@@ -4113,27 +4113,6 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
         highlight_thingy(self.view)
 
 
-class PgPepClearHighlightedCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        self.view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
-        self.view.set_status(HIGHLIGHTED_STATUS_KEY, "")
-
-
-class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
-    def __init__(self, view):
-        self.view = view
-        self.is_toggled = (
-            True if self.view.get_regions(HIGHLIGHTED_REGIONS_KEY) else False
-        )
-
-    def run(self, edit):
-        self.view.run_command(
-            "pg_pep_clear_highlighted" if self.is_toggled else "pg_pep_highlight"
-        )
-
-        self.is_toggled = not self.is_toggled
-
-
 class PgPepToggleViewAnnotationsCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         # Is enabled by default:
