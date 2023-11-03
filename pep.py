@@ -112,20 +112,11 @@ def af_status_summary(context, analysis):
         view.run_command("pg_pep_view_summary_status")
 
 
-def af_status_namespace(context, analysis):
-    """
-    Analysis Function to show a view's namespace in the status bar.
-    """
-    if view := context["view"]:
-        view.run_command("pg_pep_view_namespace_status")
-
-
 # Default functions to run after analysis.
 DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
     af_annotate,
     af_highlight_thingy,
     af_status_summary,
-    af_status_namespace,
 ]
 
 
@@ -4147,33 +4138,6 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 
         except Exception:
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
-
-
-class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        try:
-            analysis = view_analysis(self.view.id())
-
-            view_namespace = ""
-
-            if view_status_show_namespace(self.view.window()):
-                # It's possible to get the namespace wrong since it's a list of definitions,
-                # but it's unlikely because of the scope (view) of the analysis.
-                if namespaces := list(analysis_nindex(analysis).keys()):
-                    namespace_prefix = (
-                        view_status_show_namespace_prefix(self.view.window()) or ""
-                    )
-
-                    namespace_suffix = (
-                        view_status_show_namespace_suffix(self.view.window()) or ""
-                    )
-
-                    view_namespace = namespace_prefix + namespaces[0] + namespace_suffix
-
-            self.view.set_status("pg_pep_view_namespace", view_namespace)
-
-        except Exception:
-            print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
 # ---

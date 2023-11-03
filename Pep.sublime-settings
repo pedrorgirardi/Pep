@@ -52,15 +52,6 @@
     // True if you would like to see the number of clj-kondo warnings, if any, in the status bar.
     "view_status_show_warnings": false,
 
-    // True if you would like to show the namespace of the view in the status bar.
-    "view_status_show_namespace": false,
-
-    // If you would like to add a custom prefix to the namespace of the view in the status bar.
-    "view_status_show_namespace_prefix": "Namespace: ",
-
-    // If you would like to add a custom suffix to the namespace of the view in the status bar.
-    "view_status_show_namespace_suffix": "",
-
     // True if you would like to see the number of highlighted regions in the status bar.
     "view_status_show_highlighted": false,
 
