@@ -4197,11 +4197,6 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
-class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        erase_analysis_regions(self.view)
-
-
 class PgPepAnnotateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
