@@ -55,6 +55,9 @@ HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 # Setting used to override the clj-kondo config for a view analysis.
 S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 
+# Setting used to toggle a view's annotations.
+S_PEP_ANNOTATE_VIEW = "pep_annotate_view"
+
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
 CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true, :var-usages true, :arglists true, :locals true, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
 CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
@@ -74,7 +77,7 @@ def af_annotate(context, analysis):
     """
     Analysis Function to annotate view.
 
-    Depends on setting to annotate on save.
+    Depends on setting to annotate view after analysis.
     """
     if view := context["view"]:
         if annotate_view_after_analysis(view.window()):
@@ -2761,6 +2764,13 @@ def annotate_view(view):
         </body>
         """
 
+    # Erase regions from previous analysis.
+    erase_analysis_regions(view)
+
+    # Skip annotation if view explicitly set the custom setting to disable it.
+    if view.settings().get(S_PEP_ANNOTATE_VIEW) is False:
+        return
+
     analysis = view_analysis(view.id())
 
     findings = analysis_findings(analysis)
@@ -2778,9 +2788,6 @@ def annotate_view(view):
         elif finding["level"] == "warning":
             warning_region_set.append(finding_region(finding))
             warning_minihtml_set.append(finding_minihtml(finding))
-
-    # Erase regions from previous analysis.
-    erase_analysis_regions(view)
 
     redish = view.style_for_scope("region.redish").get("foreground")
     orangish = view.style_for_scope("region.orangish").get("foreground")
@@ -4125,6 +4132,14 @@ class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
         )
 
         self.is_toggled = not self.is_toggled
+
+
+class PgPepToggleViewAnnotationsCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        # Is enabled by default:
+        annotate = self.view.settings().get(S_PEP_ANNOTATE_VIEW, True)
+
+        self.view.settings().set(S_PEP_ANNOTATE_VIEW, not annotate)
 
 
 class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):

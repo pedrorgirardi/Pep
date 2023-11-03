@@ -24,6 +24,10 @@
         "command": "pg_pep_toggle_highlight"
     },
     {
+        "caption": "Pep: Toggle View Annotations",
+        "command": "pg_pep_toggle_view_annotations"
+    },
+    {
         "caption": "Pep: Outline",
         "command": "pg_pep_outline"
     },
