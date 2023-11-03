@@ -4129,9 +4129,6 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 
             status_message = ", ".join(status_messages) if status_messages else ""
 
-            if status_message:
-                status_message = "⚠ " + status_message
-
             # Show the number of errors and/or warnings.
             # (Setting the value to the empty string will clear the status.)
             self.view.set_status("pg_pep_view_summary", status_message)
