@@ -12,10 +12,6 @@
         "command": "pg_pep_analyze"
     },
     {
-        "caption": "Pep: Annotate View",
-        "command": "pg_pep_annotate"
-    },
-    {
         "caption": "Pep: Toggle View Annotations",
         "command": "pg_pep_toggle_view_annotations"
     },

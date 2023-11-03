@@ -4176,14 +4176,6 @@ class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
             print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
 
 
-class PgPepAnnotateCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        try:
-            annotate_view(self.view)
-        except Exception:
-            print("Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
-
-
 # ---
 
 
