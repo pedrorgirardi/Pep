@@ -4012,6 +4012,71 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         self.view.window().focus_sheet(sheet)
 
 
+class PgPepFindUsages2Command(sublime_plugin.TextCommand):
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        project_path_ = project_path(self.view.window())
+
+        paths_analysis_ = paths_analysis(project_path_)
+
+        # Mapping of Thingy's name to its usages.
+        thingy_name_to_usages = {}
+
+        for region in self.view.sel():
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                thingy_usages = find_usages(
+                    analysis=paths_analysis_,
+                    thingy=thingy,
+                ) or find_usages(
+                    analysis=view_analysis_,
+                    thingy=thingy,
+                )
+
+                thingy_name_to_usages[thingy_name2(thingy)] = thingy_usages or []
+
+        usages_content = []
+
+        for thingy_name_, thingy_usages_ in thingy_name_to_usages.items():
+            thingy_usages_ = thingy_dedupe(thingy_usages_)
+
+            thingy_usages_sorted = sorted(
+                thingy_usages_,
+                key=lambda thingy_usage: [
+                    thingy_usage.get("filename"),
+                    thingy_usage.get("row"),
+                    thingy_usage.get("col"),
+                ],
+            )
+
+            name_usages_content = []
+
+            for thingy_usage in thingy_usages_sorted:
+                if location := thingy_location(thingy_usage):
+                    name_usages_content.append(
+                        f'{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                    )
+
+            usages_content.append("Find Usages: " + thingy_name_)
+            usages_content.append("\n".join(name_usages_content))
+
+        panel = output_panel(self.view.window())
+        panel.settings().set("gutter", False)
+        panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("line_numbers", False)
+        panel.settings().set("gutter", False)
+        panel.settings().set("scroll_past_end", False)
+
+        panel.set_read_only(False)
+        panel.run_command("select_all")
+        panel.run_command("left_delete")
+        panel.run_command("insert", {"characters": "\n\n".join(usages_content)})
+        panel.set_read_only(True)
+
+        show_output_panel(self.view.window())
+
+
 class PgPepSelectCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
