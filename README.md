@@ -7,9 +7,9 @@
 | Command | Description |
 | ------- | ----------- |
 | `pg_pep_analyze` | Analyze view, paths or classpath |
-| `pg_pep_browse_classpath` | Go to anything in the classpath |
 | `pg_pep_outline` | Show symbols defined in the namespace - it might also be known as 'file structure' |
-| `pg_pep_goto_anything` | Go to anything in view or paths |
+| `pg_pep_goto_anything_in_classpath` | Go to anything in the classpath |
+| `pg_pep_goto_anything_in_view_paths` | Go to anything in view or paths |
 | `pg_pep_goto_namespace` | Go to namespace in paths |
 | `pg_pep_goto_definition` | Go to definition of symbol or keyword under the cursor |
 | `pg_pep_goto_warning_error_in_view` | Go to clj-kondo analysis finding (warning or error) |
@@ -21,8 +21,6 @@
 | `pg_pep_select` | Select occurrences of symbol or keyword under the cursor |
 | `pg_pep_replace` | Replace occurrences of symbol or keyword under the cursor |
 | `pg_pep_highlight` | Highlight occurrences of symbol or keyword under the cursor |
-| `pg_pep_annotate_view` | Annotate view (show warnings/errors) |
-| `pg_pep_clear_view_annotations` | Clear view annotations |
 | `pg_pep_copy_name` | Copy name of keyword or symbol to the clipboard |
 | `pg_pep_show_name` | Show name of keyword or symbol in a popup |
 
