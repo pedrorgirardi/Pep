@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.20.0 - in development
+## 0.20.0 - 2023-11-04
 New:
 - [Command to Toggle View Annotations #70](https://github.com/pedrorgirardi/Pep/issues/70)
 
