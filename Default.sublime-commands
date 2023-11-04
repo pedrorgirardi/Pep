@@ -12,16 +12,8 @@
         "command": "pg_pep_analyze"
     },
     {
-        "caption": "Pep: Annotate View",
-        "command": "pg_pep_annotate"
-    },
-    {
-        "caption": "Pep: Clear View Annotations",
-        "command": "pg_pep_clear_annotations"
-    },
-    {
-        "caption": "Pep: Toggle Highlighting",
-        "command": "pg_pep_toggle_highlight"
+        "caption": "Pep: Toggle View Annotations",
+        "command": "pg_pep_toggle_view_annotations"
     },
     {
         "caption": "Pep: Outline",

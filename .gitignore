@@ -4,3 +4,4 @@ Pep.sublime-workspace
 .vscode
 .cpcache
 .idea/
+.ruff_cache

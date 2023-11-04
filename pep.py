@@ -55,6 +55,9 @@ HIGHLIGHTED_STATUS_KEY = "pg_pep_highligths"
 # Setting used to override the clj-kondo config for a view analysis.
 S_PEP_CLJ_KONDO_CONFIG = "pep_clj_kondo_config"
 
+# Setting used to toggle a view's annotations.
+S_PEP_ANNOTATE_VIEW = "pep_annotate_view"
+
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
 CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true, :var-usages true, :arglists true, :locals true, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
 CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
@@ -74,7 +77,7 @@ def af_annotate(context, analysis):
     """
     Analysis Function to annotate view.
 
-    Depends on setting to annotate on save.
+    Depends on setting to annotate view after analysis.
     """
     if view := context["view"]:
         if annotate_view_after_analysis(view.window()):
@@ -109,20 +112,11 @@ def af_status_summary(context, analysis):
         view.run_command("pg_pep_view_summary_status")
 
 
-def af_status_namespace(context, analysis):
-    """
-    Analysis Function to show a view's namespace in the status bar.
-    """
-    if view := context["view"]:
-        view.run_command("pg_pep_view_namespace_status")
-
-
 # Default functions to run after analysis.
 DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
     af_annotate,
     af_highlight_thingy,
     af_status_summary,
-    af_status_namespace,
 ]
 
 
@@ -2761,6 +2755,13 @@ def annotate_view(view):
         </body>
         """
 
+    # Erase regions from previous analysis.
+    erase_analysis_regions(view)
+
+    # Skip annotation if view explicitly set the custom setting to disable it.
+    if view.settings().get(S_PEP_ANNOTATE_VIEW) is False:
+        return
+
     analysis = view_analysis(view.id())
 
     findings = analysis_findings(analysis)
@@ -2778,9 +2779,6 @@ def annotate_view(view):
         elif finding["level"] == "warning":
             warning_region_set.append(finding_region(finding))
             warning_minihtml_set.append(finding_minihtml(finding))
-
-    # Erase regions from previous analysis.
-    erase_analysis_regions(view)
 
     redish = view.style_for_scope("region.redish").get("foreground")
     orangish = view.style_for_scope("region.orangish").get("foreground")
@@ -4106,25 +4104,12 @@ class PgPepHighlightCommand(sublime_plugin.TextCommand):
         highlight_thingy(self.view)
 
 
-class PgPepClearHighlightedCommand(sublime_plugin.TextCommand):
+class PgPepToggleViewAnnotationsCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        self.view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
-        self.view.set_status(HIGHLIGHTED_STATUS_KEY, "")
+        # Is enabled by default:
+        annotate = self.view.settings().get(S_PEP_ANNOTATE_VIEW, True)
 
-
-class PgPepToggleHighlightCommand(sublime_plugin.TextCommand):
-    def __init__(self, view):
-        self.view = view
-        self.is_toggled = (
-            True if self.view.get_regions(HIGHLIGHTED_REGIONS_KEY) else False
-        )
-
-    def run(self, edit):
-        self.view.run_command(
-            "pg_pep_clear_highlighted" if self.is_toggled else "pg_pep_highlight"
-        )
-
-        self.is_toggled = not self.is_toggled
+        self.view.settings().set(S_PEP_ANNOTATE_VIEW, not annotate)
 
 
 class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
@@ -4144,55 +4129,12 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 
             status_message = ", ".join(status_messages) if status_messages else ""
 
-            if status_message:
-                status_message = "⚠ " + status_message
-
             # Show the number of errors and/or warnings.
             # (Setting the value to the empty string will clear the status.)
             self.view.set_status("pg_pep_view_summary", status_message)
 
         except Exception:
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
-
-
-class PgPepViewNamespaceStatusCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        try:
-            analysis = view_analysis(self.view.id())
-
-            view_namespace = ""
-
-            if view_status_show_namespace(self.view.window()):
-                # It's possible to get the namespace wrong since it's a list of definitions,
-                # but it's unlikely because of the scope (view) of the analysis.
-                if namespaces := list(analysis_nindex(analysis).keys()):
-                    namespace_prefix = (
-                        view_status_show_namespace_prefix(self.view.window()) or ""
-                    )
-
-                    namespace_suffix = (
-                        view_status_show_namespace_suffix(self.view.window()) or ""
-                    )
-
-                    view_namespace = namespace_prefix + namespaces[0] + namespace_suffix
-
-            self.view.set_status("pg_pep_view_namespace", view_namespace)
-
-        except Exception:
-            print("Pep: Error: PgPepViewNamespaceStatusCommand", traceback.format_exc())
-
-
-class PgPepClearAnnotationsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        erase_analysis_regions(self.view)
-
-
-class PgPepAnnotateCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        try:
-            annotate_view(self.view)
-        except Exception:
-            print("Pep: Error: PgPepAnnotateCommand", traceback.format_exc())
 
 
 # ---
