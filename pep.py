@@ -4054,7 +4054,7 @@ class PgPepFindUsages2Command(sublime_plugin.TextCommand):
             for thingy_usage in thingy_usages_sorted:
                 if location := thingy_location(thingy_usage):
                     name_usages_content.append(
-                        f'{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                        f'- {location.get("filename")}:{location.get("line")}:{location.get("column")}'
                     )
 
             usages_content.append("Find Usages: " + thingy_name_)
@@ -4064,8 +4064,8 @@ class PgPepFindUsages2Command(sublime_plugin.TextCommand):
 
         panel = output_panel(self.view.window())
         panel.settings().set("gutter", False)
-        panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
-        panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("result_file_regex", r"^- (.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("result_line_regex", r"^- (.*):([0-9]+):([0-9]+)$")
         panel.settings().set("highlight_line", False)
         panel.settings().set("line_numbers", False)
         panel.settings().set("gutter", False)
