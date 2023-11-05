@@ -4058,12 +4058,15 @@ class PgPepFindUsages2Command(sublime_plugin.TextCommand):
                     )
 
             usages_content.append("Find Usages: " + thingy_name_)
-            usages_content.append("\n".join(name_usages_content) if name_usages_content else "Not found.")
+            usages_content.append(
+                "\n".join(name_usages_content) if name_usages_content else "Not found."
+            )
 
         panel = output_panel(self.view.window())
         panel.settings().set("gutter", False)
         panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
         panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("highlight_line", False)
         panel.settings().set("line_numbers", False)
         panel.settings().set("gutter", False)
         panel.settings().set("scroll_past_end", False)
