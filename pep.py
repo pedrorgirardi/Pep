@@ -4058,7 +4058,7 @@ class PgPepFindUsages2Command(sublime_plugin.TextCommand):
                     )
 
             usages_content.append("Find Usages: " + thingy_name_)
-            usages_content.append("\n".join(name_usages_content))
+            usages_content.append("\n".join(name_usages_content) if name_usages_content else "Not found.")
 
         panel = output_panel(self.view.window())
         panel.settings().set("gutter", False)
