@@ -3931,20 +3931,17 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
 
         for region in self.view.sel():
             if thingy := thingy_at(self.view, view_analysis_, region):
-                if thingy_usages := find_usages(
+                thingy_usages = find_usages(
                     analysis=paths_analysis_,
                     thingy=thingy,
                 ) or find_usages(
                     analysis=view_analysis_,
                     thingy=thingy,
-                ):
-                    thingy_name_to_usages[thingy_name2(thingy)] = thingy_usages
+                )
 
-        # No usage found, return.
-        if not thingy_name_to_usages:
-            return
+                thingy_name_to_usages[thingy_name2(thingy)] = thingy_usages or []
 
-        minihtmls = []
+        usages_content = []
 
         for thingy_name_, thingy_usages_ in thingy_name_to_usages.items():
             thingy_usages_ = thingy_dedupe(thingy_usages_)
@@ -3958,58 +3955,35 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                 ],
             )
 
-            name_usages_minihtmls = []
-            name_usages_minihtmls.append(f"<h3>{thingy_name_}</h3>")
-            name_usages_minihtmls.append(f"<h4>Usages: {len(thingy_usages_)}</h4>")
-
-            name_usages_minihtmls.append("<ul>")
+            name_usages_content = []
 
             for thingy_usage in thingy_usages_sorted:
-                usage_from = (
-                    thingy_usage.get("from")
-                    or thingy_usage.get("ns")
-                    or os.path.basename(thingy_usage.get("filename"))
-                )
+                if location := thingy_location(thingy_usage):
+                    name_usages_content.append(
+                        f'- {location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                    )
 
-                usage_from = inspect.cleandoc(html.escape(usage_from))
+            usages_content.append("Find Usages: " + thingy_name_)
+            usages_content.append(
+                "\n".join(name_usages_content) if name_usages_content else "Not found."
+            )
 
-                usage_line = thingy_usage.get("row", "-")
+        panel = output_panel(self.view.window())
+        panel.settings().set("gutter", False)
+        panel.settings().set("result_file_regex", r"^- (.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("result_line_regex", r"^- (.*):([0-9]+):([0-9]+)$")
+        panel.settings().set("highlight_line", False)
+        panel.settings().set("line_numbers", False)
+        panel.settings().set("gutter", False)
+        panel.settings().set("scroll_past_end", False)
 
-                usage_column = thingy_usage.get("col", "-")
+        panel.set_read_only(False)
+        panel.run_command("select_all")
+        panel.run_command("left_delete")
+        panel.run_command("insert", {"characters": "\n\n".join(usages_content)})
+        panel.set_read_only(True)
 
-                goto_command_url = sublime.command_url(
-                    "pg_pep_open_file",
-                    {"location": thingy_location(thingy_usage)},
-                )
-
-                name_usages_minihtmls.append(
-                    f"""
-                <li>
-                    <a href="{goto_command_url}">{usage_from}:{usage_line}:{usage_column}</a>
-                </li>
-                """
-                )
-
-            name_usages_minihtmls.append("</ul>")
-            name_usages_minihtmls.append("<br/>")
-
-            minihtmls.append("".join(name_usages_minihtmls))
-
-        content = f"""
-        <body>
-            <h2>Find Usages</h2>
-
-            {"".join(minihtmls)}
-        </body>
-        """
-
-        sheet = self.view.window().new_html_sheet(
-            "Find Usages",
-            content,
-            sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
-        )
-
-        self.view.window().focus_sheet(sheet)
+        show_output_panel(self.view.window())
 
 
 class PgPepSelectCommand(sublime_plugin.TextCommand):
