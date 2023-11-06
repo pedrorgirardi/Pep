@@ -3299,7 +3299,7 @@ class PgPepInspect(sublime_plugin.TextCommand):
                     }}
                 </style>
 
-                <h1>Semantic: {thingy['_semantic']}</h1>
+                <h1>{thingy['_semantic']}</h1>
 
                 <ul>
                     {items_html}
@@ -3308,15 +3308,7 @@ class PgPepInspect(sublime_plugin.TextCommand):
             </body>
             """
 
-            flags = (
-                sublime.SEMI_TRANSIENT
-                | sublime.ADD_TO_SELECTION
-                | sublime.CLEAR_TO_RIGHT
-            )
-
-            sheet = self.view.window().new_html_sheet("Inspect", html, flags)
-
-            self.view.window().focus_sheet(sheet)
+            self.view.show_popup(html)
 
 
 class PgPepOpenFileCommand(sublime_plugin.WindowCommand):
