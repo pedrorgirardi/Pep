@@ -341,7 +341,7 @@ def clj_kondo_path(window):
     return setting(window, "clj_kondo_path", None)
 
 
-# -- Output
+# -- Output Panel
 
 
 def show_output_panel(window):
