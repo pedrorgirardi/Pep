@@ -13,8 +13,8 @@ import traceback
 from typing import List, Optional
 from zipfile import ZipFile
 
-import sublime
-import sublime_plugin
+import sublime  # type: ignore
+import sublime_plugin  # type: ignore
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -2051,7 +2051,7 @@ def thingy_text(view, thingy):
         return view.substr(tregion)
 
 
-def thingy_name2(thingy_data):
+def thingy_name2(thingy_data) -> str:
     namespace_ = thingy_data.get("ns") or thingy_data.get("to")
 
     name_ = thingy_data.get("name")
