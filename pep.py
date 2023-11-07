@@ -4002,6 +4002,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         )
 
     def __init__(self, view):
+        super().__init__(view)
+
         self.view = view
         self.analyzer = None
 
