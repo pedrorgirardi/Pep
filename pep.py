@@ -2051,7 +2051,7 @@ def thingy_text(view, thingy):
         return view.substr(tregion)
 
 
-def thingy_name2(thingy_data) -> str:
+def thingy_name(thingy_data) -> str:
     namespace_ = thingy_data.get("ns") or thingy_data.get("to")
 
     name_ = thingy_data.get("name")
@@ -2911,9 +2911,9 @@ class PgPepCopyNameCommand(sublime_plugin.TextCommand):
         region = thingy_sel_region(self.view)
 
         if thingy := thingy_at(self.view, view_analysis_, region):
-            sublime.set_clipboard(thingy_name2(thingy))
+            sublime.set_clipboard(thingy_name(thingy))
 
-            self.view.window().status_message("Copied " + thingy_name2(thingy))
+            self.view.window().status_message("Copied " + thingy_name(thingy))
 
 
 class PgPepShowNameCommand(sublime_plugin.TextCommand):
@@ -2930,7 +2930,7 @@ class PgPepShowNameCommand(sublime_plugin.TextCommand):
             content = f"""
                     <body id='pg-pep-show-name'>
 
-                        {htmlify(thingy_name2(thingy))}
+                        {htmlify(thingy_name(thingy))}
 
                     </body>
                     """
@@ -3337,7 +3337,7 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            thingy_list = sorted(thingy_list, key=thingy_name2)
+            thingy_list = sorted(thingy_list, key=thingy_name)
 
             goto_thingy(
                 self.window,
@@ -3380,7 +3380,7 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
                 ],
             )
 
-            thingy_list = sorted(thingy_list, key=thingy_name2)
+            thingy_list = sorted(thingy_list, key=thingy_name)
 
             goto_thingy(
                 self.window,
@@ -3411,7 +3411,7 @@ class PgPepGotoKeywordInClasspathCommand(sublime_plugin.WindowCommand):
         if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
             thingy_list = thingy_dedupe(keyword_regs(classpath_analysis_))
 
-            thingy_list = sorted(thingy_list, key=thingy_name2)
+            thingy_list = sorted(thingy_list, key=thingy_name)
 
             goto_thingy(
                 self.window,
@@ -3450,7 +3450,7 @@ class PgPepGotoKeywordInViewPathsCommand(sublime_plugin.WindowCommand):
         if analysis_ := paths_analysis_ or view_analysis_:
             thingy_list = thingy_dedupe(keyword_regs(analysis_))
 
-            thingy_list = sorted(thingy_list, key=thingy_name2)
+            thingy_list = sorted(thingy_list, key=thingy_name)
 
             goto_thingy(
                 self.window,
@@ -3481,7 +3481,7 @@ class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
         if analysis_ := classpath_analysis(project_path_, not_found=None):
             thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
-            thingy_list = sorted(thingy_list, key=thingy_name2)
+            thingy_list = sorted(thingy_list, key=thingy_name)
 
             goto_thingy(
                 self.window,
@@ -3512,7 +3512,7 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
         if analysis_ := paths_analysis(project_path_, not_found=None):
             thingy_list = thingy_dedupe(namespace_definitions(analysis_))
 
-            thingy_list = sorted(thingy_list, key=thingy_name2)
+            thingy_list = sorted(thingy_list, key=thingy_name)
 
             goto_thingy(
                 self.window,
@@ -3931,7 +3931,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
                     thingy=thingy,
                 )
 
-                thingy_name_to_usages[thingy_name2(thingy)] = thingy_usages or []
+                thingy_name_to_usages[thingy_name(thingy)] = thingy_usages or []
 
         usages_content = []
 
