@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## 0.22.0 - in development
 - `PgPepInspect` now shows data in a popup
 
+Breaking:
+- Delete `PgPepTraceUsagesCommand`
+
 ## 0.21.0 - 2023-11-06
 - [PgPepFindUsagesCommand Output #69](https://github.com/pedrorgirardi/Pep/issues/69)
 
