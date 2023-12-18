@@ -3724,6 +3724,48 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
             print("Pep: Error: PgPepGotoRequireImportCommand", traceback.format_exc())
 
 
+def goto_thingy_usage(
+    view,
+    thingy_usages,
+    goto_on_highlight=False,
+    goto_side_by_side=False,
+):
+    thingy_usages_ = thingy_dedupe(thingy_usages)
+
+    if len(thingy_usages_) == 1:
+        location = thingy_location(thingy_usages_[0])
+
+        goto(
+            view,
+            location,
+            GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
+        )
+
+    else:
+        thingy_usages_sorted = sorted(
+            thingy_usages_,
+            key=lambda thingy_usage: [
+                thingy_usage.get("filename"),
+                thingy_usage.get("row"),
+                thingy_usage.get("col"),
+            ],
+        )
+
+        # TODO: Quick Panel Item options per semantic.
+
+        goto_thingy(
+            view.window(),
+            thingy_usages_sorted,
+            goto_on_highlight=goto_on_highlight,
+            goto_side_by_side=goto_side_by_side,
+            quick_panel_item_opts={
+                "show_namespace": True,
+                "show_row_col": True,
+                "show_filename": False,
+            },
+        )
+
+
 class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
     def run(
         self,
@@ -3752,42 +3794,41 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     thingy_usages_.extend(thingy_usages)
 
         if thingy_usages_:
-            thingy_usages_ = thingy_dedupe(thingy_usages_)
+            goto_thingy_usage(
+                self.view,
+                thingy_usages_,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+            )
 
-            if len(thingy_usages_) == 1:
-                location = thingy_location(thingy_usages_[0])
 
-                goto(
-                    self.view.window(),
-                    location,
-                    GOTO_SIDE_BY_SIDE_FLAGS
-                    if goto_side_by_side
-                    else GOTO_DEFAULT_FLAGS,
-                )
+class PgPepGotoUsageInViewCommand(sublime_plugin.TextCommand):
+    def run(
+        self,
+        edit,
+        goto_on_highlight=True,
+        goto_side_by_side=False,
+    ):
+        view_analysis_ = view_analysis(self.view.id())
 
-            else:
-                thingy_usages_sorted = sorted(
-                    thingy_usages_,
-                    key=lambda thingy_usage: [
-                        thingy_usage.get("filename"),
-                        thingy_usage.get("row"),
-                        thingy_usage.get("col"),
-                    ],
-                )
+        # Store usages of Thingy at region(s).
+        thingy_usages_ = []
 
-                # TODO: Quick Panel Item options per semantic.
+        for region in self.view.sel():
+            if thingy := thingy_at(self.view, view_analysis_, region):
+                if thingy_usages := find_usages(
+                    analysis=view_analysis_,
+                    thingy=thingy,
+                ):
+                    thingy_usages_.extend(thingy_usages)
 
-                goto_thingy(
-                    self.view.window(),
-                    thingy_usages_sorted,
-                    goto_on_highlight=goto_on_highlight,
-                    goto_side_by_side=goto_side_by_side,
-                    quick_panel_item_opts={
-                        "show_namespace": True,
-                        "show_row_col": True,
-                        "show_filename": False,
-                    },
-                )
+        if thingy_usages_:
+            goto_thingy_usage(
+                self.view,
+                thingy_usages_,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+            )
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
