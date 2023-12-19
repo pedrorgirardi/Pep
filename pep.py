@@ -3736,7 +3736,7 @@ def goto_thingy_usage(
         location = thingy_location(thingy_usages_[0])
 
         goto(
-            view,
+            view.window(),
             location,
             GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
         )
