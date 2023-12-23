@@ -24,10 +24,10 @@
 | `pg_pep_copy_name` | Copy name of keyword or symbol to the clipboard |
 | `pg_pep_show_name` | Show name of keyword or symbol in a popup |
 
+> [!NOTE]
+> I have worked on **Pep** for over two years, but I still consider it alpha.
 
-I have worked on Pep for over a year, but I still consider it alpha.
-
-Pep is part of my Clojure(Script) development setup, combined with [Tutkain](https://github.com/eerohele/Tutkain), so I think it's developed enough to be helpful.
+**Pep** is part of my Clojure(Script) development setup, combined with [Tutkain](https://github.com/eerohele/Tutkain), so I think it's developed enough to be helpful.
 
 You're welcome to try it, and I would be happy to hear if it works for you. If it doesn't work for you, I ask you to please create an issue, and I will do my best to address it.
 
