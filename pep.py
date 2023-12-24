@@ -302,18 +302,6 @@ def analyze_scratch_view(window):
     return setting(window, "analyze_scratch_view", False)
 
 
-def view_status_show_namespace(window):
-    return setting(window, "view_status_show_namespace", False)
-
-
-def view_status_show_namespace_prefix(window):
-    return setting(window, "view_status_show_namespace_prefix", "")
-
-
-def view_status_show_namespace_suffix(window):
-    return setting(window, "view_status_show_namespace_suffix", "")
-
-
 def view_status_show_errors(window):
     return setting(window, "view_status_show_errors", True)
 
