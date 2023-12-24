@@ -206,6 +206,11 @@ def paths_analysis(project_path, not_found={}):
             nrn_usages=False,
         )
 
+        symbol_index_ = symbol_index(
+            analysis,
+            srn=False,
+        )
+
         var_index_ = var_index(
             analysis,
             vrn=False,
@@ -220,6 +225,7 @@ def paths_analysis(project_path, not_found={}):
         return {
             **keyword_index_,
             **namespace_index_,
+            **symbol_index_,
             **var_index_,
             **java_class_index_,
         }
@@ -1181,6 +1187,26 @@ def namespace_usage_quick_panel_item(thingy_data, opts={}):
     )
 
 
+def symbol_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a symbol thingy.
+    """
+    trigger = thingy_data.get("symbol", "")
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    details = ""
+
+    if opts.get("show_filename"):
+        details = thingy_data.get("filename", "")
+
+    return sublime.QuickPanelItem(
+        trigger,
+        details=details,
+    )
+
+
 def var_quick_panel_item(thingy_data, opts={}):
     """
     Returns a QuickPanelItem for a var, definition or usage, thingy.
@@ -1310,6 +1336,9 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
 
     elif semantic == TT_KEYWORD:
         return keyword_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_SYMBOL:
+        return symbol_quick_panel_item(thingy, opts)
 
     elif semantic == TT_FINDING:
         return finding_quick_panel_item(thingy, opts)
@@ -2494,13 +2523,17 @@ def find_symbol_definitions(analysis, sym):
     return analysis_vindex(analysis).get(k, [])
 
 
-def find_symbol_usages(analysis, sym):
+def find_symbol_usages(analysis, thingy):
     """
-    Returns Var usages for symbol `sym`.
+    Returns Var usages for symbol thingy.
     """
-    k = (symbol_namespace(sym), symbol_name(sym))
+    k = (symbol_namespace(thingy), symbol_name(thingy))
 
-    return analysis_vindex_usages(analysis).get(k, [])
+    var_usages = analysis_vindex_usages(analysis).get(k, [])
+
+    symbol_usages = analysis_sindex(analysis).get(thingy.get("symbol", ""), [])
+
+    return symbol_usages + var_usages
 
 
 def find_usages(analysis, thingy) -> Optional[List]:
