@@ -206,6 +206,11 @@ def paths_analysis(project_path, not_found={}):
             nrn_usages=False,
         )
 
+        symbol_index_ = symbol_index(
+            analysis,
+            srn=False,
+        )
+
         var_index_ = var_index(
             analysis,
             vrn=False,
@@ -220,6 +225,7 @@ def paths_analysis(project_path, not_found={}):
         return {
             **keyword_index_,
             **namespace_index_,
+            **symbol_index_,
             **var_index_,
             **java_class_index_,
         }
@@ -1043,7 +1049,7 @@ def project_data_paths(window) -> Optional[str]:
     return project_data(window).get("paths")
 
 
-def symbol_namespace(thingy):
+def symbol_namespace(thingy) -> Optional[str]:
     symbol_split = thingy.get("symbol").split("/")
 
     if len(symbol_split) > 1:
@@ -1051,10 +1057,8 @@ def symbol_namespace(thingy):
     else:
         return None
 
-    return symbol_split[0]
 
-
-def symbol_name(thingy):
+def symbol_name(thingy) -> str:
     symbol_split = thingy.get("symbol").split("/")
 
     if len(symbol_split) > 1:
@@ -1176,6 +1180,26 @@ def namespace_usage_quick_panel_item(thingy_data, opts={}):
         trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
 
     details = thingy_data.get("filename", "") if opts.get("show_filename") else ""
+
+    return sublime.QuickPanelItem(
+        trigger,
+        details=details,
+    )
+
+
+def symbol_quick_panel_item(thingy_data, opts={}):
+    """
+    Returns a QuickPanelItem for a symbol thingy.
+    """
+    trigger = thingy_data.get("symbol", "")
+
+    if opts.get("show_row_col"):
+        trigger = f"{trigger}:{thingy_data.get('row')}:{thingy_data.get('col')}"
+
+    details = ""
+
+    if opts.get("show_filename"):
+        details = thingy_data.get("filename", "")
 
     return sublime.QuickPanelItem(
         trigger,
@@ -1312,6 +1336,9 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
 
     elif semantic == TT_KEYWORD:
         return keyword_quick_panel_item(thingy, opts)
+
+    elif semantic == TT_SYMBOL:
+        return symbol_quick_panel_item(thingy, opts)
 
     elif semantic == TT_FINDING:
         return finding_quick_panel_item(thingy, opts)
@@ -2347,9 +2374,19 @@ def find_var_usages(analysis, thingy_data) -> List:
     `thingy_data` can be a Var definition, usage or a symbol.
     """
 
-    k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
+    var_namespace = thingy_data.get("ns") or thingy_data.get("to")
+    var_name = thingy_data.get("name")
 
-    return analysis_vindex_usages(analysis).get(k, [])
+    var_usages = analysis_vindex_usages(analysis).get(
+        (var_namespace, var_name),
+        [],
+    )
+
+    # Find usages of symbol too:
+    var_symbol = f"{var_namespace}/{var_name}" if var_namespace else var_name
+    symbol_usages = analysis_sindex(analysis).get(var_symbol, [])
+
+    return var_usages + symbol_usages
 
 
 def find_java_class_definition(analysis, thingy_data):
@@ -2496,13 +2533,17 @@ def find_symbol_definitions(analysis, sym):
     return analysis_vindex(analysis).get(k, [])
 
 
-def find_symbol_usages(analysis, sym):
+def find_symbol_usages(analysis, thingy):
     """
-    Returns Var usages for symbol `sym`.
+    Returns Var usages for symbol thingy.
     """
-    k = (symbol_namespace(sym), symbol_name(sym))
+    k = (symbol_namespace(thingy), symbol_name(thingy))
 
-    return analysis_vindex_usages(analysis).get(k, [])
+    var_usages = analysis_vindex_usages(analysis).get(k, [])
+
+    symbol_usages = analysis_sindex(analysis).get(thingy.get("symbol", ""), [])
+
+    return symbol_usages + var_usages
 
 
 def find_usages(analysis, thingy) -> Optional[List]:
@@ -2653,6 +2694,14 @@ def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
 
     elif thingy_type == TT_SYMBOL:
         regions.append(symbol_region(view, thingy_data))
+
+        if var_definition := find_var_definition(analysis, thingy_data):
+            regions.append(var_definition_region(view, var_definition))
+
+        var_usages = find_var_usages(analysis, thingy_data)
+
+        for var_usage in var_usages:
+            regions.append(var_usage_region(view, var_usage))
 
     elif thingy_type == TT_LOCAL_BINDING:
         regions.append(local_binding_region(view, thingy_data))

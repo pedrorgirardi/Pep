@@ -1,12 +1,8 @@
-;; Problem:
-;; Pep finds usages of these symbols in paths,
-;; but from a var it doesn't find a symbol.
+;; It's possible to go to a definition or usage from a symbol.
 ;;
-;; Solution:
-;; Searching for usages of symbol or var should
-;; also include symbols.
-;;
-;; See https://github.com/pedrorgirardi/Pep/issues/68
+;; Try:
+;; - PgPepGotoDefinitionCommand
+;; - PgPepGotoUsageCommand
 
 'clojure.core/map
 
