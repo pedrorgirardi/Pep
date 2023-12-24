@@ -2374,9 +2374,19 @@ def find_var_usages(analysis, thingy_data) -> List:
     `thingy_data` can be a Var definition, usage or a symbol.
     """
 
-    k = (thingy_data.get("ns") or thingy_data.get("to"), thingy_data.get("name"))
+    var_namespace = thingy_data.get("ns") or thingy_data.get("to")
+    var_name = thingy_data.get("name")
 
-    return analysis_vindex_usages(analysis).get(k, [])
+    var_usages = analysis_vindex_usages(analysis).get(
+        (var_namespace, var_name),
+        [],
+    )
+
+    # Find usages of symbol too:
+    var_symbol = f"{var_namespace}/{var_name}" if var_namespace else var_name
+    symbol_usages = analysis_sindex(analysis).get(var_symbol, [])
+
+    return var_usages + symbol_usages
 
 
 def find_java_class_definition(analysis, thingy_data):

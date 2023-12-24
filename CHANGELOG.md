@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## 0.23.0 - in development
 - Find symbol usages from symbol
+- [Find symbol usages from Var](https://github.com/pedrorgirardi/Pep/issues/68)
 
 ## 0.22.0 - 2023-12-23
 - `PgPepInspect` now shows data in a popup
