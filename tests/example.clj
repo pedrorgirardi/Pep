@@ -69,5 +69,7 @@ x
 
 (foo 1)
 
-;; TODO: It should highlight `foo` too.
+
 'example/foo
+
+'example/bar
