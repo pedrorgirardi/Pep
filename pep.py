@@ -2695,6 +2695,14 @@ def find_thingy_regions(view, analysis, thingy) -> List[sublime.Region]:
     elif thingy_type == TT_SYMBOL:
         regions.append(symbol_region(view, thingy_data))
 
+        if var_definition := find_var_definition(analysis, thingy_data):
+            regions.append(var_definition_region(view, var_definition))
+
+        var_usages = find_var_usages(analysis, thingy_data)
+
+        for var_usage in var_usages:
+            regions.append(var_usage_region(view, var_usage))
+
     elif thingy_type == TT_LOCAL_BINDING:
         regions.append(local_binding_region(view, thingy_data))
 
