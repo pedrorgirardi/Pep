@@ -1043,7 +1043,7 @@ def project_data_paths(window) -> Optional[str]:
     return project_data(window).get("paths")
 
 
-def symbol_namespace(thingy):
+def symbol_namespace(thingy) -> Optional[str]:
     symbol_split = thingy.get("symbol").split("/")
 
     if len(symbol_split) > 1:
@@ -1051,10 +1051,8 @@ def symbol_namespace(thingy):
     else:
         return None
 
-    return symbol_split[0]
 
-
-def symbol_name(thingy):
+def symbol_name(thingy) -> str:
     symbol_split = thingy.get("symbol").split("/")
 
     if len(symbol_split) > 1:
