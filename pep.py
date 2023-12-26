@@ -305,6 +305,9 @@ def analyze_scratch_view(window):
     return setting(window, "analyze_scratch_view", False)
 
 
+# --- View Status Settings
+
+
 def view_status_show_errors(window):
     return setting(window, "view_status_show_errors", True)
 
@@ -323,6 +326,9 @@ def view_status_show_highlighted_prefix(window):
 
 def view_status_show_highlighted_suffix(window):
     return setting(window, "view_status_show_highlighted_suffix", "")
+
+
+# ---
 
 
 def startupinfo():
