@@ -193,6 +193,8 @@ def view_analysis(view_id, not_found={}):
 def paths_analysis(project_path, not_found={}):
     """
     Returns analysis for paths.
+
+    TODO: Comments
     """
     project_index_ = project_index(project_path, not_found=not_found)
 
@@ -1733,6 +1735,8 @@ def index_analysis(analysis):
       - local-usages
       - keywords
       - java-class-usages
+
+    TODO: Comments
     """
 
     index = {}
@@ -1747,6 +1751,9 @@ def index_analysis(analysis):
 
 
 def unify_analysis(index):
+    """
+    TODO: Comments
+    """
     analysis = {}
 
     for _, analysis_ in index.items():
