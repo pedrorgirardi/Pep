@@ -194,43 +194,44 @@ def paths_analysis(project_path, not_found={}):
     """
     Returns analysis for paths.
     """
+    project_index_ = project_index(project_path, not_found=not_found)
 
-    if project_index_ := project_index(project_path, not_found=not_found):
-        analysis = unify_analysis(project_index_)
-
-        keyword_index_ = keyword_index(analysis)
-
-        namespace_index_ = namespace_index(
-            analysis,
-            nrn=False,
-            nrn_usages=False,
-        )
-
-        symbol_index_ = symbol_index(
-            analysis,
-            srn=False,
-        )
-
-        var_index_ = var_index(
-            analysis,
-            vrn=False,
-            vrn_usages=False,
-        )
-
-        java_class_index_ = java_class_index(
-            analysis,
-            jrn_usages=False,
-        )
-
-        return {
-            **keyword_index_,
-            **namespace_index_,
-            **symbol_index_,
-            **var_index_,
-            **java_class_index_,
-        }
-    else:
+    if not project_index_:
         return not_found
+
+    analysis = unify_analysis(project_index_)
+
+    keyword_index_ = keyword_index(analysis)
+
+    namespace_index_ = namespace_index(
+        analysis,
+        nrn=False,
+        nrn_usages=False,
+    )
+
+    symbol_index_ = symbol_index(
+        analysis,
+        srn=False,
+    )
+
+    var_index_ = var_index(
+        analysis,
+        vrn=False,
+        vrn_usages=False,
+    )
+
+    java_class_index_ = java_class_index(
+        analysis,
+        jrn_usages=False,
+    )
+
+    return {
+        **keyword_index_,
+        **namespace_index_,
+        **symbol_index_,
+        **var_index_,
+        **java_class_index_,
+    }
 
 
 # -- Settings
