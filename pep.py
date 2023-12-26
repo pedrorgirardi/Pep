@@ -2365,7 +2365,7 @@ def find_var_definitions(analysis, thingy_data) -> List:
 
 def find_var_usages(analysis, thingy_data) -> List:
     """
-    Returns a list of var_usage.
+    Returns a list of var_usage and symbols.
 
     `thingy_data` can be a Var definition, usage or a symbol.
     """
@@ -2373,6 +2373,7 @@ def find_var_usages(analysis, thingy_data) -> List:
     var_namespace = thingy_data.get("ns") or thingy_data.get("to")
     var_name = thingy_data.get("name")
 
+    # Look up Var usages by key - a tuple with namespace and name:
     var_usages = analysis_vindex_usages(analysis).get(
         (var_namespace, var_name),
         [],
@@ -2380,9 +2381,9 @@ def find_var_usages(analysis, thingy_data) -> List:
 
     # Find usages of symbol too:
     var_symbol = f"{var_namespace}/{var_name}" if var_namespace else var_name
-    symbol_usages = analysis_sindex(analysis).get(var_symbol, [])
+    var_symbol_usages = analysis_sindex(analysis).get(var_symbol, [])
 
-    return var_usages + symbol_usages
+    return var_usages + var_symbol_usages
 
 
 def find_java_class_definition(analysis, thingy_data):
