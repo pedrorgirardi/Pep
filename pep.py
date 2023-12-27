@@ -1729,7 +1729,7 @@ def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
 
 
-def index_analysis(analysis):
+def index_analysis(analysis: dict) -> dict:
     """
     Analyze paths to create indexes for var and namespace definitions, and keywords.
 
@@ -1757,7 +1757,7 @@ def index_analysis(analysis):
     return index
 
 
-def unify_analysis(index):
+def unify_analysis(index: dict) -> dict:
     """
     TODO: Comments
     """
