@@ -120,7 +120,8 @@ DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
 ]
 
 
-## Mapping of filename to analysis data by semantic, e.g. var-definitions.
+# Mapping of filename to analysis data by semantic, e.g. var-definitions.
+# (filename -> semantic -> list of 'thingies')
 _index_ = {}
 
 _view_analysis_ = {}
