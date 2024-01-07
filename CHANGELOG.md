@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.24.0 - in development
+- Fix `thingy_to_region` name-row
+
 ## 0.23.0 - 2023-12-24
 - Find symbol usages from symbol
 - [Find symbol usages from Var](https://github.com/pedrorgirardi/Pep/issues/68)

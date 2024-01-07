@@ -1786,7 +1786,7 @@ def thingy_to_region(view, thingy) -> sublime.Region:
     Returns Region for `thingy`.
     """
 
-    row_start = thingy.get("name-now", thingy.get("row"))
+    row_start = thingy.get("name-row", thingy.get("row"))
     col_start = thingy.get("name-col", thingy.get("col"))
 
     row_end = thingy.get("name-end-row", thingy.get("end-row"))
