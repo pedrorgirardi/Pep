@@ -4120,10 +4120,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if analyze_view:
             analyze_view_async(self.view, afs)
 
-    def highlight(self):
-        if automatically_highlight(self.view.window()):
-            highlight_thingy(self.view)
-
     def on_activated_async(self):
         self.analyze()
 
@@ -4140,8 +4136,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if self.highlighter:
             self.highlighter.cancel()
 
-        self.highlighter = threading.Timer(0.1, self.highlight)
-        self.highlighter.start()
+        if automatically_highlight(self.view.window()):
+            self.highlighter = threading.Timer(0.1, lambda: highlight_thingy(self.view))
+            self.highlighter.start()
 
     def on_post_save_async(self):
         # Include function to annotate view on save (if applicable).
