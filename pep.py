@@ -1082,13 +1082,11 @@ def open_jar(filename, f):
     Open JAR `filename` and call `f` with the path of the temporary file.
     """
 
-    filename_split = filename.split(":")
-    filename_jar = filename_split[0]
-    filename_file = filename_split[1]
+    dep_jar, dep_filepath  = filename.split(":")
 
-    with ZipFile(filename_jar) as jar:
-        with jar.open(filename_file) as jar_file:
-            tmp_path = os.path.join(tempfile.gettempdir(), filename_file)
+    with ZipFile(dep_jar) as jar:
+        with jar.open(dep_filepath) as jar_file:
+            tmp_path = os.path.join(tempfile.gettempdir(), dep_filepath)
 
             # Create all parent directories of the temporary file:
             os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
@@ -1111,6 +1109,9 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(True)
                 view.set_read_only(True)
+
+            if is_debug(window):
+                print(f"Pep Debug: Goto JAR {filename}:{line}:{column}")
 
             open_jar(filename, window_open_file)
 
@@ -1584,7 +1585,7 @@ def analyze_classpath(window):
         sublime.status_message("Analyzing classpath...")
 
         if is_debug(window):
-            print(f"Pep: Analyzing classpath... {window_project(window)}")
+            print(f"Pep Debug: Analyzing classpath... {window_project(window)}")
 
         # Analysis doesn't work without a .clj-kondo cache directory:
         clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
@@ -1660,7 +1661,7 @@ def analyze_classpath(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+                    f"Pep Debug: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
         return True
@@ -1687,7 +1688,7 @@ def analyze_paths(window):
         sublime.status_message("Analyzing paths...")
 
         if is_debug(window):
-            print(f"Pep: Analyzing paths... {window_project(window)}")
+            print(f"Pep Debug: Analyzing paths... {window_project(window)}")
 
         # Analysis doesn't work without a .clj-kondo cache directory:
         clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
@@ -1731,7 +1732,7 @@ def analyze_paths(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+                    f"Pep Debug: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
 
@@ -2904,7 +2905,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
         clear_cache()
 
         if is_debug(self.window):
-            print("Pep: Cleared cache")
+            print("Pep Debug: Cleared cache")
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -4169,7 +4170,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
         """
         if project_path_ := project_path(window):
             if is_debug(window):
-                print(f"Pep: Clear project cache: {project_path_}")
+                print(f"Pep Debug: Clear project cache: {project_path_}")
 
             clear_project_index(project_path_)
 
