@@ -1079,9 +1079,7 @@ def htmlify(text):
 
 def open_jar(filename, f):
     """
-    Open JAR `filename` and call `f` with filename and a file-like object (ZipExtFile).
-
-    Filename passed to `f` is a temporary file and it will be removed afterwards.
+    Open JAR `filename` and call `f` with the path of the temporary file.
     """
 
     filename_split = filename.split(":")
@@ -1090,15 +1088,12 @@ def open_jar(filename, f):
 
     with ZipFile(filename_jar) as jar:
         with jar.open(filename_file) as jar_file:
-            tmp_path = pathlib.Path(filename_file)
-            tmp_file_suffix = "." + tmp_path.name
+            tmp_path = os.path.join(tempfile.gettempdir(), filename_file)
 
-            descriptor, tempath = tempfile.mkstemp(suffix=tmp_file_suffix)
+            with open(tmp_path, "w") as tmp_file:
+                tmp_file.write(jar_file.read().decode())
 
-            with os.fdopen(descriptor, "w") as file:
-                file.write(jar_file.read().decode())
-
-            f(tempath, jar_file)
+            f(tmp_path)
 
 
 def goto(window, location, flags=sublime.ENCODED_POSITION):
@@ -1109,12 +1104,12 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
         if ".jar:" in filename:
 
-            def open_file(filename, file):
+            def window_open_file(filename):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(True)
                 view.set_read_only(True)
 
-            open_jar(filename, open_file)
+            open_jar(filename, window_open_file)
 
         else:
             window.open_file(f"{filename}:{line}:{column}", flags=flags)
