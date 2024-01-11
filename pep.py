@@ -1090,6 +1090,9 @@ def open_jar(filename, f):
         with jar.open(filename_file) as jar_file:
             tmp_path = os.path.join(tempfile.gettempdir(), filename_file)
 
+            # Create all parent directories of the temporary file:
+            os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
+
             with open(tmp_path, "w") as tmp_file:
                 tmp_file.write(jar_file.read().decode())
 
