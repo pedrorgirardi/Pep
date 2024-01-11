@@ -1588,6 +1588,12 @@ def analyze_classpath(window):
         if is_debug(window):
             print(f"Pep: Analyzing classpath... {window_project(window)}")
 
+        # Analysis doesn't work without a .clj-kondo cache directory:
+        clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
+
+        if not os.path.exists(clj_kondo_cache_directory):
+            os.makedirs(clj_kondo_cache_directory)
+
         analysis_subprocess_args = [
             clj_kondo_path(window),
             "--config",
@@ -1684,6 +1690,12 @@ def analyze_paths(window):
 
         if is_debug(window):
             print(f"Pep: Analyzing paths... {window_project(window)}")
+
+        # Analysis doesn't work without a .clj-kondo cache directory:
+        clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
+
+        if not os.path.exists(clj_kondo_cache_directory):
+            os.makedirs(clj_kondo_cache_directory)
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
