@@ -3010,7 +3010,18 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         project_path_ = project_path(self.view.window())
 
-        paths_analysis_ = paths_analysis(project_path_)
+        def paths_analysis_delay():
+            analysis = None
+
+            def f():
+                nonlocal analysis
+                if analysis is None:
+                    analysis = paths_analysis(project_path_)
+                return analysis
+
+            return f
+
+        paths_analysis_ = paths_analysis_delay()
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
@@ -3030,7 +3041,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     # only if not found try paths and project analysis.
                     definition = (
                         find_var_definition(view_analysis_, thingy)
-                        or find_var_definition(paths_analysis_, thingy)
+                        or find_var_definition(paths_analysis_(), thingy)
                         or find_var_definition(classpath_analysis_, thingy)
                     )
 
@@ -3041,14 +3052,14 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ):
                     definition = (
                         find_namespace_definition(view_analysis_, thingy)
-                        or find_namespace_definition(paths_analysis_, thingy)
+                        or find_namespace_definition(paths_analysis_(), thingy)
                         or find_namespace_definition(classpath_analysis_, thingy)
                     )
 
                 elif thingy_semantic == TT_SYMBOL:
                     definition = (
                         find_symbol_definition(view_analysis_, thingy)
-                        or find_symbol_definition(paths_analysis_, thingy)
+                        or find_symbol_definition(paths_analysis_(), thingy)
                         or find_symbol_definition(classpath_analysis_, thingy)
                     )
 
