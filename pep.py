@@ -1362,6 +1362,9 @@ def goto_thingy(
 
     # Restore active view, its selection, and viewport position - if there's an active view.
 
+    if not thingy_list:
+        return
+
     initial_view = window.active_view()
 
     initial_regions = [region for region in initial_view.sel()] if initial_view else []
@@ -3401,9 +3404,27 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
+        window_ = self.window
+
         project_path_ = project_path(self.window)
 
-        if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
+        def done_(thingy_list):
+            progress.stop()
+
+            goto_thingy(
+                window_,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
+            )
+
+        def run_():
+            classpath_analysis_ = classpath_analysis(project_path_, not_found={})
+
             thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(classpath_analysis_),
@@ -3414,16 +3435,11 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name)
 
-            goto_thingy(
-                self.window,
-                thingy_list,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-                quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
-                },
-            )
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
@@ -3588,9 +3604,6 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
 
         def done_(thingy_list):
             progress.stop()
-
-            if not thingy_list:
-                return
 
             goto_thingy(
                 window_,
