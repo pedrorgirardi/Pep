@@ -3835,6 +3835,9 @@ def goto_thingy_usage(
     goto_on_highlight=False,
     goto_side_by_side=False,
 ):
+    if not thingy_usages:
+        return
+
     thingy_usages_ = thingy_dedupe(thingy_usages)
 
     if len(thingy_usages_) == 1:
@@ -3878,18 +3881,33 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
-        def run_():
-            view_analysis_ = view_analysis(self.view.id())
+        view_ = self.view
+        view_id_ = self.view.id()
+        view_sel_ = self.view.sel()
+        window_ = self.view.window()
 
-            project_path_ = project_path(self.view.window())
+        def done_(thingy_usages_):
+            progress.stop()
+
+            goto_thingy_usage(
+                view_,
+                thingy_usages_,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+            )
+
+        def run_():
+            view_analysis_ = view_analysis(view_id_)
+
+            project_path_ = project_path(window_)
 
             paths_analysis_ = paths_analysis(project_path_)
 
             # Store usages of Thingy at region(s).
             thingy_usages_ = []
 
-            for region in self.view.sel():
-                if thingy := thingy_at(self.view, view_analysis_, region):
+            for region in view_sel_:
+                if thingy := thingy_at(view_, view_analysis_, region):
                     if thingy_usages := find_usages(
                         analysis=paths_analysis_,
                         thingy=thingy,
@@ -3899,16 +3917,9 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
                     ):
                         thingy_usages_.extend(thingy_usages)
 
-            if thingy_usages_:
-                sublime.set_timeout(
-                    lambda: goto_thingy_usage(
-                        self.view,
-                        thingy_usages_,
-                        goto_on_highlight=goto_on_highlight,
-                        goto_side_by_side=goto_side_by_side,
-                    ),
-                    0,
-                )
+            sublime.set_timeout(lambda: done_(thingy_usages_), 0)
+
+        progress.start("")
 
         threading.Thread(target=run_).start()
 
@@ -3933,13 +3944,12 @@ class PgPepGotoUsageInViewCommand(sublime_plugin.TextCommand):
                 ):
                     thingy_usages_.extend(thingy_usages)
 
-        if thingy_usages_:
-            goto_thingy_usage(
-                self.view,
-                thingy_usages_,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-            )
+        goto_thingy_usage(
+            self.view,
+            thingy_usages_,
+            goto_on_highlight=goto_on_highlight,
+            goto_side_by_side=goto_side_by_side,
+        )
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
