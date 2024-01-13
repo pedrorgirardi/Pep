@@ -16,6 +16,8 @@ from zipfile import ZipFile
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
+from . import progress
+
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
 
@@ -3613,6 +3615,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         goto_side_by_side=False,
     ):
         def goto_thingy_definition(window, thingy_definitions_):
+            progress.stop()
+
+            if not thingy_definitions_:
+                return
+
             thingy_definitions_ = thingy_dedupe(thingy_definitions_)
 
             if len(thingy_definitions_) == 1:
@@ -3693,10 +3700,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     ):
                         thingy_definitions_.extend(thingy_definitions)
 
-            if thingy_definitions_:
-                sublime.set_timeout(
-                    lambda: goto_thingy_definition(window_, thingy_definitions_), 0
-                )
+            sublime.set_timeout(
+                lambda: goto_thingy_definition(window_, thingy_definitions_), 0
+            )
+
+        progress.start("")
 
         threading.Thread(target=run_).start()
 
