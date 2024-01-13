@@ -28,8 +28,17 @@
         "command": "pg_pep_goto_anything_in_view_paths"
     },
     {
-        "caption": "Pep: Goto Namespace",
+        "caption": "Pep: Goto Namespace in Paths",
         "command": "pg_pep_goto_namespace_in_view_paths",
+        "args": {
+            "goto_on_highlight": false,
+            "goto_side_by_side": false,
+            "show_filename": false
+        }
+    },
+    {
+        "caption": "Pep: Goto Namespace in Classpath",
+        "command": "pg_pep_goto_namespace_in_classpath",
         "args": {
             "goto_on_highlight": false,
             "goto_side_by_side": false,
