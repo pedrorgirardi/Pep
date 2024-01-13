@@ -3857,33 +3857,39 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
-        view_analysis_ = view_analysis(self.view.id())
+        def run_():
+            view_analysis_ = view_analysis(self.view.id())
 
-        project_path_ = project_path(self.view.window())
+            project_path_ = project_path(self.view.window())
 
-        paths_analysis_ = paths_analysis(project_path_)
+            paths_analysis_ = paths_analysis(project_path_)
 
-        # Store usages of Thingy at region(s).
-        thingy_usages_ = []
+            # Store usages of Thingy at region(s).
+            thingy_usages_ = []
 
-        for region in self.view.sel():
-            if thingy := thingy_at(self.view, view_analysis_, region):
-                if thingy_usages := find_usages(
-                    analysis=paths_analysis_,
-                    thingy=thingy,
-                ) or find_usages(
-                    analysis=view_analysis_,
-                    thingy=thingy,
-                ):
-                    thingy_usages_.extend(thingy_usages)
+            for region in self.view.sel():
+                if thingy := thingy_at(self.view, view_analysis_, region):
+                    if thingy_usages := find_usages(
+                        analysis=paths_analysis_,
+                        thingy=thingy,
+                    ) or find_usages(
+                        analysis=view_analysis_,
+                        thingy=thingy,
+                    ):
+                        thingy_usages_.extend(thingy_usages)
 
-        if thingy_usages_:
-            goto_thingy_usage(
-                self.view,
-                thingy_usages_,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-            )
+            if thingy_usages_:
+                sublime.set_timeout(
+                    lambda: goto_thingy_usage(
+                        self.view,
+                        thingy_usages_,
+                        goto_on_highlight=goto_on_highlight,
+                        goto_side_by_side=goto_side_by_side,
+                    ),
+                    0,
+                )
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoUsageInViewCommand(sublime_plugin.TextCommand):
