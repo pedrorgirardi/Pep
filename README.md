@@ -6,6 +6,9 @@
 
 [clj-kondo](https://github.com/clj-kondo/clj-kondo) is the sole dependency, and everything else is supplied by built-in [Sublime Text APIs](https://www.sublimetext.com/docs/api_reference.html).
 
+> [!NOTE]
+> I have worked on **Pep** for over two years, but I still consider it alpha.
+
 | Command | Description |
 | ------- | ----------- |
 | `pg_pep_analyze` | Analyze view, paths or classpath |
@@ -25,9 +28,6 @@
 | `pg_pep_highlight` | Highlight occurrences of symbol or keyword under the cursor |
 | `pg_pep_copy_name` | Copy name of keyword or symbol to the clipboard |
 | `pg_pep_show_name` | Show name of keyword or symbol in a popup |
-
-> [!NOTE]
-> I have worked on **Pep** for over two years, but I still consider it alpha.
 
 **Pep** is part of my Clojure(Script) development setup, combined with [Tutkain](https://github.com/eerohele/Tutkain), so I think it's developed enough to be helpful.
 
