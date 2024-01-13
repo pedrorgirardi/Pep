@@ -3612,14 +3612,14 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         goto_on_highlight=True,
         goto_side_by_side=False,
     ):
-        def goto_thingy_definition(thingy_definitions_):
+        def goto_thingy_definition(window, thingy_definitions_):
             thingy_definitions_ = thingy_dedupe(thingy_definitions_)
 
             if len(thingy_definitions_) == 1:
                 location = thingy_location(thingy_definitions_[0])
 
                 goto(
-                    self.view.window(),
+                    window,
                     location,
                     GOTO_SIDE_BY_SIDE_FLAGS
                     if goto_side_by_side
@@ -3637,7 +3637,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 )
 
                 goto_thingy(
-                    self.view.window(),
+                    window,
                     thingy_definitions_sorted,
                     goto_on_highlight=goto_on_highlight,
                     goto_side_by_side=goto_side_by_side,
@@ -3647,8 +3647,13 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     },
                 )
 
+        view_ = self.view
+        view_id_ = self.view.id()
+        view_sel_ = self.view.sel()
+        window_ = self.view.window()
+
         def run_():
-            project_path_ = project_path(self.view.window())
+            project_path_ = project_path(window_)
 
             def paths_analysis_delay():
                 analysis = None
@@ -3661,7 +3666,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
                 return f
 
-            view_analysis_ = view_analysis(self.view.id())
+            view_analysis_ = view_analysis(view_id_)
 
             classpath_analysis_ = classpath_analysis(project_path_)
 
@@ -3670,8 +3675,8 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
             # Store usages of Thingy at region(s).
             thingy_definitions_ = []
 
-            for region in self.view.sel():
-                if thingy := thingy_at(self.view, view_analysis_, region):
+            for region in view_sel_:
+                if thingy := thingy_at(view_, view_analysis_, region):
                     if (
                         thingy_definitions := find_definitions(
                             analysis=view_analysis_,
@@ -3690,7 +3695,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             if thingy_definitions_:
                 sublime.set_timeout(
-                    lambda: goto_thingy_definition(thingy_definitions_), 0
+                    lambda: goto_thingy_definition(window_, thingy_definitions_), 0
                 )
 
         threading.Thread(target=run_).start()
