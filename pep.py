@@ -3612,47 +3612,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         goto_on_highlight=True,
         goto_side_by_side=False,
     ):
-        project_path_ = project_path(self.view.window())
-
-        def paths_analysis_delay():
-            analysis = None
-
-            def f():
-                nonlocal analysis
-                if analysis is None:
-                    analysis = paths_analysis(project_path_)
-                return analysis
-
-            return f
-
-        view_analysis_ = view_analysis(self.view.id())
-
-        classpath_analysis_ = classpath_analysis(project_path_)
-
-        paths_analysis_ = paths_analysis_delay()
-
-        # Store usages of Thingy at region(s).
-        thingy_definitions_ = []
-
-        for region in self.view.sel():
-            if thingy := thingy_at(self.view, view_analysis_, region):
-                if (
-                    thingy_definitions := find_definitions(
-                        analysis=view_analysis_,
-                        thingy=thingy,
-                    )
-                    or find_definitions(
-                        analysis=paths_analysis_(),
-                        thingy=thingy,
-                    )
-                    or find_definitions(
-                        analysis=classpath_analysis_,
-                        thingy=thingy,
-                    )
-                ):
-                    thingy_definitions_.extend(thingy_definitions)
-
-        if thingy_definitions_:
+        def goto_thingy_definition(thingy_definitions_):
             thingy_definitions_ = thingy_dedupe(thingy_definitions_)
 
             if len(thingy_definitions_) == 1:
@@ -3686,6 +3646,54 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                         "show_row_col": False,
                     },
                 )
+
+        def run_():
+            project_path_ = project_path(self.view.window())
+
+            def paths_analysis_delay():
+                analysis = None
+
+                def f():
+                    nonlocal analysis
+                    if analysis is None:
+                        analysis = paths_analysis(project_path_)
+                    return analysis
+
+                return f
+
+            view_analysis_ = view_analysis(self.view.id())
+
+            classpath_analysis_ = classpath_analysis(project_path_)
+
+            paths_analysis_ = paths_analysis_delay()
+
+            # Store usages of Thingy at region(s).
+            thingy_definitions_ = []
+
+            for region in self.view.sel():
+                if thingy := thingy_at(self.view, view_analysis_, region):
+                    if (
+                        thingy_definitions := find_definitions(
+                            analysis=view_analysis_,
+                            thingy=thingy,
+                        )
+                        or find_definitions(
+                            analysis=paths_analysis_(),
+                            thingy=thingy,
+                        )
+                        or find_definitions(
+                            analysis=classpath_analysis_,
+                            thingy=thingy,
+                        )
+                    ):
+                        thingy_definitions_.extend(thingy_definitions)
+
+            if thingy_definitions_:
+                sublime.set_timeout(
+                    lambda: goto_thingy_definition(thingy_definitions_), 0
+                )
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
