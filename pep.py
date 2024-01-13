@@ -3617,11 +3617,12 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
             )
 
         def run_():
-            if analysis_ := paths_analysis(project_path_, not_found=None):
-                thingy_list = thingy_dedupe(namespace_definitions(analysis_))
-                thingy_list = sorted(thingy_list, key=thingy_name)
+            analysis_ = paths_analysis(project_path_, not_found={})
 
-                sublime.set_timeout(lambda: done_(thingy_list), 0)
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+            thingy_list = sorted(thingy_list, key=thingy_name)
+
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
 
         progress.start("")
 
