@@ -20,16 +20,21 @@
         "command": "pg_pep_outline"
     },
     {
-        "caption": "Pep: Browse Classpath",
-        "command": "pg_pep_browse_classpath"
+        "caption": "Pep: Goto Anything in Classpath",
+        "command": "pg_pep_goto_anything_in_classpath"
     },
     {
-        "caption": "Pep: Goto Anything",
-        "command": "pg_pep_goto_anything"
+        "caption": "Pep: Goto Anything in Paths",
+        "command": "pg_pep_goto_anything_in_view_paths"
     },
     {
         "caption": "Pep: Goto Namespace",
-        "command": "pg_pep_goto_namespace"
+        "command": "pg_pep_goto_namespace_in_view_paths",
+        "args": {
+            "goto_on_highlight": false,
+            "goto_side_by_side": false,
+            "show_filename": false
+        }
     },
     {
         "caption": "Pep: Goto Definition",
@@ -37,6 +42,21 @@
         "context": [{"key": "selector",
                      "operator": "equal",
                      "operand": "source.clojure"}]
+    },
+    {
+        "caption": "Pep: Goto Usage",
+        "command": "pg_pep_goto_usage",
+        "args": {
+            "goto_on_highlight": true,
+            "goto_side_by_side": false
+        },
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ],
     },
     {
         "caption": "Pep: Goto Warning/Error in View",
@@ -48,7 +68,10 @@
     },
     {
         "caption": "Pep: Goto Require/Import in View",
-        "command": "pg_pep_goto_require_import_in_view"
+        "command": "pg_pep_goto_require_import_in_view",
+        "context": [{"key": "selector",
+                     "operator": "equal",
+                     "operand": "source.clojure"}]
     },
     {
         "caption": "Pep: Clear Cache",
