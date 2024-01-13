@@ -1082,7 +1082,7 @@ def open_jar(filename, f):
     Open JAR `filename` and call `f` with the path of the temporary file.
     """
 
-    dep_jar, dep_filepath  = filename.split(":")
+    dep_jar, dep_filepath = filename.split(":")
 
     with ZipFile(dep_jar) as jar:
         with jar.open(dep_filepath) as jar_file:
@@ -3603,11 +3603,22 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
     ):
         project_path_ = project_path(self.view.window())
 
+        def paths_analysis_delay():
+            analysis = None
+
+            def f():
+                nonlocal analysis
+                if analysis is None:
+                    analysis = paths_analysis(project_path_)
+                return analysis
+
+            return f
+
         view_analysis_ = view_analysis(self.view.id())
 
-        paths_analysis_ = paths_analysis(project_path_)
-
         classpath_analysis_ = classpath_analysis(project_path_)
+
+        paths_analysis_ = paths_analysis_delay()
 
         # Store usages of Thingy at region(s).
         thingy_definitions_ = []
@@ -3620,7 +3631,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                         thingy=thingy,
                     )
                     or find_definitions(
-                        analysis=paths_analysis_,
+                        analysis=paths_analysis_(),
                         thingy=thingy,
                     )
                     or find_definitions(
