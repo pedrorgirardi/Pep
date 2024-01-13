@@ -3614,19 +3614,24 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         goto_on_highlight=True,
         goto_side_by_side=False,
     ):
-        def goto_thingy_definition(window, thingy_definitions_):
+        view_ = self.view
+        view_id_ = self.view.id()
+        view_sel_ = self.view.sel()
+        window_ = self.view.window()
+
+        def done_(thingy_definitions):
             progress.stop()
 
-            if not thingy_definitions_:
+            if not thingy_definitions:
                 return
 
-            thingy_definitions_ = thingy_dedupe(thingy_definitions_)
+            thingy_definitions = thingy_dedupe(thingy_definitions)
 
-            if len(thingy_definitions_) == 1:
-                location = thingy_location(thingy_definitions_[0])
+            if len(thingy_definitions) == 1:
+                location = thingy_location(thingy_definitions[0])
 
                 goto(
-                    window,
+                    window_,
                     location,
                     GOTO_SIDE_BY_SIDE_FLAGS
                     if goto_side_by_side
@@ -3635,7 +3640,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             else:
                 thingy_definitions_sorted = sorted(
-                    thingy_definitions_,
+                    thingy_definitions,
                     key=lambda thingy_definition: [
                         thingy_definition.get("filename"),
                         thingy_definition.get("row"),
@@ -3644,7 +3649,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 )
 
                 goto_thingy(
-                    window,
+                    window_,
                     thingy_definitions_sorted,
                     goto_on_highlight=goto_on_highlight,
                     goto_side_by_side=goto_side_by_side,
@@ -3653,11 +3658,6 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                         "show_row_col": False,
                     },
                 )
-
-        view_ = self.view
-        view_id_ = self.view.id()
-        view_sel_ = self.view.sel()
-        window_ = self.view.window()
 
         def run_():
             project_path_ = project_path(window_)
@@ -3700,9 +3700,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                     ):
                         thingy_definitions_.extend(thingy_definitions)
 
-            sublime.set_timeout(
-                lambda: goto_thingy_definition(window_, thingy_definitions_), 0
-            )
+            sublime.set_timeout(lambda: done_(thingy_definitions_), 0)
 
         progress.start("")
 
@@ -3830,7 +3828,7 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
 
 
 def goto_thingy_usage(
-    view,
+    window,
     thingy_usages,
     goto_on_highlight=False,
     goto_side_by_side=False,
@@ -3844,7 +3842,7 @@ def goto_thingy_usage(
         location = thingy_location(thingy_usages_[0])
 
         goto(
-            view.window(),
+            window,
             location,
             GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
         )
@@ -3862,7 +3860,7 @@ def goto_thingy_usage(
         # TODO: Quick Panel Item options per semantic.
 
         goto_thingy(
-            view.window(),
+            window,
             thingy_usages_sorted,
             goto_on_highlight=goto_on_highlight,
             goto_side_by_side=goto_side_by_side,
@@ -3886,12 +3884,12 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
         view_sel_ = self.view.sel()
         window_ = self.view.window()
 
-        def done_(thingy_usages_):
+        def done_(thingy_usages):
             progress.stop()
 
             goto_thingy_usage(
-                view_,
-                thingy_usages_,
+                window_,
+                thingy_usages,
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
             )
@@ -3945,7 +3943,7 @@ class PgPepGotoUsageInViewCommand(sublime_plugin.TextCommand):
                     thingy_usages_.extend(thingy_usages)
 
         goto_thingy_usage(
-            self.view,
+            self.view.window(),
             thingy_usages_,
             goto_on_highlight=goto_on_highlight,
             goto_side_by_side=goto_side_by_side,
