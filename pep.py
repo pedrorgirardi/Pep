@@ -3582,15 +3582,18 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
         show_filename=False,
         show_row_col=False,
     ):
+        window_ = self.window
+
         project_path_ = project_path(self.window)
 
-        if analysis_ := paths_analysis(project_path_, not_found=None):
-            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+        def done_(thingy_list):
+            progress.stop()
 
-            thingy_list = sorted(thingy_list, key=thingy_name)
+            if not thingy_list:
+                return
 
             goto_thingy(
-                self.window,
+                window_,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
@@ -3599,6 +3602,17 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
                     "show_row_col": show_row_col,
                 },
             )
+
+        def run_():
+            if analysis_ := paths_analysis(project_path_, not_found=None):
+                thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+                thingy_list = sorted(thingy_list, key=thingy_name)
+
+                sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
