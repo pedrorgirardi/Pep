@@ -2,7 +2,7 @@
 
 ![Pep](logo.png)
 
-**Pep** leverages clj-kondo analysis data to provide code navigation, documentation and usages analysis.
+**Pep** leverages [clj-kondo analysis data](https://github.com/clj-kondo/clj-kondo/tree/master/analysis) to provide code navigation, documentation and usages analysis.
 
 [clj-kondo](https://github.com/clj-kondo/clj-kondo) is the sole dependency, and everything else is supplied by built-in [Sublime Text APIs](https://www.sublimetext.com/docs/api_reference.html).
 
