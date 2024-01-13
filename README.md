@@ -94,7 +94,8 @@ Goto definition of a local binding, var, spec, re-frame handler.
                                "Packages/Tutkain/Clojure (Tutkain).sublime-syntax",
                                "Packages/Tutkain/ClojureScript (Tutkain).sublime-syntax",
                                "Packages/Tutkain/Clojure Common (Tutkain).sublime-syntax",
-                               "Packages/Tutkain/Babashka (Tutkain).sublime-syntax"],
+                               "Packages/Tutkain/Babashka (Tutkain).sublime-syntax",
+                               "Packages/Clojure Sublimed/Clojure (Sublimed).sublime-syntax"],
 
     // Number of seconds to delay the analysis after a view is modified.
     "analysis_delay": 0.6,
@@ -119,8 +120,6 @@ Goto definition of a local binding, var, spec, re-frame handler.
     // (Doesn't do anything if there isn't a *.sublime-project file.)
     "analyze_classpath_on_load_project": true,
 
-    // If you would like to see clj-kondo warnings/errors displayed along the right-hand edge of the view:
-
     // True if warnings/errors should be displayed right after the analysis is completed.
     // It's a 'tighter feedback loop' to display warnings/errors after the analysis, but some might find it distracting.
     "annotate_view_after_analysis": false,
@@ -136,15 +135,6 @@ Goto definition of a local binding, var, spec, re-frame handler.
 
     // True if you would like to see the number of clj-kondo warnings, if any, in the status bar.
     "view_status_show_warnings": false,
-
-    // True if you would like to show the namespace of the view in the status bar.
-    "view_status_show_namespace": false,
-
-    // If you would like to add a custom prefix to the namespace of the view in the status bar.
-    "view_status_show_namespace_prefix": "Namespace: ",
-
-    // If you would like to add a custom suffix to the namespace of the view in the status bar.
-    "view_status_show_namespace_suffix": "",
 
     // True if you would like to see the number of highlighted regions in the status bar.
     "view_status_show_highlighted": false,
