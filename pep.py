@@ -3452,17 +3452,35 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
-        active_view = self.window.active_view()
+        active_view_ = self.window.active_view()
+        active_view_id_ = self.window.active_view().id()
+        window_ = self.window
 
-        view_analysis_ = (
-            view_analysis(active_view.id(), not_found=None) if active_view else None
-        )
+        def done_(thingy_list):
+            progress.stop()
 
-        project_path_ = project_path(self.window)
+            goto_thingy(
+                window_,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
+            )
 
-        paths_analysis_ = paths_analysis(project_path_, not_found=None)
+        def run_():
+            view_analysis_ = (
+                view_analysis(active_view_id_, not_found=None) if active_view_ else None
+            )
 
-        if analysis_ := paths_analysis_ or view_analysis_:
+            project_path_ = project_path(window_)
+
+            paths_analysis_ = paths_analysis(project_path_, not_found=None)
+
+            analysis_ = paths_analysis_ or view_analysis_ or {}
+
             thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(analysis_),
@@ -3473,16 +3491,11 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name)
 
-            goto_thingy(
-                self.window,
-                thingy_list,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-                quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
-                },
-            )
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoKeywordInClasspathCommand(sublime_plugin.WindowCommand):
