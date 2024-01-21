@@ -3743,11 +3743,11 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                             thingy=thingy,
                         )
                         or find_definitions(
-                            analysis=paths_analysis_(),
+                            analysis=classpath_analysis_,
                             thingy=thingy,
                         )
                         or find_definitions(
-                            analysis=classpath_analysis_,
+                            analysis=paths_analysis_(),
                             thingy=thingy,
                         )
                     ):
