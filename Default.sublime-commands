@@ -24,8 +24,8 @@
         "command": "pg_pep_goto_anything_in_view_paths"
     },
     {
-        "caption": "Pep: Outline",
-        "command": "pg_pep_outline"
+        "caption": "Pep: Goto Anything in View",
+        "command": "pg_pep_goto_anything_in_view"
     },
     {
         "caption": "Pep: Goto Namespace in Classpath",

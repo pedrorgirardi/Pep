@@ -2930,6 +2930,7 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
             analyze_classpath_async(self.window)
 
 
+# Deprecated. It should be deleted soon.
 class PgPepOutlineCommand(sublime_plugin.TextCommand):
     """
     Outline Thingies in View.
@@ -3496,6 +3497,43 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
         progress.start("")
 
         threading.Thread(target=run_).start()
+
+
+class PgPepGotoAnythingInViewCommand(sublime_plugin.TextCommand):
+    """
+    Goto namespace, var or keyword in paths or view.
+    """
+
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        thingy_list = thingy_dedupe(
+            [
+                *namespace_definitions(view_analysis_),
+                *var_definitions(view_analysis_),
+                *keyword_regs(view_analysis_),
+            ],
+        )
+
+        thingy_list = sorted(
+            thingy_list,
+            key=lambda thingy: (
+                thingy["row"],
+                thingy["col"],
+            ),
+        )
+
+        goto_thingy(
+            self.view.window(),
+            thingy_list,
+            goto_on_highlight=True,
+            goto_side_by_side=False,
+            quick_panel_item_opts={
+                "show_namespace": False,
+                "show_row_col": False,
+                "show_filename": False,
+            },
+        )
 
 
 class PgPepGotoKeywordInClasspathCommand(sublime_plugin.WindowCommand):
