@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - Fix `thingy_to_region` name-row
 - Delay selection highlight
 - [Create .clj-kondo directory before analysis](https://github.com/pedrorgirardi/Pep/issues/57)
+- Improved Goto Definition performance for view and classpath
 
 ## 0.23.0 - 2023-12-24
 - Find symbol usages from symbol
