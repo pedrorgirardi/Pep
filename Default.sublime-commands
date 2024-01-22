@@ -46,6 +46,14 @@
         }
     },
     {
+        "caption": "Pep: Goto Keyword in Classpath",
+        "command": "pg_pep_goto_keyword_in_classpath"
+    },
+    {
+        "caption": "Pep: Goto Keyword in Paths",
+        "command": "pg_pep_goto_keyword_in_view_paths"
+    },
+    {
         "caption": "Pep: Goto Definition",
         "command": "pg_pep_goto_definition",
         "context": [
