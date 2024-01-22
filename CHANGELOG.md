@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Delay selection highlight
 - [Create .clj-kondo directory before analysis](https://github.com/pedrorgirardi/Pep/issues/57)
 - Improved Goto Definition performance for view and classpath
+- Added Goto Keyword commands to Command Palette
 
 ## 0.23.0 - 2023-12-24
 - Find symbol usages from symbol
