@@ -4284,7 +4284,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             self.highlighter.cancel()
 
         if automatically_highlight(self.view.window()):
-            self.highlighter = threading.Timer(0.1, lambda: highlight_thingy(self.view))
+            self.highlighter = threading.Timer(0.2, lambda: highlight_thingy(self.view))
             self.highlighter.start()
 
     def on_post_save_async(self):
