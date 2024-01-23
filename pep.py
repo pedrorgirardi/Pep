@@ -4237,6 +4237,21 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 # ---
 
 
+# TODO: Try to implement automatically highlight with PepTimer.
+class PepTimer(threading.Timer):
+    def __init__(self, interval, function, args=None, kwargs=None):
+        super(PepTimer, self).__init__(interval, function, args, kwargs)
+        self.is_pending = False
+
+    def start(self):
+        self.is_pending = True
+        super(PepTimer, self).start()
+
+    def cancel(self):
+        self.is_pending = False
+        super(PepTimer, self).cancel()
+
+
 class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
     These 'actions' are configured via settings.
