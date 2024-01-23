@@ -3047,8 +3047,8 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     # only if not found try paths and project analysis.
                     definition = (
                         find_var_definition(view_analysis_, thingy)
-                        or find_var_definition(paths_analysis_(), thingy)
                         or find_var_definition(classpath_analysis_, thingy)
+                        or find_var_definition(paths_analysis_(), thingy)
                     )
 
                 elif (
@@ -3058,15 +3058,15 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ):
                     definition = (
                         find_namespace_definition(view_analysis_, thingy)
-                        or find_namespace_definition(paths_analysis_(), thingy)
                         or find_namespace_definition(classpath_analysis_, thingy)
+                        or find_namespace_definition(paths_analysis_(), thingy)
                     )
 
                 elif thingy_semantic == TT_SYMBOL:
                     definition = (
                         find_symbol_definition(view_analysis_, thingy)
-                        or find_symbol_definition(paths_analysis_(), thingy)
                         or find_symbol_definition(classpath_analysis_, thingy)
+                        or find_symbol_definition(paths_analysis_(), thingy)
                     )
 
             if definition:
@@ -4272,6 +4272,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         self.analyzer = None
         self.highlighter = None
+        self.is_highlight_pending = False
 
     def analyze(self, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
         analyze_view = True
@@ -4281,6 +4282,11 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         if analyze_view:
             analyze_view_async(self.view, afs)
+
+    def highlight(self):
+        self.is_highlight_pending = False
+
+        highlight_thingy(self.view)
 
     def on_activated_async(self):
         self.analyze()
@@ -4299,7 +4305,12 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
             self.highlighter.cancel()
 
         if automatically_highlight(self.view.window()):
-            self.highlighter = threading.Timer(0.2, lambda: highlight_thingy(self.view))
+            interval = 0.2 if self.is_highlight_pending else 0.1
+
+            self.highlighter = threading.Timer(interval, self.highlight)
+
+            self.is_highlight_pending = True
+
             self.highlighter.start()
 
     def on_post_save_async(self):
