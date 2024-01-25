@@ -16,7 +16,7 @@ from zipfile import ZipFile
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
-from . import progress
+from .src import progress
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
