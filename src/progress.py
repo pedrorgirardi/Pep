@@ -1,4 +1,4 @@
-import sublime
+import sublime # type: ignore
 
 bar = None
 
