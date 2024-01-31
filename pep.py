@@ -16,6 +16,8 @@ from zipfile import ZipFile
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
+from .src import progress
+
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
 
@@ -120,7 +122,8 @@ DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
 ]
 
 
-## Mapping of filename to analysis data by semantic, e.g. var-definitions.
+# Mapping of filename to analysis data by semantic, e.g. var-definitions.
+# (filename -> semantic -> list of 'thingies')
 _index_ = {}
 
 _view_analysis_ = {}
@@ -193,44 +196,47 @@ def view_analysis(view_id, not_found={}):
 def paths_analysis(project_path, not_found={}):
     """
     Returns analysis for paths.
+
+    TODO: Comments
     """
+    project_index_ = project_index(project_path, not_found=not_found)
 
-    if project_index_ := project_index(project_path, not_found=not_found):
-        analysis = unify_analysis(project_index_)
-
-        keyword_index_ = keyword_index(analysis)
-
-        namespace_index_ = namespace_index(
-            analysis,
-            nrn=False,
-            nrn_usages=False,
-        )
-
-        symbol_index_ = symbol_index(
-            analysis,
-            srn=False,
-        )
-
-        var_index_ = var_index(
-            analysis,
-            vrn=False,
-            vrn_usages=False,
-        )
-
-        java_class_index_ = java_class_index(
-            analysis,
-            jrn_usages=False,
-        )
-
-        return {
-            **keyword_index_,
-            **namespace_index_,
-            **symbol_index_,
-            **var_index_,
-            **java_class_index_,
-        }
-    else:
+    if not project_index_:
         return not_found
+
+    analysis = unify_analysis(project_index_)
+
+    keyword_index_ = keyword_index(analysis)
+
+    namespace_index_ = namespace_index(
+        analysis,
+        nrn=False,
+        nrn_usages=False,
+    )
+
+    symbol_index_ = symbol_index(
+        analysis,
+        srn=False,
+    )
+
+    var_index_ = var_index(
+        analysis,
+        vrn=False,
+        vrn_usages=False,
+    )
+
+    java_class_index_ = java_class_index(
+        analysis,
+        jrn_usages=False,
+    )
+
+    return {
+        **keyword_index_,
+        **namespace_index_,
+        **symbol_index_,
+        **var_index_,
+        **java_class_index_,
+    }
 
 
 # -- Settings
@@ -302,16 +308,7 @@ def analyze_scratch_view(window):
     return setting(window, "analyze_scratch_view", False)
 
 
-def view_status_show_namespace(window):
-    return setting(window, "view_status_show_namespace", False)
-
-
-def view_status_show_namespace_prefix(window):
-    return setting(window, "view_status_show_namespace_prefix", "")
-
-
-def view_status_show_namespace_suffix(window):
-    return setting(window, "view_status_show_namespace_suffix", "")
+# --- View Status Settings
 
 
 def view_status_show_errors(window):
@@ -332,6 +329,9 @@ def view_status_show_highlighted_prefix(window):
 
 def view_status_show_highlighted_suffix(window):
     return setting(window, "view_status_show_highlighted_suffix", "")
+
+
+# ---
 
 
 def startupinfo():
@@ -1081,26 +1081,22 @@ def htmlify(text):
 
 def open_jar(filename, f):
     """
-    Open JAR `filename` and call `f` with filename and a file-like object (ZipExtFile).
-
-    Filename passed to `f` is a temporary file and it will be removed afterwards.
+    Open JAR `filename` and call `f` with the path of the temporary file.
     """
 
-    filename_split = filename.split(":")
-    filename_jar = filename_split[0]
-    filename_file = filename_split[1]
+    dep_jar, dep_filepath = filename.split(":")
 
-    with ZipFile(filename_jar) as jar:
-        with jar.open(filename_file) as jar_file:
-            tmp_path = pathlib.Path(filename_file)
-            tmp_file_suffix = "." + tmp_path.name
+    with ZipFile(dep_jar) as jar:
+        with jar.open(dep_filepath) as jar_file:
+            tmp_path = os.path.join(tempfile.gettempdir(), dep_filepath)
 
-            descriptor, tempath = tempfile.mkstemp(suffix=tmp_file_suffix)
+            # Create all parent directories of the temporary file:
+            os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
 
-            with os.fdopen(descriptor, "w") as file:
-                file.write(jar_file.read().decode())
+            with open(tmp_path, "w") as tmp_file:
+                tmp_file.write(jar_file.read().decode())
 
-            f(tempath, jar_file)
+            f(tmp_path)
 
 
 def goto(window, location, flags=sublime.ENCODED_POSITION):
@@ -1111,12 +1107,15 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
 
         if ".jar:" in filename:
 
-            def open_file(filename, file):
+            def window_open_file(filename):
                 view = window.open_file(f"{filename}:{line}:{column}", flags=flags)
                 view.set_scratch(True)
                 view.set_read_only(True)
 
-            open_jar(filename, open_file)
+            if is_debug(window):
+                print(f"Pep Debug: Goto JAR {filename}:{line}:{column}")
+
+            open_jar(filename, window_open_file)
 
         else:
             window.open_file(f"{filename}:{line}:{column}", flags=flags)
@@ -1363,6 +1362,9 @@ def goto_thingy(
 
     # Restore active view, its selection, and viewport position - if there's an active view.
 
+    if not thingy_list:
+        return
+
     initial_view = window.active_view()
 
     initial_regions = [region for region in initial_view.sel()] if initial_view else []
@@ -1588,7 +1590,13 @@ def analyze_classpath(window):
         sublime.status_message("Analyzing classpath...")
 
         if is_debug(window):
-            print(f"Pep: Analyzing classpath... {window_project(window)}")
+            print(f"Pep Debug: Analyzing classpath... {window_project(window)}")
+
+        # Analysis doesn't work without a .clj-kondo cache directory:
+        clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
+
+        if not os.path.exists(clj_kondo_cache_directory):
+            os.makedirs(clj_kondo_cache_directory)
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
@@ -1658,7 +1666,7 @@ def analyze_classpath(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+                    f"Pep Debug: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
         return True
@@ -1685,7 +1693,13 @@ def analyze_paths(window):
         sublime.status_message("Analyzing paths...")
 
         if is_debug(window):
-            print(f"Pep: Analyzing paths... {window_project(window)}")
+            print(f"Pep Debug: Analyzing paths... {window_project(window)}")
+
+        # Analysis doesn't work without a .clj-kondo cache directory:
+        clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
+
+        if not os.path.exists(clj_kondo_cache_directory):
+            os.makedirs(clj_kondo_cache_directory)
 
         analysis_subprocess_args = [
             clj_kondo_path(window),
@@ -1723,7 +1737,7 @@ def analyze_paths(window):
 
             if is_debug(window):
                 print(
-                    f"Pep: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+                    f"Pep Debug: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
                 )
 
 
@@ -1731,7 +1745,7 @@ def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
 
 
-def index_analysis(analysis):
+def index_analysis(analysis: dict) -> dict:
     """
     Analyze paths to create indexes for var and namespace definitions, and keywords.
 
@@ -1744,6 +1758,8 @@ def index_analysis(analysis):
       - local-usages
       - keywords
       - java-class-usages
+
+    TODO: Comments
     """
 
     index = {}
@@ -1757,7 +1773,10 @@ def index_analysis(analysis):
     return index
 
 
-def unify_analysis(index):
+def unify_analysis(index: dict) -> dict:
+    """
+    TODO: Comments
+    """
     analysis = {}
 
     for _, analysis_ in index.items():
@@ -1783,7 +1802,7 @@ def thingy_to_region(view, thingy) -> sublime.Region:
     Returns Region for `thingy`.
     """
 
-    row_start = thingy.get("name-now", thingy.get("row"))
+    row_start = thingy.get("name-row", thingy.get("row"))
     col_start = thingy.get("name-col", thingy.get("col"))
 
     row_end = thingy.get("name-end-row", thingy.get("end-row"))
@@ -2369,7 +2388,7 @@ def find_var_definitions(analysis, thingy_data) -> List:
 
 def find_var_usages(analysis, thingy_data) -> List:
     """
-    Returns a list of var_usage.
+    Returns a list of var_usage and symbols.
 
     `thingy_data` can be a Var definition, usage or a symbol.
     """
@@ -2377,6 +2396,7 @@ def find_var_usages(analysis, thingy_data) -> List:
     var_namespace = thingy_data.get("ns") or thingy_data.get("to")
     var_name = thingy_data.get("name")
 
+    # Look up Var usages by key - a tuple with namespace and name:
     var_usages = analysis_vindex_usages(analysis).get(
         (var_namespace, var_name),
         [],
@@ -2384,9 +2404,9 @@ def find_var_usages(analysis, thingy_data) -> List:
 
     # Find usages of symbol too:
     var_symbol = f"{var_namespace}/{var_name}" if var_namespace else var_name
-    symbol_usages = analysis_sindex(analysis).get(var_symbol, [])
+    var_symbol_usages = analysis_sindex(analysis).get(var_symbol, [])
 
-    return var_usages + symbol_usages
+    return var_usages + var_symbol_usages
 
 
 def find_java_class_definition(analysis, thingy_data):
@@ -2556,8 +2576,6 @@ def find_usages(analysis, thingy) -> Optional[List]:
         return find_local_usages(analysis, thingy)
 
     elif thingy_semantic == TT_VAR_DEFINITION or thingy_semantic == TT_VAR_USAGE:
-        # TODO: Search symbols too.
-
         return find_var_usages(analysis, thingy)
 
     elif thingy_semantic == TT_SYMBOL:
@@ -2892,7 +2910,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
         clear_cache()
 
         if is_debug(self.window):
-            print("Pep: Cleared cache")
+            print("Pep Debug: Cleared cache")
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -2912,6 +2930,7 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
             analyze_classpath_async(self.window)
 
 
+# Deprecated. It should be deleted soon.
 class PgPepOutlineCommand(sublime_plugin.TextCommand):
     """
     Outline Thingies in View.
@@ -2997,7 +3016,18 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
 
         project_path_ = project_path(self.view.window())
 
-        paths_analysis_ = paths_analysis(project_path_)
+        def paths_analysis_delay():
+            analysis = None
+
+            def f():
+                nonlocal analysis
+                if analysis is None:
+                    analysis = paths_analysis(project_path_)
+                return analysis
+
+            return f
+
+        paths_analysis_ = paths_analysis_delay()
 
         classpath_analysis_ = classpath_analysis(project_path_)
 
@@ -3017,8 +3047,8 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     # only if not found try paths and project analysis.
                     definition = (
                         find_var_definition(view_analysis_, thingy)
-                        or find_var_definition(paths_analysis_, thingy)
                         or find_var_definition(classpath_analysis_, thingy)
+                        or find_var_definition(paths_analysis_(), thingy)
                     )
 
                 elif (
@@ -3028,15 +3058,15 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ):
                     definition = (
                         find_namespace_definition(view_analysis_, thingy)
-                        or find_namespace_definition(paths_analysis_, thingy)
                         or find_namespace_definition(classpath_analysis_, thingy)
+                        or find_namespace_definition(paths_analysis_(), thingy)
                     )
 
                 elif thingy_semantic == TT_SYMBOL:
                     definition = (
                         find_symbol_definition(view_analysis_, thingy)
-                        or find_symbol_definition(paths_analysis_, thingy)
                         or find_symbol_definition(classpath_analysis_, thingy)
+                        or find_symbol_definition(paths_analysis_(), thingy)
                     )
 
             if definition:
@@ -3375,9 +3405,27 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
+        window_ = self.window
+
         project_path_ = project_path(self.window)
 
-        if classpath_analysis_ := classpath_analysis(project_path_, not_found=None):
+        def done_(thingy_list):
+            progress.stop()
+
+            goto_thingy(
+                window_,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
+            )
+
+        def run_():
+            classpath_analysis_ = classpath_analysis(project_path_, not_found={})
+
             thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(classpath_analysis_),
@@ -3388,16 +3436,11 @@ class PgPepGotoAnythingInClasspathCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name)
 
-            goto_thingy(
-                self.window,
-                thingy_list,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-                quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
-                },
-            )
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
@@ -3410,17 +3453,35 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
-        active_view = self.window.active_view()
+        active_view_ = self.window.active_view()
+        active_view_id_ = self.window.active_view().id()
+        window_ = self.window
 
-        view_analysis_ = (
-            view_analysis(active_view.id(), not_found=None) if active_view else None
-        )
+        def done_(thingy_list):
+            progress.stop()
 
-        project_path_ = project_path(self.window)
+            goto_thingy(
+                window_,
+                thingy_list,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
+                quick_panel_item_opts={
+                    "show_namespace": True,
+                    "show_row_col": False,
+                },
+            )
 
-        paths_analysis_ = paths_analysis(project_path_, not_found=None)
+        def run_():
+            view_analysis_ = (
+                view_analysis(active_view_id_, not_found=None) if active_view_ else None
+            )
 
-        if analysis_ := paths_analysis_ or view_analysis_:
+            project_path_ = project_path(window_)
+
+            paths_analysis_ = paths_analysis(project_path_, not_found=None)
+
+            analysis_ = paths_analysis_ or view_analysis_ or {}
+
             thingy_list = thingy_dedupe(
                 [
                     *namespace_definitions(analysis_),
@@ -3431,16 +3492,48 @@ class PgPepGotoAnythingInViewPathsCommand(sublime_plugin.WindowCommand):
 
             thingy_list = sorted(thingy_list, key=thingy_name)
 
-            goto_thingy(
-                self.window,
-                thingy_list,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-                quick_panel_item_opts={
-                    "show_namespace": True,
-                    "show_row_col": False,
-                },
-            )
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
+
+
+class PgPepGotoAnythingInViewCommand(sublime_plugin.TextCommand):
+    """
+    Goto namespace, var or keyword in paths or view.
+    """
+
+    def run(self, edit):
+        view_analysis_ = view_analysis(self.view.id())
+
+        thingy_list = thingy_dedupe(
+            [
+                *namespace_definitions(view_analysis_),
+                *var_definitions(view_analysis_),
+                *keyword_regs(view_analysis_),
+            ],
+        )
+
+        thingy_list = sorted(
+            thingy_list,
+            key=lambda thingy: (
+                thingy["row"],
+                thingy["col"],
+            ),
+        )
+
+        goto_thingy(
+            self.view.window(),
+            thingy_list,
+            goto_on_highlight=True,
+            goto_side_by_side=False,
+            quick_panel_item_opts={
+                "show_namespace": False,
+                "show_row_col": False,
+                "show_filename": False,
+            },
+        )
 
 
 class PgPepGotoKeywordInClasspathCommand(sublime_plugin.WindowCommand):
@@ -3525,15 +3618,15 @@ class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
         show_filename=False,
         show_row_col=False,
     ):
+        window_ = self.window
+
         project_path_ = project_path(self.window)
 
-        if analysis_ := classpath_analysis(project_path_, not_found=None):
-            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
-
-            thingy_list = sorted(thingy_list, key=thingy_name)
+        def done_(thingy_list):
+            progress.stop()
 
             goto_thingy(
-                self.window,
+                window_,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
@@ -3542,6 +3635,18 @@ class PgPepGotoNamespaceInClasspathCommand(sublime_plugin.WindowCommand):
                     "show_row_col": show_row_col,
                 },
             )
+
+        def run_():
+            analysis_ = classpath_analysis(project_path_, not_found={})
+
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+            thingy_list = sorted(thingy_list, key=thingy_name)
+
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
@@ -3556,15 +3661,15 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
         show_filename=False,
         show_row_col=False,
     ):
+        window_ = self.window
+
         project_path_ = project_path(self.window)
 
-        if analysis_ := paths_analysis(project_path_, not_found=None):
-            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
-
-            thingy_list = sorted(thingy_list, key=thingy_name)
+        def done_(thingy_list):
+            progress.stop()
 
             goto_thingy(
-                self.window,
+                window_,
                 thingy_list,
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
@@ -3573,6 +3678,18 @@ class PgPepGotoNamespaceInViewPathsCommand(sublime_plugin.WindowCommand):
                     "show_row_col": show_row_col,
                 },
             )
+
+        def run_():
+            analysis_ = paths_analysis(project_path_, not_found={})
+
+            thingy_list = thingy_dedupe(namespace_definitions(analysis_))
+            thingy_list = sorted(thingy_list, key=thingy_name)
+
+            sublime.set_timeout(lambda: done_(thingy_list), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
@@ -3588,43 +3705,24 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
         goto_on_highlight=True,
         goto_side_by_side=False,
     ):
-        project_path_ = project_path(self.view.window())
+        view_ = self.view
+        view_id_ = self.view.id()
+        view_sel_ = self.view.sel()
+        window_ = self.view.window()
 
-        view_analysis_ = view_analysis(self.view.id())
+        def done_(thingy_definitions):
+            progress.stop()
 
-        paths_analysis_ = paths_analysis(project_path_)
+            if not thingy_definitions:
+                return
 
-        classpath_analysis_ = classpath_analysis(project_path_)
+            thingy_definitions = thingy_dedupe(thingy_definitions)
 
-        # Store usages of Thingy at region(s).
-        thingy_definitions_ = []
-
-        for region in self.view.sel():
-            if thingy := thingy_at(self.view, view_analysis_, region):
-                if (
-                    thingy_definitions := find_definitions(
-                        analysis=view_analysis_,
-                        thingy=thingy,
-                    )
-                    or find_definitions(
-                        analysis=paths_analysis_,
-                        thingy=thingy,
-                    )
-                    or find_definitions(
-                        analysis=classpath_analysis_,
-                        thingy=thingy,
-                    )
-                ):
-                    thingy_definitions_.extend(thingy_definitions)
-
-        if thingy_definitions_:
-            thingy_definitions_ = thingy_dedupe(thingy_definitions_)
-
-            if len(thingy_definitions_) == 1:
-                location = thingy_location(thingy_definitions_[0])
+            if len(thingy_definitions) == 1:
+                location = thingy_location(thingy_definitions[0])
 
                 goto(
-                    self.view.window(),
+                    window_,
                     location,
                     GOTO_SIDE_BY_SIDE_FLAGS
                     if goto_side_by_side
@@ -3633,7 +3731,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
 
             else:
                 thingy_definitions_sorted = sorted(
-                    thingy_definitions_,
+                    thingy_definitions,
                     key=lambda thingy_definition: [
                         thingy_definition.get("filename"),
                         thingy_definition.get("row"),
@@ -3642,7 +3740,7 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                 )
 
                 goto_thingy(
-                    self.view.window(),
+                    window_,
                     thingy_definitions_sorted,
                     goto_on_highlight=goto_on_highlight,
                     goto_side_by_side=goto_side_by_side,
@@ -3651,6 +3749,53 @@ class PgPepGotoDefinitionCommand(sublime_plugin.TextCommand):
                         "show_row_col": False,
                     },
                 )
+
+        def run_():
+            project_path_ = project_path(window_)
+
+            def paths_analysis_delay():
+                analysis = None
+
+                def f():
+                    nonlocal analysis
+                    if analysis is None:
+                        analysis = paths_analysis(project_path_)
+                    return analysis
+
+                return f
+
+            view_analysis_ = view_analysis(view_id_)
+
+            classpath_analysis_ = classpath_analysis(project_path_)
+
+            paths_analysis_ = paths_analysis_delay()
+
+            # Store usages of Thingy at region(s).
+            thingy_definitions_ = []
+
+            for region in view_sel_:
+                if thingy := thingy_at(view_, view_analysis_, region):
+                    if (
+                        thingy_definitions := find_definitions(
+                            analysis=view_analysis_,
+                            thingy=thingy,
+                        )
+                        or find_definitions(
+                            analysis=paths_analysis_(),
+                            thingy=thingy,
+                        )
+                        or find_definitions(
+                            analysis=classpath_analysis_,
+                            thingy=thingy,
+                        )
+                    ):
+                        thingy_definitions_.extend(thingy_definitions)
+
+            sublime.set_timeout(lambda: done_(thingy_definitions_), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoNamespaceUsageInViewCommand(sublime_plugin.TextCommand):
@@ -3774,18 +3919,21 @@ class PgPepGotoRequireImportInViewCommand(sublime_plugin.TextCommand):
 
 
 def goto_thingy_usage(
-    view,
+    window,
     thingy_usages,
     goto_on_highlight=False,
     goto_side_by_side=False,
 ):
+    if not thingy_usages:
+        return
+
     thingy_usages_ = thingy_dedupe(thingy_usages)
 
     if len(thingy_usages_) == 1:
         location = thingy_location(thingy_usages_[0])
 
         goto(
-            view.window(),
+            window,
             location,
             GOTO_SIDE_BY_SIDE_FLAGS if goto_side_by_side else GOTO_DEFAULT_FLAGS,
         )
@@ -3803,7 +3951,7 @@ def goto_thingy_usage(
         # TODO: Quick Panel Item options per semantic.
 
         goto_thingy(
-            view.window(),
+            window,
             thingy_usages_sorted,
             goto_on_highlight=goto_on_highlight,
             goto_side_by_side=goto_side_by_side,
@@ -3822,33 +3970,47 @@ class PgPepGotoUsageCommand(sublime_plugin.TextCommand):
         goto_on_highlight=False,
         goto_side_by_side=False,
     ):
-        view_analysis_ = view_analysis(self.view.id())
+        view_ = self.view
+        view_id_ = self.view.id()
+        view_sel_ = self.view.sel()
+        window_ = self.view.window()
 
-        project_path_ = project_path(self.view.window())
+        def done_(thingy_usages):
+            progress.stop()
 
-        paths_analysis_ = paths_analysis(project_path_)
-
-        # Store usages of Thingy at region(s).
-        thingy_usages_ = []
-
-        for region in self.view.sel():
-            if thingy := thingy_at(self.view, view_analysis_, region):
-                if thingy_usages := find_usages(
-                    analysis=paths_analysis_,
-                    thingy=thingy,
-                ) or find_usages(
-                    analysis=view_analysis_,
-                    thingy=thingy,
-                ):
-                    thingy_usages_.extend(thingy_usages)
-
-        if thingy_usages_:
             goto_thingy_usage(
-                self.view,
-                thingy_usages_,
+                window_,
+                thingy_usages,
                 goto_on_highlight=goto_on_highlight,
                 goto_side_by_side=goto_side_by_side,
             )
+
+        def run_():
+            view_analysis_ = view_analysis(view_id_)
+
+            project_path_ = project_path(window_)
+
+            paths_analysis_ = paths_analysis(project_path_)
+
+            # Store usages of Thingy at region(s).
+            thingy_usages_ = []
+
+            for region in view_sel_:
+                if thingy := thingy_at(view_, view_analysis_, region):
+                    if thingy_usages := find_usages(
+                        analysis=paths_analysis_,
+                        thingy=thingy,
+                    ) or find_usages(
+                        analysis=view_analysis_,
+                        thingy=thingy,
+                    ):
+                        thingy_usages_.extend(thingy_usages)
+
+            sublime.set_timeout(lambda: done_(thingy_usages_), 0)
+
+        progress.start("")
+
+        threading.Thread(target=run_).start()
 
 
 class PgPepGotoUsageInViewCommand(sublime_plugin.TextCommand):
@@ -3871,13 +4033,12 @@ class PgPepGotoUsageInViewCommand(sublime_plugin.TextCommand):
                 ):
                     thingy_usages_.extend(thingy_usages)
 
-        if thingy_usages_:
-            goto_thingy_usage(
-                self.view,
-                thingy_usages_,
-                goto_on_highlight=goto_on_highlight,
-                goto_side_by_side=goto_side_by_side,
-            )
+        goto_thingy_usage(
+            self.view.window(),
+            thingy_usages_,
+            goto_on_highlight=goto_on_highlight,
+            goto_side_by_side=goto_side_by_side,
+        )
 
 
 class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
@@ -4095,6 +4256,8 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         super().__init__(view)
 
         self.analyzer = None
+        self.highlighter = None
+        self.is_highlight_pending = False
 
     def analyze(self, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
         analyze_view = True
@@ -4104,6 +4267,11 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         if analyze_view:
             analyze_view_async(self.view, afs)
+
+    def highlight(self):
+        self.is_highlight_pending = False
+
+        highlight_thingy(self.view)
 
     def on_activated_async(self):
         self.analyze()
@@ -4118,8 +4286,16 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.analyzer.start()
 
     def on_selection_modified_async(self):
+        if self.highlighter:
+            self.highlighter.cancel()
+
         if automatically_highlight(self.view.window()):
-            highlight_thingy(self.view)
+            interval = 0.3 if self.is_highlight_pending else 0.1
+
+            self.is_highlight_pending = True
+
+            self.highlighter = threading.Timer(interval, self.highlight)
+            self.highlighter.start()
 
     def on_post_save_async(self):
         # Include function to annotate view on save (if applicable).
@@ -4152,7 +4328,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
         """
         if project_path_ := project_path(window):
             if is_debug(window):
-                print(f"Pep: Clear project cache: {project_path_}")
+                print(f"Pep Debug: Clear project cache: {project_path_}")
 
             clear_project_index(project_path_)
 
