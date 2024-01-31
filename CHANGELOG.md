@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.24.0 - in development
+## 0.24.0 - 2024-01-30
 - Fix `thingy_to_region` name-row
 - Delay selection highlight
 - [Create .clj-kondo directory before analysis](https://github.com/pedrorgirardi/Pep/issues/57)
