@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.25.0 - in development
+- PgPepShowDocCommand: lookup paths before classpath
+
 ## 0.24.0 - 2024-01-30
 - Fix `thingy_to_region` name-row
 - Delay selection highlight

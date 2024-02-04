@@ -3047,8 +3047,8 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     # only if not found try paths and project analysis.
                     definition = (
                         find_var_definition(view_analysis_, thingy)
-                        or find_var_definition(classpath_analysis_, thingy)
                         or find_var_definition(paths_analysis_(), thingy)
+                        or find_var_definition(classpath_analysis_, thingy)
                     )
 
                 elif (
@@ -3058,15 +3058,15 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ):
                     definition = (
                         find_namespace_definition(view_analysis_, thingy)
-                        or find_namespace_definition(classpath_analysis_, thingy)
                         or find_namespace_definition(paths_analysis_(), thingy)
+                        or find_namespace_definition(classpath_analysis_, thingy)
                     )
 
                 elif thingy_semantic == TT_SYMBOL:
                     definition = (
                         find_symbol_definition(view_analysis_, thingy)
-                        or find_symbol_definition(classpath_analysis_, thingy)
                         or find_symbol_definition(paths_analysis_(), thingy)
+                        or find_symbol_definition(classpath_analysis_, thingy)
                     )
 
             if definition:
