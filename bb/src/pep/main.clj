@@ -1,3 +1,3 @@
 (ns pep.main
   (:require
-   [clj-kondo.core :as clj-kondo]))
+   [pod.borkdude.clj-kondo :as clj-kondo]))

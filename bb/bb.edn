@@ -1,1 +1,4 @@
-{:deps {pedrorgirardi/pep {:local/root "."}}}
+{:paths ["src"]
+
+ :pods
+ {clj-kondo/clj-kondo {:version "2024.02.12"}}}
