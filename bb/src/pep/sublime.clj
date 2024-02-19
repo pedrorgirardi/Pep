@@ -8,10 +8,16 @@
 
 (def stdin-lint-config
   {:analysis
-   {:arglists true
+   {:var-definitions true
+    :var-usages true
+    :arglists true
     :locals true
     :keywords true
-    :java-class-usages true}
+    :symbols true
+    :java-class-definitions false
+    :java-class-usages true
+    :java-member-definitions false
+    :instance-invocations true}
 
    :output
    {:canonical-paths true}})
