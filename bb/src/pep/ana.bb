@@ -3,6 +3,7 @@
    [clojure.string :as str]
 
    [babashka.fs :as fs]
+   [babashka.process :refer [shell]]
    [pod.borkdude.clj-kondo :as clj-kondo]
    [cheshire.core :as json]))
 
@@ -76,6 +77,25 @@
   (doseq [[filename analysis] (filename->analysis analysis)]
     (spit (dbfile filename) (json/generate-string analysis))))
 
+(defn- dbc
+  "Executes DuckDB command."
+  [command]
+  (shell
+    {:out :string
+     :err :string
+     :continue true}
+    "duckdb"
+    "-json"
+    "-c" (str "INSTALL json; LOAD json; " command)))
+
+(defn- dbq
+  "Query DuckDB."
+  [query]
+  (let [{:keys [cmd out err]} (dbc query)]
+    (if (str/blank? err)
+      out
+      (throw (ex-info err {:cmd cmd})))))
+
 (comment
 
   (persist!
@@ -88,6 +108,10 @@
     (clj-kondo/run!
       {:lint ["/Users/pedro/Developer/Velos/rex.system/rex.ingestion/src/rex/ingestion.clj"]
        :config lint-config}))
+
+  (dbq
+    "SELECT name FROM '/Users/pedro/Downloads/ingestion.clj.json' WHERE _sem = 'var-definitions'")
+
 
 
 
