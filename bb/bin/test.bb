@@ -6,9 +6,13 @@
 
 (cp/add-classpath "src:test")
 
-(require 'pep.sublime-test)
+(require
+  'pep.sublime-test
+  'pep.ana-test)
 
-(let [test-results (t/run-tests 'pep.sublime-test)
+(let [test-results (t/run-tests
+                     'pep.sublime-test
+                     'pep.ana-test)
 
       {:keys [fail error]} test-results]
 

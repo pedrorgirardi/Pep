@@ -114,5 +114,3 @@
     (pprint/pprint
       (namespace-index (:analysis result)))))
 
-
-;; cat /Users/pedro/Library/Application\ Support/Sublime\ Text/Packages/Pep/bb/src/pep/sublime.bb | bb -x pep.sublime/analyze-stdin! | pbcopy
