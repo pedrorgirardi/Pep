@@ -56,8 +56,8 @@
                   (into [] (map #(assoc % :_sem sem)) data)))]
     (group-by :filename (into [] xform analysis))))
 
-(defn dbdir []
-  (fs/file (fs/temp-dir) "pep"))
+(defn dbdir [dbname]
+  (fs/file (fs/temp-dir) "pep" "db" dbname))
 
 (defn dbfilename [filename]
   (str
@@ -67,15 +67,18 @@
         (str/split filename (re-pattern fs/file-separator))))
     ".json"))
 
-(defn dbfile [filename]
-  (fs/file (dbdir) (dbfilename filename)))
+(defn dbsave! [dbname {:keys [analysis]}]
+  (when-not (fs/exists? (dbdir dbname))
+    (fs/create-dir (dbdir dbname)))
 
-(defn persist! [{:keys [analysis]}]
-  (when-not (fs/exists? (dbdir))
-    (fs/create-dir (dbdir)))
+  (reduce
+    (fn [F [filename analysis]]
+      (let [f (fs/file (dbdir dbname) (dbfilename filename))]
+        (spit f (json/generate-string analysis))
 
-  (doseq [[filename analysis] (filename->analysis analysis)]
-    (spit (dbfile filename) (json/generate-string analysis))))
+        (conj F f)))
+    #{}
+    (filename->analysis analysis)))
 
 (defn- dbc
   "Executes DuckDB command."
@@ -98,21 +101,21 @@
 
 (comment
 
-  (persist!
+  (dbsave! "pep"
     (clj-kondo/run!
-      {:lint ["src/pep/ana.bb"]
-       :config lint-config}))
+      {:config lint-config
+       :lint
+       ["src/pep/ana.bb"
+        "src/pep/sublime.bb"]}))
 
 
-  (persist!
+  (dbsave! "rex.system"
     (clj-kondo/run!
       {:lint ["/Users/pedro/Developer/Velos/rex.system/rex.ingestion/src/rex/ingestion.clj"]
        :config lint-config}))
 
   (dbq
     "SELECT name FROM '/Users/pedro/Downloads/ingestion.clj.json' WHERE _sem = 'var-definitions'")
-
-
 
 
   )
