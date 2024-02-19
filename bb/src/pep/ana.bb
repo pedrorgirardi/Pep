@@ -1,4 +1,50 @@
-(ns pep.ana)
+(ns pep.ana
+  (:require
+   [clojure.string :as str]
+
+   [babashka.fs :as fs]
+   [pod.borkdude.clj-kondo :as clj-kondo]
+   [cheshire.core :as json]))
+
+(def lint-config
+  {:analysis
+   {:var-definitions true
+    :var-usages true
+    :arglists true
+    :locals true
+    :keywords true
+    :symbols true
+    :java-class-definitions false
+    :java-class-usages true
+    :java-member-definitions false
+    :instance-invocations true}
+
+   :output
+   {:canonical-paths true}})
+
+(defn lint-stdin!
+  ([]
+   (lint-stdin! {:config lint-config}))
+  ([{:keys [config]}]
+   (try
+     (let [f (doto
+               (java.io.File/createTempFile "pep_" ".clj")
+               (spit (slurp *in*)))
+
+           result (clj-kondo/run!
+                    {:lint [(.getPath f)]
+                     :config config})]
+
+       (try
+         (.delete f)
+         (catch Exception _
+           nil))
+
+       result)
+     (catch Exception _
+       ;; TODO: Logging
+
+       nil))))
 
 (defn filename->analysis
   "Returns a mapping of filename to its analysis data."
@@ -9,22 +55,40 @@
                   (into [] (map #(assoc % :_sem sem)) data)))]
     (group-by :filename (into [] xform analysis))))
 
+(defn dbdir []
+  (fs/file (fs/temp-dir) "pep"))
+
+(defn dbfilename [filename]
+  (str
+    (str/join "_"
+      (into []
+        (remove str/blank?)
+        (str/split filename (re-pattern fs/file-separator))))
+    ".json"))
+
+(defn dbfile [filename]
+  (fs/file (dbdir) (dbfilename filename)))
+
+(defn persist! [{:keys [analysis]}]
+  (when-not (fs/exists? (dbdir))
+    (fs/create-dir (dbdir)))
+
+  (doseq [[filename analysis] (filename->analysis analysis)]
+    (spit (dbfile filename) (json/generate-string analysis))))
 
 (comment
 
-  ;; cat /Users/pedro/Library/Application\ Support/Sublime\ Text/Packages/Pep/bb/src/pep/sublime.bb | bb -x pep.sublime/analyze-stdin! | pbcopy
-
-  (require '[babashka.fs :as fs])
-
-  fs/file-separator
-  fs/path-separator
-  fs/temp-dir
+  (persist!
+    (clj-kondo/run!
+      {:lint ["src/pep/ana.bb"]
+       :config lint-config}))
 
 
-  (require '[clojure.string :as str])
-  (str/replace "/private/var/folders/33/kv329l5x2nbglsc_2f2z6pw40000gn/T/pep1341669416854084134.bb" fs/file-separator "_")
+  (persist!
+    (clj-kondo/run!
+      {:lint ["/Users/pedro/Developer/Velos/rex.system/rex.ingestion/src/rex/ingestion.clj"]
+       :config lint-config}))
 
-  (let [{:keys [analysis]} (with-in-str (slurp "src/pep/sublime.bb") (lint-stdin!))]
-    (filename->analysis analysis))
+
 
   )
