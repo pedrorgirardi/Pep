@@ -6,9 +6,7 @@
 
 (deftest namespace-index-test
   (let [{:keys [analysis]} (with-in-str (slurp "src/pep/sublime.bb")
-                             (sublime/lint-stdin!
-                               {:filename "sublime.bb"
-                                :config sublime/stdin-lint-config}))
+                             (sublime/lint-stdin!))
 
         {:keys [nindex nrn]} (sublime/namespace-index analysis)
 

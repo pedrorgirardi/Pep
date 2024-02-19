@@ -84,9 +84,8 @@
 (defn lint-stdin!
   ([]
    (lint-stdin!
-     {:filename "?"
-      :config stdin-lint-config}))
-  ([{:keys [filename config]}]
+     {:config stdin-lint-config}))
+  ([{:keys [config]}]
    (try
      (let [f (doto
                (java.io.File/createTempFile "pep" ".bb")
@@ -94,7 +93,6 @@
 
            result (clj-kondo/run!
                     {:lint [(.getPath f)]
-                     :filename filename
                      :config config})]
 
        (try
