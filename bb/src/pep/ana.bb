@@ -1,6 +1,7 @@
 (ns pep.ana
   (:require
    [clojure.string :as str]
+   [clojure.tools.deps :as deps]
 
    [babashka.fs :as fs]
    [babashka.process :refer [shell]]
@@ -116,6 +117,30 @@
 
   (dbq
     "SELECT name FROM '/Users/pedro/Downloads/ingestion.clj.json' WHERE _sem = 'var-definitions'")
+
+
+  (let [deps-file (fs/file "/Users/pedro/Developer/Velos/rex.system/rex.ingestion/deps.edn")
+        deps-map (deps/slurp-deps deps-file)
+
+        {:keys [classpath-roots]} (deps/create-basis {:projet deps-map})]
+    (dbsave! "rex.system"
+      (clj-kondo/run!
+        {:lint classpath-roots
+         :config lint-config})))
+
+
+  (require '[clojure.pprint :as pprint])
+
+  (pprint/print-table
+    (json/parse-string
+      (dbq
+        "SELECT
+       ns, name, filename
+     FROM
+       '/var/folders/33/kv329l5x2nbglsc_2f2z6pw40000gn/T/pep/db/rex.system/*.json'
+     WHERE
+      _sem = 'var-definitions'
+      AND ns = 'clojure.core'")))
 
 
   )
