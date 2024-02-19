@@ -49,11 +49,11 @@
                     (let [namespace-definition (assoc namespace-definition :_semantic TT_NAMESPACE_DEFINITION)
 
                           index (if nindex
-                                  (update-in index [:nindex (:name namespace-definition)] (fnil conj []) namespace-definition)
+                                  (update-in index [:nindex (:name namespace-definition)] (fnil conj #{}) namespace-definition)
                                   index)
 
                           index (if nrn
-                                  (update-in index [:nrn (:name-row namespace-definition)] (fnil conj []) namespace-definition)
+                                  (update-in index [:nrn (:name-row namespace-definition)] (fnil conj #{}) namespace-definition)
                                   index)]
                       index))
                   {:nindex {}
@@ -65,13 +65,13 @@
                     (let [namespace-usage (assoc namespace-usage :_semantic TT_NAMESPACE_USAGE)
 
                           index (if nindex_usages
-                                  (update-in index [:nindex_usages (:to namespace-usage)] (fnil conj []) namespace-usage)
+                                  (update-in index [:nindex_usages (:to namespace-usage)] (fnil conj #{}) namespace-usage)
                                   index)
 
                           index (if nrn_usages
-                                  (let [index (update-in index [:nrn_usages (:name-row namespace-usage)] (fnil conj []) namespace-usage)]
+                                  (let [index (update-in index [:nrn_usages (:name-row namespace-usage)] (fnil conj #{}) namespace-usage)]
                                     (if-let [alias-row (:alias-row namespace-usage)]
-                                      (update-in index [:nrn_usages alias-row] (fnil conj []) namespace-usage)
+                                      (update-in index [:nrn_usages alias-row] (fnil conj #{}) namespace-usage)
                                       index))
                                   index)]
                       index))
@@ -89,13 +89,13 @@
   ([{:keys [filename config]}]
    (try
      (let [f (doto
-               (java.io.File/createTempFile "pep" ".clj")
+               (java.io.File/createTempFile "pep" ".bb")
                (spit (slurp *in*)))
 
            result (clj-kondo/run!
-                 {:lint [(.getPath f)]
-                  :filename filename
-                  :config config})]
+                    {:lint [(.getPath f)]
+                     :filename filename
+                     :config config})]
 
        (try
          (.delete f)
@@ -117,4 +117,4 @@
       (namespace-index (:analysis result)))))
 
 
-;; cat /Users/pedro/Library/Application\ Support/Sublime\ Text/Packages/Pep/bb/src/pep/sublime.clj | bb -x pep.sublime/analyze-stdin! | pbcopy
+;; cat /Users/pedro/Library/Application\ Support/Sublime\ Text/Packages/Pep/bb/src/pep/sublime.bb | bb -x pep.sublime/analyze-stdin! | pbcopy
