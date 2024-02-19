@@ -46,3 +46,6 @@
                       {:filename filename
                        :config stdin-lint-config})]
     (pprint/pprint result)))
+
+
+;; cat /Users/pedro/Library/Application\ Support/Sublime\ Text/Packages/Pep/bb/src/pep/sublime.clj | bb -x pep.sublime/analyze-stdin! | pbcopy
