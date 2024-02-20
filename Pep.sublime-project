@@ -8,8 +8,8 @@
         "classpath": "clojure -Spath",
         "paths": [
             "tests",
-            "bb/src",
-            "bb/test"
+            "backend/src",
+            "backend/test"
         ]
     }
 }
