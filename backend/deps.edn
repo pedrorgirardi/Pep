@@ -11,4 +11,15 @@
 
  :aliases
  {:repl
-  {:jvm-opts ["-Dclojure.server.repl={:port,5555,:accept,clojure.core.server/repl}"]}}}
+  {:jvm-opts ["-Dclojure.server.repl={:port,5555,:accept,clojure.core.server/repl}"]}
+
+  :test
+  {:extra-paths ["test"]}
+
+  :test-runner
+  {:extra-deps
+   {com.cognitect/test-runner
+    {:git/url "https://github.com/cognitect-labs/test-runner.git"
+     :sha "7284cda41fb9edc0f3bc6b6185cfb7138fc8a023"}}
+
+   :exec-fn cognitect.test-runner.api/test}}}

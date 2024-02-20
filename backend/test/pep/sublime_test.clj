@@ -5,7 +5,7 @@
    [pep.sublime :as sublime]))
 
 (deftest namespace-index-test
-  (let [{:keys [analysis]} (with-in-str (slurp "src/pep/sublime.bb")
+  (let [{:keys [analysis]} (with-in-str (slurp "src/pep/sublime.clj")
                              (sublime/lint-stdin!))
 
         {:keys [nindex nrn]} (sublime/namespace-index analysis)
