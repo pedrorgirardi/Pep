@@ -122,6 +122,15 @@
       (namespace-index (:analysis result)))))
 
 
+(defn deps-paths
+  "Returns a vector containing paths and extra-paths."
+  [deps-map]
+  (reduce-kv
+    (fn [paths _ {:keys [extra-paths]}]
+      (into paths extra-paths))
+    (:paths deps-map)
+    (:aliases deps-map)))
+
 (defn analyze-classpath! [{:keys [project_base_name project_path]}]
   (when-let [deps-map (deps/slurp-deps (fs/file project_path "deps.edn"))]
     (when-let [basis (binding [b/*project-root* project_path]
