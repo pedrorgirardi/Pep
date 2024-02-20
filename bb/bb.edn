@@ -1,5 +1,8 @@
 {:paths ["src"]
 
+ :deps
+ {io.github.babashka/tools.bbuild {:git/sha "f5a4acaf25ec2bc5582853758ba81383fff5e86b"}}
+
  :pods
  {clj-kondo/clj-kondo {:version "2024.02.12"}
   org.babashka/tools-deps-native {:version "0.1.6"}}}

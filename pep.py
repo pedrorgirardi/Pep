@@ -1027,6 +1027,10 @@ def project_path(window) -> Optional[str]:
     return window.extract_variables().get("project_path") if window else None
 
 
+def project_base_name(window) -> Optional[str]:
+    return window.extract_variables().get("project_base_name") if window else None
+
+
 def window_project(window) -> Optional[str]:
     return window.extract_variables().get("project") if window else None
 
@@ -1743,6 +1747,35 @@ def analyze_paths(window):
 
 def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
+
+
+def analyze_classpath_v2(window):
+    def bbx():
+        args = [
+            "bb",
+            "-x",
+            "pep.sublime/analyze-classpath",
+            "--project_base_name",
+            project_base_name(window),
+            "--project_path",
+            project_path(window),
+        ]
+
+        t0 = time.time()
+
+        process = subprocess.run(
+            args,
+            cwd=pathlib.Path(sublime.packages_path(), "Pep", "bb"),
+            text=True,
+            capture_output=True,
+            startupinfo=startupinfo(),
+        )
+
+        process.check_returncode()
+
+        print(f"Pep Debug: Classpath analysis v2 is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]")
+
+    threading.Thread(target=bbx, daemon=True).start()
 
 
 def index_analysis(analysis: dict) -> dict:
@@ -4321,6 +4354,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
         if setting(window, "analyze_classpath_on_load_project", False):
             analyze_classpath_async(window)
+            analyze_classpath_v2(window)
 
     def on_pre_close_project(self, window):
         """
@@ -4345,3 +4379,4 @@ def plugin_loaded():
 
         if setting(window, "analyze_classpath_on_plugin_loaded", False):
             analyze_classpath_async(window)
+            analyze_classpath_v2(window)

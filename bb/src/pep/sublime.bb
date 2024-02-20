@@ -1,7 +1,13 @@
 (ns pep.sublime
   (:require
    [clojure.pprint :as pprint]
-   [pod.borkdude.clj-kondo :as clj-kondo]))
+   [clojure.tools.deps :as deps]
+   [clojure.tools.build.api :as b]
+
+   [babashka.fs :as fs]
+   [pod.borkdude.clj-kondo :as clj-kondo]
+
+   [pep.ana :as ana]))
 
 (def TT_NAMESPACE_DEFINITION "namespace_definition")
 (def TT_NAMESPACE_USAGE "namespace_usage")
@@ -114,3 +120,30 @@
     (pprint/pprint
       (namespace-index (:analysis result)))))
 
+
+(defn analyze-classpath [{:keys [project_base_name project_path]}]
+  (when-let [deps-map (deps/slurp-deps (fs/file project_path "deps.edn"))]
+    (when-let [basis (binding [b/*project-root* project_path]
+                       (try
+                         (b/create-basis {:projet deps-map})
+                         (catch Exception ex
+                           (binding [*out* *err*]
+                             (println ex))
+
+                           nil)))]
+      (let [{:keys [classpath-roots]} basis
+
+            result (clj-kondo/run!
+                     {:lint classpath-roots
+                      :config ana/lint-config})]
+
+        (ana/dbsave! project_base_name result)))))
+
+
+(comment
+
+  (analyze-classpath
+    {:project_base_name "rex.system"
+     :project_path "/Users/pedro/Developer/Velos/rex.system"})
+
+  )
