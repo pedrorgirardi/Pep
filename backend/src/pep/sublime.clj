@@ -1,6 +1,7 @@
 (ns pep.sublime
   (:require
    [clojure.pprint :as pprint]
+   [clojure.stacktrace :as stacktrace]
    [clojure.tools.deps :as deps]
    [clojure.tools.build.api :as b]
 
@@ -128,7 +129,7 @@
                          (b/create-basis {:projet deps-map})
                          (catch Exception ex
                            (binding [*out* *err*]
-                             (println ex))
+                             (stacktrace/print-stack-trace ex))
 
                            nil)))]
       (let [{:keys [classpath-roots]} basis
