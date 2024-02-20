@@ -1,0 +1,12 @@
+{:paths ["src"]
+
+ :deps
+ {org.clojure/data.json {:mvn/version "2.5.0"}
+  io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}
+  clj-kondo/clj-kondo {:mvn/version "2024.02.12"}
+  babashka/fs {:mvn/version "0.5.20"}
+  babashka/process {:mvn/version "0.5.21"}}
+
+ :aliases
+ {:repl
+  {:jvm-opts ["-Dclojure.server.repl={:port,5555,:accept,clojure.core.server/repl}"]}}}

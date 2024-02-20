@@ -2,11 +2,11 @@
   (:require
    [clojure.string :as str]
    [clojure.tools.deps :as deps]
+   [clojure.data.json :as json]
 
    [babashka.fs :as fs]
    [babashka.process :refer [shell]]
-   [pod.borkdude.clj-kondo :as clj-kondo]
-   [cheshire.core :as json]))
+   [clj-kondo.core :as clj-kondo]))
 
 (def lint-config
   {:analysis
@@ -75,7 +75,7 @@
   (reduce
     (fn [F [filename analysis]]
       (let [f (fs/file (dbdir dbname) (dbfilename filename))]
-        (spit f (json/generate-string analysis))
+        (spit f (json/write-str analysis))
 
         (conj F f)))
     #{}
@@ -132,7 +132,7 @@
   (require '[clojure.pprint :as pprint])
 
   (pprint/print-table
-    (json/parse-string
+    (json/read-str
       (dbq
         "SELECT
        ns, name, filename

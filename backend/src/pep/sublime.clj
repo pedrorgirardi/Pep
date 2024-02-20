@@ -5,7 +5,7 @@
    [clojure.tools.build.api :as b]
 
    [babashka.fs :as fs]
-   [pod.borkdude.clj-kondo :as clj-kondo]
+   [clj-kondo.core :as clj-kondo]
 
    [pep.ana :as ana]))
 
@@ -121,7 +121,7 @@
       (namespace-index (:analysis result)))))
 
 
-(defn analyze-classpath [{:keys [project_base_name project_path]}]
+(defn analyze-classpath! [{:keys [project_base_name project_path]}]
   (when-let [deps-map (deps/slurp-deps (fs/file project_path "deps.edn"))]
     (when-let [basis (binding [b/*project-root* project_path]
                        (try
@@ -142,7 +142,11 @@
 
 (comment
 
-  (analyze-classpath
+  (analyze-classpath!
+    {:project_base_name "data90"
+     :project_path "/Users/pedro/Developer/data90"})
+
+  (analyze-classpath!
     {:project_base_name "rex.system"
      :project_path "/Users/pedro/Developer/Velos/rex.system"})
 

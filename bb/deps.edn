@@ -1,4 +1,0 @@
-{:paths ["src"]
-
- :deps
- {clj-kondo/clj-kondo {:mvn/version "2024.02.12"}}}
