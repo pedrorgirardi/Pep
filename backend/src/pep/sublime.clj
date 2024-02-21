@@ -79,6 +79,11 @@
                              (stacktrace/print-stack-trace ex))
 
                            nil)))]
+
+      ;; Note:
+      ;; Analysis doesn't work without a `.clj-kondo` directory.
+      (mkdir-clj-kondo-cache! project_path)
+
       (let [result (clj-kondo/run!
                      {:lint (:classpath-roots basis)
                       :config ana/lint-config})]
