@@ -1,42 +1,33 @@
 (ns pep.sublime-test
   (:require
+   [clojure.java.io :as io]
    [clojure.test :refer [deftest testing is]]
 
    [pep.sublime :as sublime]))
 
-(deftest namespace-index-test
-  (let [{:keys [analysis]} (with-in-str (slurp "src/pep/sublime.clj")
-                             (sublime/lint-stdin!))
+(deftest slurp-deps-test
+  (is (= nil (sublime/slurp-deps "")))
+  (is (= nil (sublime/slurp-deps "foo")))
 
-        {:keys [nindex nrn]} (sublime/namespace-index analysis)
+  (testing "Pep's deps.edn"
+    (is (sublime/slurp-deps nil))
+    (is (sublime/slurp-deps "."))
+    (is (= (sublime/slurp-deps nil) (sublime/slurp-deps ".")))))
 
-        pep-sublime-namespace-definition {:_semantic "namespace_definition"
-                                          :col 1
-                                          :end-col 44
-                                          :end-row 4
-                                          :name 'pep.sublime
-                                          :name-col 5
-                                          :name-end-col 16
-                                          :name-end-row 1
-                                          :name-row 1
-                                          :row 1}]
+(deftest deps-paths-test
+  (is (= nil (sublime/deps-paths nil)))
+  (is (= nil (sublime/deps-paths {})))
+  (is (= [] (sublime/deps-paths {:paths []})))
+  (is (= ["src"] (sublime/deps-paths {:paths ["src"]})))
+  (is (= ["src"] (sublime/deps-paths {:paths ["src"] :aliases {:dev {:extra-paths nil}}})))
+  (is (= ["src"] (sublime/deps-paths {:paths ["src"] :aliases {:dev {:extra-paths []}}})))
+  (is (= ["src" "dev"] (sublime/deps-paths {:paths ["src"] :aliases {:dev {:extra-paths ["dev"]}}}))))
 
-    (testing "Namespace definitions"
-      (is (= {'pep.sublime #{pep-sublime-namespace-definition}}
-            (into {}
-              (map
-                (fn [[namespace-name namespace-definitions]]
-                  [namespace-name (into #{}
-                                    (map #(dissoc % :filename))
-                                    namespace-definitions)]))
-              nindex))))
+(deftest project-paths-test
+  (is (= #{} (sublime/project-paths nil)))
+  (is (= #{} (sublime/project-paths "")))
 
-    (testing "Namespace definitions locs"
-      (is (= {1 #{pep-sublime-namespace-definition}}
-            (into {}
-              (map
-                (fn [[namespace-name-row namespace-definitions]]
-                  [namespace-name-row (into #{}
-                                        (map #(dissoc % :filename))
-                                        namespace-definitions)]))
-              nrn))))))
+  (testing "Pep's project paths"
+    (is (= #{(io/file "./src")
+             (io/file "./test")}
+          (sublime/project-paths ".")))))
