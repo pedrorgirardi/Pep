@@ -4,48 +4,7 @@
    [clojure.data.json :as json]
 
    [babashka.fs :as fs]
-   [babashka.process :refer [shell]]
-   [clj-kondo.core :as clj-kondo]))
-
-(def lint-config
-  {:analysis
-   {:var-definitions true
-    :var-usages true
-    :arglists true
-    :locals true
-    :keywords true
-    :symbols true
-    :java-class-definitions false
-    :java-class-usages true
-    :java-member-definitions false
-    :instance-invocations true}
-
-   :output
-   {:canonical-paths true}})
-
-(defn lint-stdin!
-  ([]
-   (lint-stdin! {:config lint-config}))
-  ([{:keys [config]}]
-   (try
-     (let [f (doto
-               (java.io.File/createTempFile "pep_" ".clj")
-               (spit (slurp *in*)))
-
-           result (clj-kondo/run!
-                    {:lint [(.getPath f)]
-                     :config config})]
-
-       (try
-         (.delete f)
-         (catch Exception _
-           nil))
-
-       result)
-     (catch Exception _
-       ;; TODO: Logging
-
-       nil))))
+   [babashka.process :refer [shell]]))
 
 (defn filename->analysis
   "Returns a mapping of filename to its analysis data."
@@ -56,24 +15,19 @@
                   (into [] (map #(assoc % :_sem sem)) data)))]
     (group-by :filename (into [] xform analysis))))
 
-(defn dbdir [dbname]
-  (fs/file (fs/temp-dir) "pep" "db" dbname))
+(defn dbdir [project_base_name]
+  (fs/file (fs/temp-dir) "pep" "db" project_base_name))
 
 (defn dbfilename [filename]
-  (str
-    (str/join "_"
-      (into []
-        (remove str/blank?)
-        (str/split filename (re-pattern fs/file-separator))))
-    ".json"))
+  (format "%s.json" (hash filename)))
 
-(defn dbsave! [dbname {:keys [analysis]}]
-  (when-not (fs/exists? (dbdir dbname))
-    (fs/create-dir (dbdir dbname)))
+(defn dbsave! [project_base_name {:keys [analysis]}]
+  (when-not (fs/exists? (dbdir project_base_name))
+    (fs/create-dir (dbdir project_base_name)))
 
   (reduce
     (fn [F [filename analysis]]
-      (let [f (fs/file (dbdir dbname) (dbfilename filename))]
+      (let [f (fs/file (dbdir project_base_name) (dbfilename filename))]
         (spit f (json/write-str analysis))
 
         (conj F f)))
@@ -130,7 +84,8 @@
 
 
   (with-open [db (in-memory-db)]
-    (time (jdbc/execute! db [q])))
+    (jdbc/execute! db ["INSTALL json; LOAD json;"])
+    (jdbc/execute! db [q]))
   ;; Elapsed time: 210.58975 msecs
 
 

@@ -86,7 +86,7 @@
 
       (let [result (clj-kondo/run!
                      {:lint (:classpath-roots basis)
-                      :config ana/lint-config})]
+                      :config lint-config})]
 
         (ana/dbsave! project_base_name result)))))
 
@@ -98,7 +98,7 @@
      :project_path "/Users/pedro/Developer/data90"})
 
   (analyze-paths!
-    {:project_base_name "rex.system"
+    {:project_base_name "rex.ingestion"
      :project_path "/Users/pedro/Developer/Velos/rex.system/rex.ingestion"})
 
 
