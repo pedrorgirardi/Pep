@@ -1,8 +1,9 @@
-(ns pep.ana
+(ns pep.db
   (:require
    [clojure.string :as str]
    [clojure.data.json :as json]
 
+   [next.jdbc :as jdbc]
    [babashka.fs :as fs]
    [babashka.process :refer [shell]]))
 
@@ -53,40 +54,28 @@
       out
       (throw (ex-info err {:cmd cmd})))))
 
-(comment
+(defn query [sqlparams]
+  (with-open [db (jdbc/get-connection "jdbc:duckdb:")]
+    (jdbc/execute! db ["INSTALL json; LOAD json;"])
+    (jdbc/execute! db sqlparams)))
 
-  (require '[clojure.pprint :as pprint])
+(comment
 
   (def q
     "SELECT
        ns, name, filename
      FROM
-       '/var/folders/33/kv329l5x2nbglsc_2f2z6pw40000gn/T/pep/db/rex.system/*.json'
+       '/var/folders/33/kv329l5x2nbglsc_2f2z6pw40000gn/T/pep/db/data90/*.json'
      WHERE
       _sem = 'var-definitions'
-      AND ns = 'clojure.set'
       AND filename like '%.clj'")
 
-  (time (pprint/print-table (json/read-str (dbq q))))
-  ;; Elapsed time: 881.967916 msecs
-
   (time (dbq q))
-  ;; Elapsed time: 881.24075 msecs
-
-  (require '[next.jdbc :as jdbc])
-
-  (defn in-memory-db
-    "Retorna uma conexão para um banco de dados em memória.
-
-  https://duckdb.org/docs/api/java"
-  ^org.duckdb.DuckDBConnection []
-  (jdbc/get-connection "jdbc:duckdb:"))
+  ;; Elapsed time: 68.789125 msecs
 
 
-  (with-open [db (in-memory-db)]
-    (jdbc/execute! db ["INSTALL json; LOAD json;"])
-    (jdbc/execute! db [q]))
-  ;; Elapsed time: 210.58975 msecs
+  (time (query [q]))
+  ;; Elapsed time: 45.964917 msecs
 
 
   )

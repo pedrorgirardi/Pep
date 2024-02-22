@@ -7,7 +7,7 @@
 
    [clj-kondo.core :as clj-kondo]
 
-   [pep.ana :as ana]))
+   [pep.db :as db]))
 
 (def lint-config
   {:analysis
@@ -65,7 +65,7 @@
                       :parallel true
                       :config lint-config})]
 
-        (ana/dbsave! project_base_name result)))))
+        (db/dbsave! project_base_name result)))))
 
 (defn analyze-classpath!
   "Analyze classpath with clj-kondo."
@@ -88,7 +88,7 @@
                      {:lint (:classpath-roots basis)
                       :config lint-config})]
 
-        (ana/dbsave! project_base_name result)))))
+        (db/dbsave! project_base_name result)))))
 
 
 (comment
