@@ -4,13 +4,16 @@
    [clojure.data.json :as json])
 
   (:import
+   (java.nio ByteBuffer)
    (java.nio.file Files)
-   (java.nio.channels ServerSocketChannel)
+   (java.nio.channels ServerSocketChannel SocketChannel)
    (java.net StandardProtocolFamily)
    (java.net UnixDomainSocketAddress)
    (java.util.concurrent Executors ExecutorService)))
 
 (set! *warn-on-reflection* true)
+
+(def *stop? (atom false))
 
 (def ^ExecutorService acceptor
   (Executors/newSingleThreadExecutor))
@@ -32,27 +35,56 @@
 
 (comment
 
-  (let [^UnixDomainSocketAddress address (UnixDomainSocketAddress/of "/tmp/pep.socket")]
+  (def path "/tmp/pep.socket")
 
+  (def address (UnixDomainSocketAddress/of path))
+
+  (Files/deleteIfExists (.getPath address))
+
+
+  (submit acceptor
     (with-open [server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)]
 
-      (.bind server-channel address)
+      (.bind server-channel ^UnixDomainSocketAddress address)
 
-      (with-open [client-channel (.accept server-channel)]
-        (let [buffer (java.nio.ByteBuffer/allocate 1024)]
+      (loop []
+        (println "Waiting for connection...")
 
-          (.read client-channel buffer)
-          (.flip buffer)
+        (with-open [client-channel (.accept server-channel)]
 
-          (let [bytes (byte-array (.remaining buffer))]
+          (println "Accepted:" client-channel)
 
-            (.get buffer bytes)
+          (let [buffer (java.nio.ByteBuffer/allocate 1024)]
 
-            (with-open [reader (io/reader bytes)]
-              (let [message (json/read reader :key-fn keyword)]
-                (submit handler (handle message))))))))
+            (.read client-channel buffer)
+            (.flip buffer)
 
-    (Files/deleteIfExists (.getPath address)))
+            (let [bytes (byte-array (.remaining buffer))]
+
+              (.get buffer bytes)
+
+              (with-open [reader (io/reader bytes)]
+                (let [message (json/read reader :key-fn keyword)]
+                  (submit handler (handle message))
+
+                  (println "Handled!"))))))
+
+        (when-not @*stop?
+          (recur)))
+
+      (Files/deleteIfExists (.getPath address))
+
+      (println "Stopped")))
+
+
+
+  (reset! *stop? true)
+
+
+  (with-open [client-channel (SocketChannel/open ^UnixDomainSocketAddress address)]
+    (.write client-channel
+      (ByteBuffer/wrap
+        (.getBytes (json/write-str {:op "Hello!"})))))
 
 
   ;; nc -U /tmp/pep.socket
