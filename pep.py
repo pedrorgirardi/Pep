@@ -347,6 +347,10 @@ def startupinfo():
 def clj_kondo_path(window):
     cmd = setting(window, "clj_kondo_path", None)
 
+    # From Popen docs:
+    # For maximum reliability, use a fully qualified path for the executable.
+    # To search for an unqualified name on PATH, use shutil.which().
+
     return shutil.which(cmd)
 
 
