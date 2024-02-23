@@ -1,8 +1,8 @@
 (ns pep.ana
   (:require
    [clojure.java.io :as io]
+   [clojure.pprint :as pprint]
    [clojure.tools.deps :as deps]
-   [clojure.tools.build.api :as build]
 
    [clj-kondo.core :as clj-kondo]))
 
@@ -20,19 +20,6 @@
     :java-class-usages true
     :java-member-definitions false
     :instance-invocations true}
-
-   :output
-   {:canonical-paths true}})
-
-(def classpath-config
-  {:skip-lint true
-
-   :analysis
-   {:var-definitions {:shallow true}
-    :var-usages false
-    :arglists true
-    :keywords true
-    :java-class-definitions false}
 
    :output
    {:canonical-paths true}})
@@ -68,55 +55,37 @@
 
 (defn analyze-paths!
   "Analyze paths with clj-kondo."
+  ([project_path]
+   (analyze-paths! paths-config project_path))
+  ([config project_path]
+   (let [paths (project-paths project_path)]
+     (when (seq paths)
+       ;; Note:
+       ;; Analysis doesn't work without a `.clj-kondo` directory.
+       (mkdir-clj-kondo-cache! project_path)
+
+       (clj-kondo/run!
+         {:lint paths
+          :parallel true
+          :config config})))))
+
+(defn diagnostics
   [project_path]
-  (let [paths (project-paths project_path)]
-    (when (seq paths)
-      ;; Note:
-      ;; Analysis doesn't work without a `.clj-kondo` directory.
-      (mkdir-clj-kondo-cache! project_path)
+  (let [{:keys [findings summary]} (analyze-paths!
+                                     {:skip-lint true
+                                      :output {:canonical-paths true}}
+                                     project_path)]
 
-      (clj-kondo/run!
-        {:lint paths
-         :parallel true
-         :config paths-config}))))
+    (pprint/print-table [summary])
 
-(defn analyze-classpath!
-  "Analyze classpath with clj-kondo."
-  [project_path]
-  (when-let [deps-map (slurp-deps project_path)]
-    (let [basis (binding [build/*project-root* project_path]
-                  (build/create-basis {:projet deps-map}))]
-
-      ;; Note:
-      ;; Analysis doesn't work without a `.clj-kondo` directory.
-      (mkdir-clj-kondo-cache! project_path)
-
-      (clj-kondo/run!
-        {:lint (:classpath-roots basis)
-         :config classpath-config}))))
+    findings))
 
 
 (comment
 
   (def paths-result (analyze-paths! "/Users/pedro/Developer/data90"))
 
-  (:summary paths-result)
-  (:findings paths-result)
-
-
-  (def classpath-result (analyze-classpath! "/Users/pedro/Developer/data90"))
-
-  (:summary classpath-result)
-
-  ;; Warnings"
-  (into []
-    (filter #(= :warning (:level %)))
-    (:findings classpath-result))
-
-  ;; Errors:
-  (into []
-    (filter #(= :error (:level %)))
-    (:findings classpath-result))
+  (diagnostics "/Users/pedro/Developer/data90")
 
 
   )

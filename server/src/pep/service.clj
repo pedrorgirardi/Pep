@@ -4,7 +4,18 @@
 
    [io.pedestal.http :as http]
    [io.pedestal.http.route :as route]
-   [io.pedestal.http.body-params :as body-params]))
+   [io.pedestal.http.body-params :as body-params]
+
+   [pep.ana :as ana]))
+
+(defn handler-diagnostics
+  [req]
+  (try
+    {:status 200
+     :body (ana/diagnostics (get-in req [:query-params :project_path]))}
+    (catch Exception ex
+      {:status 500
+       :body {:error {:message (ex-message ex)}}})))
 
 (defn ping [_]
   {:status 200
@@ -37,7 +48,12 @@
      {:get [:route/echo-GET `echo]
       :put [:route/echo-PUT `echo]
       :post [:route/echo-POST `echo]
-      :delete [:route/echo-DELETE `echo]}]]])
+      :delete [:route/echo-DELETE `echo]}]
+
+    ["/diagnostics"
+     ^:interceptors
+     [`http/json-body]
+     {:get `handler-diagnostics}]]])
 
 (defn initialize
   "The service map provides a configuration that Pedestal turns into a service function,
