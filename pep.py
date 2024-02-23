@@ -6,6 +6,7 @@ import pathlib
 import re
 import shlex
 import subprocess
+import shutil
 import tempfile
 import threading
 import time
@@ -344,7 +345,9 @@ def startupinfo():
 
 
 def clj_kondo_path(window):
-    return setting(window, "clj_kondo_path", None)
+    cmd = setting(window, "clj_kondo_path", None)
+
+    return shutil.which(cmd)
 
 
 # -- Output Panel
