@@ -47,7 +47,7 @@
 
       (.bind server-channel ^UnixDomainSocketAddress address)
 
-      (loop []
+      (while (not @*stop?)
         (println "Waiting for connection...")
 
         (with-open [client-channel (.accept server-channel)]
@@ -67,10 +67,7 @@
                 (let [message (json/read reader :key-fn keyword)]
                   (submit handler (handle message))
 
-                  (println "Handled!"))))))
-
-        (when-not @*stop?
-          (recur)))
+                  (println "Handled!")))))))
 
       (Files/deleteIfExists (.getPath address))
 
