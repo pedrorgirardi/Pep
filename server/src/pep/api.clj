@@ -33,49 +33,61 @@
   [message]
   (tap> message))
 
+(defn start [{:keys [path]}]
+  (let [^UnixDomainSocketAddress address (UnixDomainSocketAddress/of ^String path)]
+    (submit acceptor
+      (with-open [server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)]
+
+        ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
+        (.bind server-channel ^UnixDomainSocketAddress address)
+
+        (println "Started 🟢")
+
+        (while (not @*stop?)
+          (println "Waiting for connection ⌛️")
+
+          ;; Accepts a connection made to this channel's socket.
+          ;;
+          ;; The socket channel returned by this method, if any,
+          ;; will be in blocking mode regardless of the blocking mode of this channel.
+          (with-open [client-channel (.accept server-channel)]
+
+            (println "Accepted connection ✅")
+
+            (let [buffer (java.nio.ByteBuffer/allocate 1024)]
+
+              ;; Reads a sequence of bytes from this channel into the given buffer.
+              ;;
+              ;; An attempt is made to read up to r bytes from the channel,
+              ;; where r is the number of bytes remaining in the buffer, that is, dst.remaining(),
+              ;; at the moment this method is invoked.
+              (.read client-channel buffer)
+
+              (let [_ (.flip buffer)
+                    bytes (byte-array (.remaining buffer))
+                    _ (.get buffer bytes)]
+                (with-open [reader (io/reader bytes)]
+                  (let [message (json/read reader :key-fn keyword)]
+                    (submit handler (handle message))
+
+                    (println "Handled ✅")))))))
+
+        (Files/deleteIfExists (.getPath address))
+
+        (println "Stopped 🔴")))))
+
 (comment
 
   (def path "/tmp/pep.socket")
 
   (def address (UnixDomainSocketAddress/of path))
 
-  (Files/deleteIfExists (.getPath address))
+  (Files/deleteIfExists (.getPath (UnixDomainSocketAddress/of path)))
 
-
-  (submit acceptor
-    (with-open [server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)]
-
-      (.bind server-channel ^UnixDomainSocketAddress address)
-
-      (while (not @*stop?)
-        (println "Waiting for connection...")
-
-        (with-open [client-channel (.accept server-channel)]
-
-          (println "Accepted:" client-channel)
-
-          (let [buffer (java.nio.ByteBuffer/allocate 1024)]
-
-            (.read client-channel buffer)
-            (.flip buffer)
-
-            (let [bytes (byte-array (.remaining buffer))]
-
-              (.get buffer bytes)
-
-              (with-open [reader (io/reader bytes)]
-                (let [message (json/read reader :key-fn keyword)]
-                  (submit handler (handle message))
-
-                  (println "Handled!")))))))
-
-      (Files/deleteIfExists (.getPath address))
-
-      (println "Stopped")))
-
-
+  (def task (start {:path path}))
 
   (reset! *stop? true)
+  (reset! *stop? false)
 
 
   (with-open [client-channel (SocketChannel/open ^UnixDomainSocketAddress address)]
