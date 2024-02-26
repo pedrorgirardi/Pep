@@ -3,6 +3,7 @@
  :deps
  {org.clojure/clojure {:mvn/version "1.12.0-alpha8"}
   org.clojure/data.json {:mvn/version "2.5.0"}
+  org.clojure/core.async {:mvn/version "1.6.681"}
 
   io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}
 
