@@ -110,7 +110,26 @@
 
 (defn write! [^SocketChannel c m]
   (let [^String s (json/write-str m)
+
+        ;; Wraps a byte array into a buffer.
+        ;;
+        ;; The new buffer will be backed by the given byte array;
+        ;; that is, modifications to the buffer will cause the array to be modified and vice versa.
+        ;;
+        ;; The new buffer's capacity and limit will be array.length,
+        ;; its position will be zero, its mark will be undefined,
+        ;; and its byte order will be BIG_ENDIAN.
+
+        ;; Its backing array will be the given array,
+        ;; and its array offset will be zero.
         ^ByteBuffer buffer (ByteBuffer/wrap (.getBytes s))]
+
+    ;; Writes a sequence of bytes to this channel from the given buffer.
+    ;; An attempt is made to write up to r bytes to the channel,
+    ;; where r is the number of bytes remaining in the buffer, that is, src.remaining(),
+    ;; at the moment this method is invoked.
+    ;;
+    ;; Returns the number of bytes written, possibly zero.
     (.write c buffer)))
 
 (defn start [{:keys [address]}]
