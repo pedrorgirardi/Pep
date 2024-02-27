@@ -75,8 +75,8 @@
       (finally
         (.shutdownNow executor)))))
 
-(defn read-message [^SocketChannel client-channel]
-  (when (.isConnected client-channel)
+(defn read! [^SocketChannel c]
+  (when (.isConnected c)
     (let [buffer (java.nio.ByteBuffer/allocate 1024)
 
           ;; Reads a sequence of bytes from this channel into the given buffer.
@@ -86,7 +86,7 @@
           ;; at the moment this method is invoked.
           ;;
           ;; The number of bytes read, possibly zero, or -1 if the channel has reached end-of-stream.
-          n (.read client-channel buffer)]
+          n (.read c buffer)]
 
       (when-not (= -1 n)
         (try
@@ -97,6 +97,11 @@
               (json/read reader :key-fn keyword)))
           (catch Exception ex
             (log/error ex "An error occurred while reading/decoding message.")))))))
+
+(defn write! [^SocketChannel c m]
+  (let [^String s (json/write-str m)
+        ^ByteBuffer buffer (ByteBuffer/wrap (.getBytes s))]
+    (.write c buffer)))
 
 (defn start [{:keys [path]}]
   (let [^UnixDomainSocketAddress address (UnixDomainSocketAddress/of ^String path)]
@@ -129,7 +134,11 @@
                   (when-some [message (async/<!! c)]
                     (log/debug "Handler: Take" message)
 
-                    (handle message)
+                    (try
+                      (let [response (handle message)]
+                        (write! client-channel response))
+                      (catch Exception ex
+                        (write! client-channel {:error {:message (ex-message ex)}})))
 
                     (recur)))
 
@@ -140,13 +149,11 @@
                 (log/info "Acceptor: Started 🟢")
 
                 (with-open [client-channel client-channel]
-                  (loop [message (read-message client-channel)]
-                    (log/info "Received" message)
-
+                  (loop [message (read! client-channel)]
                     (when message
                       (async/>!! c message)
 
-                      (recur (read-message client-channel))))
+                      (recur (read! client-channel))))
 
                   (log/info "Acceptor: Client is disconnected 🟠"))
 
@@ -174,24 +181,14 @@
 
 
   (with-open [client-channel (SocketChannel/open ^UnixDomainSocketAddress address)]
-    (.write client-channel
-      (ByteBuffer/wrap
-        (.getBytes (json/write-str {:op "Hello!"})))))
+    (write! client-channel {:op "Hello!"}))
+
 
   (def client-1 (SocketChannel/open ^UnixDomainSocketAddress address))
-  (def client-2 (SocketChannel/open ^UnixDomainSocketAddress address))
 
-  (.write client-1
-      (ByteBuffer/wrap
-        (.getBytes (json/write-str {:op "Hello 1!"}))))
+  (write! client-1 {:op "Hello 1!"})
+  (read! client-1)
 
   (.close client-1)
-
-
-  (.write client-2
-      (ByteBuffer/wrap
-        (.getBytes (json/write-str {:op "Hello 2!"}))))
-
-  (.close client-2)
 
   )
