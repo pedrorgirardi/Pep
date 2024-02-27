@@ -20,6 +20,9 @@
 (def ^ExecutorService acceptor
   (Executors/newSingleThreadExecutor))
 
+(defn address ^UnixDomainSocketAddress []
+  (UnixDomainSocketAddress/of "/tmp/pep.socket"))
+
 (defmacro submit
   "Given a ExecutorService thread pool and a body of forms, .submit the body
   (with binding conveyance) into the thread pool."
@@ -38,9 +41,7 @@
 (defmulti handle :op)
 
 (defmethod handle :default
-  [message]
-  (log/info "Default handler" message)
-
+  [_]
   {:result :default})
 
 (defn accept [^ServerSocketChannel server-channel]
@@ -112,78 +113,75 @@
         ^ByteBuffer buffer (ByteBuffer/wrap (.getBytes s))]
     (.write c buffer)))
 
-(defn start [{:keys [path]}]
-  (let [^UnixDomainSocketAddress address (UnixDomainSocketAddress/of ^String path)]
-    (submit acceptor
-      (with-open [server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)]
+(defn start [{:keys [address]}]
+  (submit acceptor
+    (with-open [server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)]
 
-        ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
-        (.bind server-channel ^UnixDomainSocketAddress address)
+      ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
+      (.bind server-channel ^UnixDomainSocketAddress address)
 
-        (log/info "Server: Started 🟢" address)
+      (log/info "Server: Started 🟢" address)
 
-        (while (not @*stop?)
-          (log/info "Server: Waiting for connection ⌛️")
+      (while (not @*stop?)
+        (log/info "Server: Waiting for connection ⌛️")
 
-          ;; Accepts a connection made to this channel's socket.
-          ;;
-          ;; The socket channel returned by this method, if any,
-          ;; will be in blocking mode regardless of the blocking mode of this channel.
+        ;; Accepts a connection made to this channel's socket.
+        ;;
+        ;; The socket channel returned by this method, if any,
+        ;; will be in blocking mode regardless of the blocking mode of this channel.
 
-          (when-let [^SocketChannel client-channel (.accept server-channel)]
-            (log/info "Server: Accepted connection 🔌")
+        (when-let [^SocketChannel client-channel (.accept server-channel)]
+          (log/info "Server: Accepted connection 🔌")
 
-            (let [c (async/chan 1)]
+          (let [c (async/chan 1)]
 
-              ;; -- Consumer
-              (async/thread
-                (log/info "Handler: Started 🟢")
+            ;; -- Consumer
+            (async/thread
+              (log/info "Handler: Started 🟢")
 
-                (loop []
-                  (when-some [message (async/<!! c)]
-                    (log/debug "Handler: Take" message)
+              (loop []
+                (when-some [message (async/<!! c)]
+                  (log/debug "Handler: Take" message)
 
-                    (try
-                      (let [response (handle message)]
-                        (write! client-channel response))
-                      (catch Exception ex
-                        (write! client-channel {:error {:message (ex-message ex)}})))
+                  (try
+                    (let [response (handle message)]
+                      (write! client-channel response))
+                    (catch Exception ex
+                      (write! client-channel {:error {:message (ex-message ex)}})))
 
-                    (recur)))
+                  (recur)))
 
-                (log/info "Handler: Stopped 🔴"))
+              (log/info "Handler: Stopped 🔴"))
 
-              ;; -- Producer
-              (async/thread
-                (log/info "Acceptor: Started 🟢")
+            ;; -- Producer
+            (async/thread
+              (log/info "Acceptor: Started 🟢")
 
-                (with-open [client-channel client-channel]
-                  (loop [message (read! client-channel)]
-                    (when message
-                      (async/>!! c message)
+              (with-open [client-channel client-channel]
+                (loop [message (read! client-channel)]
+                  (when message
+                    (async/>!! c message)
 
-                      (recur (read! client-channel))))
+                    (recur (read! client-channel))))
 
-                  (log/info "Acceptor: Client is disconnected 🟠"))
+                (log/info "Acceptor: Client is disconnected 🟠"))
 
-                (async/close! c)
+              (async/close! c)
 
-                (log/info "Acceptor: Stopped 🔴")))))
+              (log/info "Acceptor: Stopped 🔴")))))
 
-        (Files/deleteIfExists (.getPath address))
+      (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
 
-        (log/info "Server: Stopped 🔴")))))
+      (log/info "Server: Stopped 🔴"))))
 
 
 (comment
 
-  (def path "/tmp/pep.socket")
+  (def addr (address))
 
-  (def address (UnixDomainSocketAddress/of path))
+  (Files/deleteIfExists (.getPath addr))
 
-  (Files/deleteIfExists (.getPath (UnixDomainSocketAddress/of path)))
-
-  (def task (start {:path path}))
+  (def task (start {:address addr}))
 
   (reset! *stop? false)
   (reset! *stop? true)
