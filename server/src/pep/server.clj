@@ -34,6 +34,47 @@
 
   {:result :default})
 
+(defn accept [^ServerSocketChannel server-channel]
+  (let [*timeout? (atom nil)
+
+        timeout-chan (async/timeout 10000)
+
+        socket-chan (async/thread
+                      (let [^SocketChannel client-channel (.accept server-channel)]
+                        (log/info "Accept timeout" @*timeout?)
+
+                        (if @*timeout?
+                          (do
+                            (log/info "Accept took too long; Closing channel...")
+                            (try
+                              (.close client-channel)
+                              (catch Exception ex
+                                (log/error ex "Failed to close channel."))))
+                          client-channel)))
+
+        [v ch] (async/alts!! [socket-chan timeout-chan])]
+
+    (log/info "Accept" v (if (= ch timeout-chan) :timeout-chan :socket-chan))
+
+    (reset! *timeout? (= ch timeout-chan))
+
+    v))
+
+(defn accept2 [^ServerSocketChannel server-channel]
+  (let [executor (Executors/newSingleThreadExecutor)
+
+        f (.submit executor
+            ^Callable
+            (fn []
+              (.accept server-channel)))]
+
+    (try
+      (.get f 5 java.util.concurrent.TimeUnit/SECONDS)
+      (catch Exception _
+        (log/warn "Accept timeout"))
+      (finally
+        (.shutdownNow executor)))))
+
 (defn read-message [^SocketChannel client-channel]
   (when (.isConnected client-channel)
     (let [buffer (java.nio.ByteBuffer/allocate 1024)
@@ -74,32 +115,32 @@
           ;;
           ;; The socket channel returned by this method, if any,
           ;; will be in blocking mode regardless of the blocking mode of this channel.
-          (let [client-channel (.accept server-channel)
 
-                c (async/chan 1)]
+          (when-let [^SocketChannel client-channel (.accept server-channel)]
+            (log/info "Server: Accepted connection 🔌")
 
-            (log/info "Server: Accepted connection ✅")
+            (let [c (async/chan 1)]
 
-            ;; -- Consumer
-            (async/thread
-              (log/info "Handler: Started 🟢")
+              ;; -- Consumer
+              (async/thread
+                (log/info "Handler: Started 🟢")
 
-              (loop []
-                (when-some [message (async/<!! c)]
-                  (log/debug "Handler: Take" message)
+                (loop []
+                  (when-some [message (async/<!! c)]
+                    (log/debug "Handler: Take" message)
 
-                  (handle message)
+                    (handle message)
 
-                  (recur)))
+                    (recur)))
 
-              (log/info "Handler: Stopped 🔴"))
+                (log/info "Handler: Stopped 🔴"))
 
-            ;; -- Producer
-            (async/thread
-              (log/info "Acceptor: Started 🟢")
+              ;; -- Producer
+              (async/thread
+                (log/info "Acceptor: Started 🟢")
 
-              (with-open [client-channel client-channel]
-                (loop [message (read-message client-channel)]
+                (with-open [client-channel client-channel]
+                  (loop [message (read-message client-channel)]
                     (log/info "Received" message)
 
                     (when message
@@ -107,11 +148,11 @@
 
                       (recur (read-message client-channel))))
 
-                (log/info "Acceptor: Client is disconnected 🟠"))
+                  (log/info "Acceptor: Client is disconnected 🟠"))
 
-              (async/close! c)
+                (async/close! c)
 
-              (log/info "Acceptor: Stopped 🔴"))))
+                (log/info "Acceptor: Stopped 🔴")))))
 
         (Files/deleteIfExists (.getPath address))
 
