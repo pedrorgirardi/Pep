@@ -26,6 +26,15 @@
   [thread-pool & body]
   `(let [^Callable f# (bound-fn [] ~@body)] (.submit ~thread-pool f#)))
 
+(defn task! [^Callable f timeout]
+  (let [executor (Executors/newSingleThreadExecutor)]
+    (try
+      (.get (.submit executor f) timeout java.util.concurrent.TimeUnit/SECONDS)
+      (catch Exception _
+        (throw (ex-info "Task timed out" {:timeout timeout})))
+      (finally
+        (.shutdownNow executor)))))
+
 (defmulti handle :op)
 
 (defmethod handle :default
@@ -187,7 +196,8 @@
   (def client-1 (SocketChannel/open ^UnixDomainSocketAddress address))
 
   (write! client-1 {:op "Hello 1!"})
-  (read! client-1)
+
+  (task! #(read! client-1) 2)
 
   (.close client-1)
 
