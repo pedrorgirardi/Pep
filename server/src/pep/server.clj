@@ -193,6 +193,83 @@
 
       (log/info "Server: Stopped 🔴"))))
 
+(defn start2 [{:keys [^UnixDomainSocketAddress address]}]
+  (let [^ExecutorService acceptor (Executors/newSingleThreadExecutor)
+
+        server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)
+
+        *conn# (atom 0)]
+
+    ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
+    (.bind server-channel ^UnixDomainSocketAddress address)
+
+    (log/info "🟢 Server: Started" (.toString (.getPath address)))
+
+    (submit acceptor
+      (while true
+
+        (log/info "⌛️ Server: Waiting for connection")
+
+        (let [;; Accepts a connection made to this channel's socket.
+              ;;
+              ;; The socket channel returned by this method, if any,
+              ;; will be in blocking mode regardless of the blocking mode of this channel.
+              ^SocketChannel client-channel (.accept server-channel)
+
+              c (async/chan 1)]
+
+          (swap! *conn# inc)
+
+          (log/info (format "🔌 Server: Accepted connection; Client %d" @*conn#))
+
+          ;; -- Consumer
+          (async/thread
+            (log/info (format "🟢 Handler: Started; Client %d" @*conn#))
+
+            (loop []
+              (when-some [message (async/<!! c)]
+                (try
+                  (let [response (handle message)]
+                    (write! client-channel response))
+                  (catch Exception ex
+                    (write! client-channel {:error {:message (ex-message ex)}})))
+
+                (recur)))
+
+            (log/info (format "🔴 Handler: Stopped; Client %d" @*conn#)))
+
+          ;; -- Producer
+          (async/thread
+            (log/info (format "🟢 Acceptor: Started; Client %d" @*conn#))
+
+            (with-open [client-channel client-channel]
+              (loop [message (read! client-channel)]
+                (when message
+                  (async/>!! c message)
+
+                  (recur (read! client-channel))))
+
+              (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*conn#)))
+
+            (async/close! c)
+
+            (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
+
+    (fn stop []
+      (try
+        (log/info "⌛️ Shutting down server...")
+
+        (.close server-channel)
+
+        (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
+
+        (.shutdownNow acceptor)
+
+        (log/info "🔴 Server is down")
+
+        (catch Exception ex
+          (log/error ex "Stop error"))))))
+
 
 (comment
 
@@ -202,15 +279,19 @@
 
   (def task (start {:address addr}))
 
+  (def stop (start2 {:address addr}))
+
+  (stop)
+
   (reset! *stop? false)
   (reset! *stop? true)
 
 
-  (with-open [client-channel (SocketChannel/open ^UnixDomainSocketAddress address)]
+  (with-open [client-channel (SocketChannel/open ^UnixDomainSocketAddress addr)]
     (write! client-channel {:op "Hello!"}))
 
 
-  (def client-1 (SocketChannel/open ^UnixDomainSocketAddress address))
+  (def client-1 (SocketChannel/open ^UnixDomainSocketAddress addr))
 
   (write! client-1 {:op "Hello 1!"})
 
