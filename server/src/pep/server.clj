@@ -3,7 +3,9 @@
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
-   [clojure.core.async :as async])
+   [clojure.core.async :as async]
+
+   [pep.handler :as handler])
 
   (:import
    (java.nio ByteBuffer)
@@ -32,12 +34,6 @@
         (throw (ex-info "Task timed out" {:timeout timeout})))
       (finally
         (.shutdownNow executor)))))
-
-(defmulti handle :op)
-
-(defmethod handle :default
-  [_]
-  {:result "nop"})
 
 (defn read! [^SocketChannel c]
   (when (.isConnected c)
@@ -123,7 +119,7 @@
             (loop []
               (when-some [message (async/<!! c)]
                 (try
-                  (write! client-channel (handle message))
+                  (write! client-channel (handler/handle message))
                   (catch Exception ex
                     (write! client-channel {:error {:message (ex-message ex)}})))
 
