@@ -1,6 +1,5 @@
 (ns pep.handler-test
   (:require
-   [clojure.java.io :as io]
    [clojure.test :refer [deftest is]]
 
    [pep.server :as server])
@@ -11,12 +10,8 @@
 
 (set! *warn-on-reflection* true)
 
-(defn random-address ^UnixDomainSocketAddress []
-  (let [file (io/file (System/getProperty "java.io.tmpdir") (format "pep_%s.socket" (str (random-uuid))))]
-    (UnixDomainSocketAddress/of (.getPath file))))
-
 (deftest handle-default-test
-  (let [address (random-address)
+  (let [address (server/random-address)
 
         stop (server/start {:address address})]
 

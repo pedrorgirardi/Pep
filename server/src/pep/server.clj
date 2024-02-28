@@ -20,6 +20,12 @@
 (def default-address
   (UnixDomainSocketAddress/of "/tmp/pep.socket"))
 
+(defn random-address
+  "Returns a random UnixDomainSocketAddress."
+  ^UnixDomainSocketAddress []
+  (let [file (io/file (System/getProperty "java.io.tmpdir") (format "pep_%s.socket" (str (random-uuid))))]
+    (UnixDomainSocketAddress/of (.getPath file))))
+
 (defmacro submit
   "Given a ExecutorService thread pool and a body of forms, .submit the body
   (with binding conveyance) into the thread pool."
