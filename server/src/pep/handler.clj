@@ -8,6 +8,10 @@
   [_]
   {:result "nop"})
 
+(defmethod handle "error"
+  [_]
+  (throw (ex-info "Bad handler." {})))
+
 (defmethod handle "diagnostics"
   [{:keys [root-path]}]
   {:result (ana/diagnostics root-path)})
