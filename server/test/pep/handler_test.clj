@@ -19,7 +19,7 @@
 
         stop (server/start {:address address})]
 
-    (is (= {:result "nop"}
+    (is (= {:success "nop"}
           (with-open [c (SocketChannel/open ^UnixDomainSocketAddress address)]
             (request c {:op "Hello!"}))))
 

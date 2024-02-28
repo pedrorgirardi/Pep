@@ -5,12 +5,14 @@
 (defmulti handle
   "Multimethod to handle client requests.
 
-  Dispatched by `:op`."
+  Dispatched by `:op`.
+
+  Returns a map with either `:success` or `:error`."
   :op)
 
 (defmethod handle :default
   [_]
-  {:result "nop"})
+  {:success "nop"})
 
 (defmethod handle "error"
   [_]
@@ -18,7 +20,7 @@
 
 (defmethod handle "diagnostics"
   [{:keys [root-path]}]
-  {:result (ana/diagnostics root-path)})
+  {:success (ana/diagnostics root-path)})
 
 (comment
 
