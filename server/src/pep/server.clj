@@ -17,7 +17,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn address ^UnixDomainSocketAddress []
+(def default-address
   (UnixDomainSocketAddress/of "/tmp/pep.socket"))
 
 (defmacro submit
@@ -162,7 +162,7 @@
 
 (comment
 
-  (def addr (address))
+  (def addr default-address)
 
   (Files/deleteIfExists (.getPath addr))
 
