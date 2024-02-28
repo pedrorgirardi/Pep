@@ -63,28 +63,29 @@
             (log/error ex "An error occurred while reading/decoding message.")))))))
 
 (defn write! [^SocketChannel c m]
-  (let [^String s (json/write-str m)
+  (when (.isConnected c)
+    (let [^String s (json/write-str m)
 
-        ;; Wraps a byte array into a buffer.
-        ;;
-        ;; The new buffer will be backed by the given byte array;
-        ;; that is, modifications to the buffer will cause the array to be modified and vice versa.
-        ;;
-        ;; The new buffer's capacity and limit will be array.length,
-        ;; its position will be zero, its mark will be undefined,
-        ;; and its byte order will be BIG_ENDIAN.
+          ;; Wraps a byte array into a buffer.
+          ;;
+          ;; The new buffer will be backed by the given byte array;
+          ;; that is, modifications to the buffer will cause the array to be modified and vice versa.
+          ;;
+          ;; The new buffer's capacity and limit will be array.length,
+          ;; its position will be zero, its mark will be undefined,
+          ;; and its byte order will be BIG_ENDIAN.
 
-        ;; Its backing array will be the given array,
-        ;; and its array offset will be zero.
-        ^ByteBuffer buffer (ByteBuffer/wrap (.getBytes s))]
+          ;; Its backing array will be the given array,
+          ;; and its array offset will be zero.
+          ^ByteBuffer buffer (ByteBuffer/wrap (.getBytes s))]
 
-    ;; Writes a sequence of bytes to this channel from the given buffer.
-    ;; An attempt is made to write up to r bytes to the channel,
-    ;; where r is the number of bytes remaining in the buffer, that is, src.remaining(),
-    ;; at the moment this method is invoked.
-    ;;
-    ;; Returns the number of bytes written, possibly zero.
-    (.write c buffer)))
+      ;; Writes a sequence of bytes to this channel from the given buffer.
+      ;; An attempt is made to write up to r bytes to the channel,
+      ;; where r is the number of bytes remaining in the buffer, that is, src.remaining(),
+      ;; at the moment this method is invoked.
+      ;;
+      ;; Returns the number of bytes written, possibly zero.
+      (.write c buffer))))
 
 (defn start [{:keys [^UnixDomainSocketAddress address]}]
   (let [^ExecutorService acceptor (Executors/newSingleThreadExecutor)
@@ -122,8 +123,7 @@
             (loop []
               (when-some [message (async/<!! c)]
                 (try
-                  (let [response (handle message)]
-                    (write! client-channel response))
+                  (write! client-channel (handle message))
                   (catch Exception ex
                     (write! client-channel {:error {:message (ex-message ex)}})))
 
@@ -176,8 +176,9 @@
   (stop)
 
 
-  (with-open [client-channel (SocketChannel/open ^UnixDomainSocketAddress addr)]
-    (write! client-channel {:op "Hello!"}))
+  (with-open [c (SocketChannel/open ^UnixDomainSocketAddress addr)]
+    (write! c {:op "Hello!"})
+    (with-timeout #(read! c) 2))
 
 
   (def client-1 (SocketChannel/open ^UnixDomainSocketAddress addr))
