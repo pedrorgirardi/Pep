@@ -1,7 +1,6 @@
 (ns pep.ana
   (:require
    [clojure.java.io :as io]
-   [clojure.pprint :as pprint]
    [clojure.tools.deps :as deps]
 
    [clj-kondo.core :as clj-kondo]))
@@ -75,10 +74,8 @@
                                      {:skip-lint true
                                       :output {:canonical-paths true}}
                                      project_path)]
-
-    (pprint/print-table [summary])
-
-    findings))
+    {:diagnostics (group-by :level findings)
+     :summary summary}))
 
 
 (comment
