@@ -111,6 +111,11 @@
      (log/info "🟢 Server: Started" (.toString (.getPath address)))
 
      (submit acceptor
+
+       ;; The server starts two threads per connection:
+       ;; - for reading messages
+       ;; - for processing messages
+
        (while true
 
          (log/info "⌛️ Server: Waiting for connection")
@@ -121,18 +126,19 @@
                ;; will be in blocking mode regardless of the blocking mode of this channel.
                ^SocketChannel client-channel (.accept server-channel)
 
-               c (async/chan 1)]
+               message-chan (async/chan 1)]
 
            (swap! *conn# inc)
 
            (log/info (format "🔌 Server: Accepted connection; Client %d" @*conn#))
 
-           ;; -- Consumer
+           ;; -- Handler
+           ;; Process responsible for handling messages.
            (async/thread
              (log/info (format "🟢 Handler: Started; Client %d" @*conn#))
 
              (loop []
-               (when-some [message (async/<!! c)]
+               (when-some [message (async/<!! message-chan)]
                  (try
                    (write! client-channel (handler/handle message))
                    (catch Exception ex
@@ -142,20 +148,21 @@
 
              (log/info (format "🔴 Handler: Stopped; Client %d" @*conn#)))
 
-           ;; -- Producer
+           ;; -- Acceptor
+           ;; Process responsible for reading messages.
            (async/thread
              (log/info (format "🟢 Acceptor: Started; Client %d" @*conn#))
 
              (with-open [client-channel client-channel]
                (loop [message (read! client-channel)]
                  (when message
-                   (async/>!! c message)
+                   (async/>!! message-chan message)
 
                    (recur (read! client-channel))))
 
                (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*conn#)))
 
-             (async/close! c)
+             (async/close! message-chan)
 
              (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
 
