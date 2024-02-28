@@ -2,7 +2,11 @@
   (:require
    [pep.ana :as ana]))
 
-(defmulti handle :op)
+(defmulti handle
+  "Multimethod to handle client requests.
+
+  Dispatched by `:op`."
+  :op)
 
 (defmethod handle :default
   [_]
