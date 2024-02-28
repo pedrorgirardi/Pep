@@ -17,8 +17,11 @@
 
 (set! *warn-on-reflection* true)
 
-(def default-address
-  (UnixDomainSocketAddress/of "/tmp/pep.socket"))
+(defn default-address
+  "Returns the default UnixDomainSocketAddress."
+  ^UnixDomainSocketAddress []
+  (let [file (io/file (System/getProperty "java.io.tmpdir") "pep.socket")]
+    (UnixDomainSocketAddress/of (.getPath file))))
 
 (defn random-address
   "Returns a random UnixDomainSocketAddress."
@@ -168,7 +171,7 @@
 
 (comment
 
-  (def addr default-address)
+  (def addr (default-address))
 
   (Files/deleteIfExists (.getPath addr))
 
