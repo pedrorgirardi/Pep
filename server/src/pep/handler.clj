@@ -16,7 +16,7 @@
 
 (defmethod handle "error"
   [_]
-  (throw (ex-info "Bad handler." {})))
+  (throw (ex-info "Bad handler." {:foo :bar})))
 
 (defmethod handle "diagnostics"
   [{:keys [root-path]}]

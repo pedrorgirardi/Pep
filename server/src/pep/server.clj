@@ -142,7 +142,11 @@
                  (try
                    (write! client-channel (handler/handle message))
                    (catch Exception ex
-                     (write! client-channel {:error {:message (ex-message ex)}})))
+                     (write! client-channel
+                       {:error
+                        (merge {:message (ex-message ex)}
+                          (when-let [data (ex-data ex)]
+                            {:data data}))})))
 
                  (recur)))
 

@@ -30,7 +30,9 @@
 
         stop (server/start {:address address})]
 
-    (is (= {:error {:message "Bad handler."}}
+    (is (= {:error
+            {:message "Bad handler."
+             :data {:foo "bar"}}}
           (with-open [c (SocketChannel/open ^UnixDomainSocketAddress address)]
             (request c {:op "error"}))))
 
