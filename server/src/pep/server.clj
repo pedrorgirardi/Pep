@@ -37,7 +37,7 @@
 
 (defmethod handle :default
   [_]
-  {:result :default})
+  {:result "nop"})
 
 (defn read! [^SocketChannel c]
   (when (.isConnected c)
