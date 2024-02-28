@@ -24,7 +24,7 @@
   [thread-pool & body]
   `(let [^Callable f# (bound-fn [] ~@body)] (.submit ~thread-pool f#)))
 
-(defn task! [^Callable f timeout]
+(defn with-timeout [^Callable f timeout]
   (let [executor (Executors/newSingleThreadExecutor)]
     (try
       (.get (.submit executor f) timeout java.util.concurrent.TimeUnit/SECONDS)
@@ -184,7 +184,7 @@
 
   (write! client-1 {:op "Hello 1!"})
 
-  (task! #(read! client-1) 2)
+  (with-timeout #(read! client-1) 2)
 
   (.close client-1)
 
