@@ -29,5 +29,6 @@
 
   (testing "Pep's project paths"
     (is (= #{(io/file "./src")
-             (io/file "./test")}
+             (io/file "./test")
+             (io/file "./resources")}
           (sublime/project-paths ".")))))
