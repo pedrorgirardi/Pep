@@ -11,10 +11,12 @@
 
 (set! *warn-on-reflection* true)
 
-(deftest handle-default-test
-  (let [file (io/file (System/getProperty "java.io.tmpdir") (format "pep_%s.socket" (str (random-uuid))))
+(defn random-address ^UnixDomainSocketAddress []
+  (let [file (io/file (System/getProperty "java.io.tmpdir") (format "pep_%s.socket" (str (random-uuid))))]
+    (UnixDomainSocketAddress/of (.getPath file))))
 
-        address (UnixDomainSocketAddress/of (.getPath file))
+(deftest handle-default-test
+  (let [address (random-address)
 
         stop (server/start {:address address})]
 
