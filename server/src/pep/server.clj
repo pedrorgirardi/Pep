@@ -176,9 +176,9 @@
 
          (.close server-channel)
 
-         (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
-
          (.shutdownNow acceptor)
+
+         (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
 
          (log/info "🔴 Server is down")
 
