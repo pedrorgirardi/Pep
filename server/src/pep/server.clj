@@ -95,7 +95,9 @@
 (defn write2! [^SocketChannel c m]
   (when (.isConnected c)
     (with-open [outs (java.io.ByteArrayOutputStream.)
-                writer (java.io.OutputStreamWriter. outs "UTF-8")]
+
+                writer (java.io.BufferedWriter.
+                         (java.io.OutputStreamWriter. outs "UTF-8"))]
 
       (json/write m writer)
 
