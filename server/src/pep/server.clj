@@ -94,14 +94,10 @@
 
 (defn write2! [^SocketChannel c m]
   (when (.isConnected c)
-    (with-open [outs (java.io.ByteArrayOutputStream.)
+    (let [outs (java.io.ByteArrayOutputStream.)]
 
-                writer (java.io.BufferedWriter.
-                         (java.io.OutputStreamWriter. outs "UTF-8"))]
-
-      (json/write m writer)
-
-      (.flush writer)
+      (with-open [writer (java.io.BufferedWriter. (java.io.OutputStreamWriter. outs "UTF-8"))]
+        (json/write m writer))
 
       (.write c ^ByteBuffer (ByteBuffer/wrap (.toByteArray outs))))))
 
