@@ -92,6 +92,17 @@
       ;; Returns the number of bytes written, possibly zero.
       (.write c buffer))))
 
+(defn write2! [^SocketChannel c m]
+  (when (.isConnected c)
+    (with-open [outs (java.io.ByteArrayOutputStream.)
+                writer (java.io.OutputStreamWriter. outs "UTF-8")]
+
+      (json/write m writer)
+
+      (.flush writer)
+
+      (.write c ^ByteBuffer (ByteBuffer/wrap (.toByteArray outs))))))
+
 (defn start
   "Start the server.
 
@@ -140,9 +151,9 @@
              (loop []
                (when-some [message (async/<!! message-chan)]
                  (try
-                   (write! client-channel (handler/handle message))
+                   (write2! client-channel (handler/handle message))
                    (catch Exception ex
-                     (write! client-channel
+                     (write2! client-channel
                        {:error
                         (merge {:message (ex-message ex)}
                           (when-let [data (ex-data ex)]
@@ -199,13 +210,13 @@
 
 
   (with-open [c (SocketChannel/open ^UnixDomainSocketAddress addr)]
-    (write! c {:op "Hello!"})
+    (write2! c {:op "Hello!"})
     (with-timeout #(read! c) 2))
 
 
   (def client-1 (SocketChannel/open ^UnixDomainSocketAddress addr))
 
-  (write! client-1 {:op "Hello 1!"})
+  (write2! client-1 {:op "Hello 1!"})
 
   (with-timeout #(read! client-1) 2)
 
