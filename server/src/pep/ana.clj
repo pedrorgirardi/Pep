@@ -2,6 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.tools.deps :as deps]
+   [clojure.tools.build.api :as b]
 
    [clj-kondo.core :as clj-kondo]))
 
@@ -44,6 +45,12 @@
     (some-> project_path
       slurp-deps
       deps-paths)))
+
+(defn project-classpath-basis
+  [project_path]
+  (when-let [deps-map (slurp-deps project_path)]
+    (binding [b/*project-root* project_path]
+      (b/create-basis {:projet deps-map}))))
 
 (defn mkdir-clj-kondo-cache!
   "Creates a .clj-kondo directory at `project_path` if it doesn't exist."
