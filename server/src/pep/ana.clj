@@ -25,9 +25,9 @@
    {:canonical-paths true}})
 
 (defn slurp-deps
-  "Slurp deps.edn from `project_path`."
-  [project_path]
-  (deps/slurp-deps (io/file project_path "deps.edn")))
+  "Slurp deps.edn from `root-path`."
+  [root-path]
+  (deps/slurp-deps (io/file root-path "deps.edn")))
 
 (defn deps-paths
   "Returns a vector containing paths and extra-paths."
@@ -39,36 +39,36 @@
     (:aliases deps-map)))
 
 (defn project-paths
-  [project_path]
+  [root-path]
   (into #{}
-    (map #(io/file project_path %))
-    (some-> project_path
-      slurp-deps
-      deps-paths)))
+    (map #(io/file root-path %))
+    (some-> root-path
+      (slurp-deps)
+      (deps-paths))))
 
 (defn project-classpath-basis
-  [project_path]
-  (when-let [deps-map (slurp-deps project_path)]
-    (binding [b/*project-root* project_path]
+  [root-path]
+  (when-let [deps-map (slurp-deps root-path)]
+    (binding [b/*project-root* root-path]
       (b/create-basis {:projet deps-map}))))
 
 (defn mkdir-clj-kondo-cache!
-  "Creates a .clj-kondo directory at `project_path` if it doesn't exist."
-  [project_path]
-  (let [dir (io/file project_path ".clj-kondo")]
+  "Creates a .clj-kondo directory at `root-path` if it doesn't exist."
+  [root-path]
+  (let [dir (io/file root-path ".clj-kondo")]
     (when-not (.exists dir)
       (.mkdir dir))))
 
 (defn analyze-paths!
   "Analyze paths with clj-kondo."
-  ([project_path]
-   (analyze-paths! paths-config project_path))
-  ([config project_path]
-   (let [paths (project-paths project_path)]
+  ([root-path]
+   (analyze-paths! paths-config root-path))
+  ([config root-path]
+   (let [paths (project-paths root-path)]
      (when (seq paths)
        ;; Note:
        ;; Analysis doesn't work without a `.clj-kondo` directory.
-       (mkdir-clj-kondo-cache! project_path)
+       (mkdir-clj-kondo-cache! root-path)
 
        (clj-kondo/run!
          {:lint paths
@@ -76,20 +76,17 @@
           :config config})))))
 
 (defn diagnostics
-  [project_path]
+  [root-path]
   (let [{:keys [findings summary]} (analyze-paths!
                                      {:skip-lint true
                                       :output {:canonical-paths true}}
-                                     project_path)]
+                                     root-path)]
     {:diagnostics (group-by :level findings)
      :summary summary}))
 
 
 (comment
 
-  (def paths-result (analyze-paths! "/Users/pedro/Developer/data90"))
-
-  (diagnostics "/Users/pedro/Developer/data90")
-
+  (diagnostics ".")
 
   )
