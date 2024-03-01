@@ -11,7 +11,7 @@
 (set! *warn-on-reflection* true)
 
 (defn request [^SocketChannel c r]
-  (server/write2! c r)
+  (server/write! c r)
   (server/with-timeout #(server/read! c) 2))
 
 (deftest handle-default-test

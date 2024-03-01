@@ -69,31 +69,6 @@
 
 (defn write! [^SocketChannel c m]
   (when (.isConnected c)
-    (let [^String s (json/write-str m)
-
-          ;; Wraps a byte array into a buffer.
-          ;;
-          ;; The new buffer will be backed by the given byte array;
-          ;; that is, modifications to the buffer will cause the array to be modified and vice versa.
-          ;;
-          ;; The new buffer's capacity and limit will be array.length,
-          ;; its position will be zero, its mark will be undefined,
-          ;; and its byte order will be BIG_ENDIAN.
-
-          ;; Its backing array will be the given array,
-          ;; and its array offset will be zero.
-          ^ByteBuffer buffer (ByteBuffer/wrap (.getBytes s))]
-
-      ;; Writes a sequence of bytes to this channel from the given buffer.
-      ;; An attempt is made to write up to r bytes to the channel,
-      ;; where r is the number of bytes remaining in the buffer, that is, src.remaining(),
-      ;; at the moment this method is invoked.
-      ;;
-      ;; Returns the number of bytes written, possibly zero.
-      (.write c buffer))))
-
-(defn write2! [^SocketChannel c m]
-  (when (.isConnected c)
     (let [outs (java.io.ByteArrayOutputStream.)]
 
       (with-open [writer (java.io.BufferedWriter. (java.io.OutputStreamWriter. outs "UTF-8"))]
@@ -149,9 +124,9 @@
              (loop []
                (when-some [message (async/<!! message-chan)]
                  (try
-                   (write2! client-channel (handler/handle message))
+                   (write! client-channel (handler/handle message))
                    (catch Exception ex
-                     (write2! client-channel
+                     (write! client-channel
                        {:error
                         (merge {:message (ex-message ex)}
                           (when-let [data (ex-data ex)]
@@ -208,13 +183,13 @@
 
 
   (with-open [c (SocketChannel/open ^UnixDomainSocketAddress addr)]
-    (write2! c {:op "Hello!"})
+    (write! c {:op "Hello!"})
     (with-timeout #(read! c) 2))
 
 
   (def client-1 (SocketChannel/open ^UnixDomainSocketAddress addr))
 
-  (write2! client-1 {:op "Hello 1!"})
+  (write! client-1 {:op "Hello 1!"})
 
   (with-timeout #(read! client-1) 2)
 
