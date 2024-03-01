@@ -5,3 +5,4 @@ Pep.sublime-workspace
 .cpcache
 .idea/
 .ruff_cache
+server/log/*.log
