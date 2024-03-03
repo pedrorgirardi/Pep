@@ -137,5 +137,9 @@
                 "operand": "source.clojure"
             }
         ]
+    },
+    {
+        "caption": "Pep: Diagnostics",
+        "command": "pg_pep_diagnostics"
     }
 ]

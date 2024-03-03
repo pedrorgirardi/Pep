@@ -5,8 +5,9 @@ import os
 import pathlib
 import re
 import shlex
-import subprocess
 import shutil
+import socket
+import subprocess
 import tempfile
 import threading
 import time
@@ -18,6 +19,7 @@ import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
 from .src import progress
+from .src import op
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -4278,6 +4280,40 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 
         except Exception:
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
+
+
+class PgPepDiagnosticsCommand(sublime_plugin.TextCommand):
+    """
+    Project's diagnostics.
+    """
+
+    def run(self, edit):
+        window_ = self.view.window()
+
+        def done_(response):
+            print(response)
+
+            progress.stop()
+
+        def run_():
+            if project_path_ := project_path(window_):
+                progress.start("")
+
+                try:
+                    with socket.socket(
+                        socket.AF_UNIX, socket.SOCK_STREAM
+                    ) as client_socket:
+                        client_socket.connect(op.server_default_path())
+
+                        response = op.diagnostics(client_socket, project_path_)
+
+                        sublime.set_timeout(lambda: done_(response), 0)
+                except Exception:
+                    print("Pep: Error: PgPepDiagnosticsCommand", traceback.format_exc())
+
+                    sublime.set_timeout(lambda: done_(None), 0)
+
+        threading.Thread(target=run_).start()
 
 
 # ---
