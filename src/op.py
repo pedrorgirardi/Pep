@@ -22,7 +22,7 @@ def req(client_socket: socket.socket, data: Dict[str, Any]) -> Dict[str, Any]:
         # and there is no way to determine how much data, if any, was successfully sent.
         client_socket.sendall(json.dumps(data).encode("utf-8"))
 
-        chunks = []
+        chunks = bytearray()
 
         while True:
             chunk = client_socket.recv(1024)
@@ -31,16 +31,13 @@ def req(client_socket: socket.socket, data: Dict[str, Any]) -> Dict[str, Any]:
             if not chunk:
                 break
 
-            chunks.append(chunk)
+            chunks.extend(chunk)
 
-            # Received less data than buffer size, assuming end of message:
-            if len(chunk) < 1024:
+            # Check if the last byte is the delimiter
+            if chunks[-1:] == b'\n':
                 break
 
-        # Combine all parts into one bytes object
-        response_bytes = b"".join(chunks)
-
-        return json.loads(response_bytes.decode("utf-8"))
+        return json.loads(chunks[:-1].decode("utf-8"))
 
 
 def diagnostics(client_socket: socket.socket, root_path: str) -> Dict[str, Any]:

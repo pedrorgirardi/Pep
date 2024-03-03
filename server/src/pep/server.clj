@@ -71,8 +71,9 @@
   (when (.isConnected c)
     (let [outs (java.io.ByteArrayOutputStream.)]
 
-      (with-open [writer (java.io.BufferedWriter. (java.io.OutputStreamWriter. outs "UTF-8"))]
-        (json/write m writer))
+      (with-open [^java.io.Writer writer (java.io.BufferedWriter. (java.io.OutputStreamWriter. outs "UTF-8"))]
+        (json/write m writer)
+        (.write writer "\n"))
 
       (.write c ^ByteBuffer (ByteBuffer/wrap (.toByteArray outs))))))
 
