@@ -139,6 +139,10 @@
         ]
     },
     {
+        "caption": "Pep: Show Output Panel",
+        "command": "pg_pep_show_output_panel"
+    },
+    {
         "caption": "Pep 2: Diagnostics",
         "command": "pg_pep_v2_diagnostics"
     }

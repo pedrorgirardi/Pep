@@ -4282,6 +4282,11 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
+class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        show_output_panel(self.window)
+
+
 class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
     """
     Project's diagnostics.
