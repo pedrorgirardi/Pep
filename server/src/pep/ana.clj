@@ -82,8 +82,16 @@
                                       :output
                                       {:format :json
                                        :canonical-paths true}}
-                                     root-path)]
-    {:diagnostics (group-by :level findings)
+                                     root-path)
+
+        diagnostics (group-by :level findings)
+        diagnostics (into {}
+                      (map
+                        (fn [[k v]]
+                          [k (sort-by (juxt :filename :row :col) v)]))
+                      diagnostics)]
+
+    {:diagnostics diagnostics
      :summary summary}))
 
 
