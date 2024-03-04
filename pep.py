@@ -4293,15 +4293,15 @@ class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
         show_output_panel(self.window)
 
 
-class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
+class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
     """
     Project's diagnostics.
     """
 
-    def run(self, edit):
-        window_ = self.view.window()
+    def run(self):
+        window_ = self.window
 
-        def done_(response):
+        def done_(root_path, response):
             progress.stop()
 
             content = []
@@ -4310,6 +4310,8 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
             diagnostics = response.get("success", {}).get("diagnostics", {})
 
             content.append("Diagnostics")
+
+            content.append(f"Path: {root_path}")
 
             content.append(
                 f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
@@ -4331,7 +4333,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
                         f'{index+1}. Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
                     )
 
-            panel = output_panel(self.view.window())
+            panel = output_panel(window_)
             panel.settings().set("gutter", False)
             panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
             panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
@@ -4346,10 +4348,13 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
 
             panel.set_read_only(True)
 
-            show_output_panel(self.view.window())
+            show_output_panel(window_)
 
         def run_():
-            if project_path_ := project_path(window_):
+            if folders_ := window_.folders():
+                # TODO: How to open more than one folder per window?
+                root_path = folders_[0]
+
                 progress.start("")
 
                 try:
@@ -4358,9 +4363,9 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
                     ) as client_socket:
                         client_socket.connect(op.server_default_path())
 
-                        response = op.diagnostics(client_socket, project_path_)
+                        response = op.diagnostics(client_socket, root_path)
 
-                        sublime.set_timeout(lambda: done_(response), 0)
+                        sublime.set_timeout(lambda: done_(root_path, response), 0)
                 except Exception:
                     print("Pep: Error: PgPepDiagnosticsCommand", traceback.format_exc())
 
