@@ -2948,6 +2948,20 @@ class ScopeInputHandler(sublime_plugin.ListInputHandler):
         return "Scope"
 
 
+class RootPathInputHandler(sublime_plugin.ListInputHandler):
+    def __init__(self, folders):
+        self.folders = folders
+
+    def name(self):
+        return "root_path"
+
+    def list_items(self):
+        return [(folder, folder) for folder in self.folders]
+
+    def placeholder(self):
+        return "Root Path"
+
+
 class ReplaceTextInputHandler(sublime_plugin.TextInputHandler):
     def __init__(self, text):
         self.text = text
@@ -4298,10 +4312,14 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
     Project's diagnostics.
     """
 
-    def run(self):
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler(folders=self.window.folders())
+
+    def run(self, root_path):
         window_ = self.window
 
-        def done_(root_path, response):
+        def show_diagnostics(root_path, response):
             content = []
 
             summary = response.get("success", {}).get("summary", {})
@@ -4309,7 +4327,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
 
             content.append("Diagnostics")
 
-            content.append(f"Path: {root_path}")
+            content.append(f"Root Path: {root_path}")
 
             content.append(
                 f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
@@ -4352,18 +4370,14 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("")
 
-                if folders_ := window_.folders():
-                    # TODO: How to open more than one folder per window?
-                    root_path = folders_[0]
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
+                    client_socket.connect(op.server_default_path())
 
-                    with socket.socket(
-                        socket.AF_UNIX, socket.SOCK_STREAM
-                    ) as client_socket:
-                        client_socket.connect(op.server_default_path())
+                    response = op.diagnostics(client_socket, root_path)
 
-                        response = op.diagnostics(client_socket, root_path)
-
-                        sublime.set_timeout(lambda: done_(root_path, response), 0)
+                    sublime.set_timeout(
+                        lambda: show_diagnostics(root_path, response), 0
+                    )
             except Exception:
                 print("Pep: Error: PgPepV2DiagnosticsCommand", traceback.format_exc())
             finally:
