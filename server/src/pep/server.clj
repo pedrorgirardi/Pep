@@ -81,95 +81,103 @@
   "Start the server.
 
   Returns a 'stop' (fn [] ...) which must be used to stop the server & release resources."
-  ([]
-   (start {:address (default-address)}))
-  ([{:keys [^UnixDomainSocketAddress address]}]
-   (let [^ExecutorService acceptor (Executors/newSingleThreadExecutor)
+  [{:keys [^UnixDomainSocketAddress address]}]
+  (let [^ExecutorService acceptor (Executors/newSingleThreadExecutor)
 
-         server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)
+        server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)
 
-         *conn# (atom 0)]
+        *conn# (atom 0)]
 
-     ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
-     (.bind server-channel ^UnixDomainSocketAddress address)
+    ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
+    (.bind server-channel address)
 
-     (log/info "🟢 Server: Started" (.toString (.getPath address)))
+    (log/info "🟢 Server: Started" (.toString (.getPath address)))
 
-     (submit acceptor
+    (submit acceptor
 
-       ;; The server starts two threads per connection:
-       ;; - for reading messages
-       ;; - for processing messages
+      ;; The server starts two threads per connection:
+      ;; - for reading messages
+      ;; - for processing messages
 
-       (while true
+      (while true
 
-         (log/info "⌛️ Server: Waiting for connection")
+        (log/info "⌛️ Server: Waiting for connection")
 
-         (let [;; Accepts a connection made to this channel's socket.
-               ;;
-               ;; The socket channel returned by this method, if any,
-               ;; will be in blocking mode regardless of the blocking mode of this channel.
-               ^SocketChannel client-channel (.accept server-channel)
+        (let [;; Accepts a connection made to this channel's socket.
+              ;;
+              ;; The socket channel returned by this method, if any,
+              ;; will be in blocking mode regardless of the blocking mode of this channel.
+              ^SocketChannel client-channel (.accept server-channel)
 
-               message-chan (async/chan 1)]
+              message-chan (async/chan 1)]
 
-           (swap! *conn# inc)
+          (swap! *conn# inc)
 
-           (log/info (format "🔌 Server: Accepted connection; Client %d" @*conn#))
+          (log/info (format "🔌 Server: Accepted connection; Client %d" @*conn#))
 
-           ;; -- Handler
-           ;; Process responsible for handling messages.
-           (async/thread
-             (log/info (format "🟢 Handler: Started; Client %d" @*conn#))
+          ;; -- Handler
+          ;; Process responsible for handling messages.
+          (async/thread
+            (log/info (format "🟢 Handler: Started; Client %d" @*conn#))
 
-             (loop []
-               (when-some [message (async/<!! message-chan)]
-                 (try
-                   (write! client-channel (handler/handle message))
-                   (catch Exception ex
-                     (write! client-channel
-                       {:error
-                        (merge {:message (ex-message ex)}
-                          (when-let [data (ex-data ex)]
-                            {:data data}))})))
+            (loop []
+              (when-some [message (async/<!! message-chan)]
+                (try
+                  (write! client-channel (handler/handle message))
+                  (catch Exception ex
+                    (write! client-channel
+                      {:error
+                       (merge {:message (ex-message ex)}
+                         (when-let [data (ex-data ex)]
+                           {:data data}))})))
 
-                 (recur)))
+                (recur)))
 
-             (log/info (format "🔴 Handler: Stopped; Client %d" @*conn#)))
+            (log/info (format "🔴 Handler: Stopped; Client %d" @*conn#)))
 
-           ;; -- Acceptor
-           ;; Process responsible for reading messages.
-           (async/thread
-             (log/info (format "🟢 Acceptor: Started; Client %d" @*conn#))
+          ;; -- Acceptor
+          ;; Process responsible for reading messages.
+          (async/thread
+            (log/info (format "🟢 Acceptor: Started; Client %d" @*conn#))
 
-             (with-open [client-channel client-channel]
-               (loop [message (read! client-channel)]
-                 (when message
-                   (async/>!! message-chan message)
+            (with-open [client-channel client-channel]
+              (loop [message (read! client-channel)]
+                (when message
+                  (async/>!! message-chan message)
 
-                   (recur (read! client-channel))))
+                  (recur (read! client-channel))))
 
-               (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*conn#)))
+              (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*conn#)))
 
-             (async/close! message-chan)
+            (async/close! message-chan)
 
-             (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
+            (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
 
-     (fn stop []
-       (try
-         (log/info "⌛️ Shutting down server...")
+    (fn stop []
+      (try
+        (log/info "⌛️ Shutting down server...")
 
-         (.close server-channel)
+        (.close server-channel)
 
-         (.shutdownNow acceptor)
+        (.shutdownNow acceptor)
 
-         (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
+        (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
 
-         (log/info "🔴 Server is down")
+        (log/info "🔴 Server is down")
 
-         (catch Exception ex
-           (log/error ex "Stop error")))))))
+        (catch Exception ex
+          (log/error ex "Stop error"))))))
 
+(defn start-default [& _]
+  (let [^UnixDomainSocketAddress address (default-address)]
+
+    (Files/deleteIfExists (.getPath address))
+
+    (let [^Runnable stop (start {:address address})]
+
+      (println "Pep server is up and running!")
+
+      (.addShutdownHook (Runtime/getRuntime) (Thread. stop)))))
 
 (comment
 
@@ -195,5 +203,11 @@
   (with-timeout #(read! client-1) 2)
 
   (.close client-1)
+
+
+  (start-default)
+
+  (System/exit 0)
+
 
   )
