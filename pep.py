@@ -4291,9 +4291,40 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
         window_ = self.view.window()
 
         def done_(response):
-            print(response)
-
             progress.stop()
+
+            content = []
+
+            diagnostics = response.get("success", {}).get("diagnostics", {})
+
+            for diagnostic in diagnostics.get("error", []):
+                if location := thingy_location(diagnostic):
+                    content.append(
+                        f'- Error: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                    )
+
+            for diagnostic in diagnostics.get("warning", []):
+                if location := thingy_location(diagnostic):
+                    content.append(
+                        f'- Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                    )
+
+            panel = output_panel(self.view.window())
+            panel.settings().set("gutter", False)
+            panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
+            panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
+            panel.settings().set("highlight_line", False)
+            panel.settings().set("line_numbers", False)
+            panel.settings().set("gutter", False)
+            panel.settings().set("scroll_past_end", False)
+
+            panel.set_read_only(False)
+            panel.run_command("select_all")
+            panel.run_command("left_delete")
+            panel.run_command("insert", {"characters": "\n\n".join(content)})
+            panel.set_read_only(True)
+
+            show_output_panel(self.view.window())
 
         def run_():
             if project_path_ := project_path(window_):
