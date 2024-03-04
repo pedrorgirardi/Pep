@@ -378,6 +378,12 @@ def output_panel(window):
     )
 
 
+def replace_output_panel_content(panel, characters):
+    panel.run_command("select_all")
+    panel.run_command("left_delete")
+    panel.run_command("insert", {"characters": characters})
+
+
 # ---
 
 
@@ -4149,9 +4155,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         panel.settings().set("scroll_past_end", False)
 
         panel.set_read_only(False)
-        panel.run_command("select_all")
-        panel.run_command("left_delete")
-        panel.run_command("insert", {"characters": "\n\n".join(usages_content)})
+
+        replace_output_panel_content(panel, "\n\n".join(usages_content))
+
         panel.set_read_only(True)
 
         show_output_panel(self.view.window())
@@ -4335,9 +4341,9 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
             panel.settings().set("scroll_past_end", False)
 
             panel.set_read_only(False)
-            panel.run_command("select_all")
-            panel.run_command("left_delete")
-            panel.run_command("insert", {"characters": "\n\n".join(content)})
+
+            replace_output_panel_content(panel, "\n\n".join(content))
+
             panel.set_read_only(True)
 
             show_output_panel(self.view.window())
