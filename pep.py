@@ -2949,14 +2949,14 @@ class ScopeInputHandler(sublime_plugin.ListInputHandler):
 
 
 class RootPathInputHandler(sublime_plugin.ListInputHandler):
-    def __init__(self, folders):
-        self.folders = folders
-
     def name(self):
         return "root_path"
 
     def list_items(self):
-        return [(folder, folder) for folder in self.folders]
+        # The returned value may be a list of item,
+        # or a 2-element tuple containing a list of items,
+        # and an int index of the item to pre-select.
+        return (sublime.active_window().folders(), 0)
 
     def placeholder(self):
         return "Root Path"
@@ -4314,7 +4314,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
 
     def input(self, args):
         if "root_path" not in args:
-            return RootPathInputHandler(folders=self.window.folders())
+            return RootPathInputHandler()
 
     def run(self, root_path):
         window_ = self.window
