@@ -139,7 +139,7 @@
         ]
     },
     {
-        "caption": "Pep: Diagnostics",
-        "command": "pg_pep_diagnostics"
+        "caption": "Pep 2: Diagnostics",
+        "command": "pg_pep_v2_diagnostics"
     }
 ]

@@ -4282,7 +4282,7 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
 
 
-class PgPepDiagnosticsCommand(sublime_plugin.TextCommand):
+class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
     """
     Project's diagnostics.
     """
