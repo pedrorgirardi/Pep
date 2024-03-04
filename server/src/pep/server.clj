@@ -153,31 +153,35 @@
 
             (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
 
-    (fn stop []
-      (try
-        (log/info "⌛️ Shutting down server...")
+    (let [^Runnable stop (fn stop []
+                           (try
+                             (log/info "⌛️ Shutting down server...")
 
-        (.close server-channel)
+                             (.close server-channel)
 
-        (.shutdownNow acceptor)
+                             (.shutdownNow acceptor)
 
-        (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
+                             (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
 
-        (log/info "🔴 Server is down")
+                             (log/info "🔴 Server is down")
 
-        (catch Exception ex
-          (log/error ex "Stop error"))))))
+                             (catch Exception ex
+                               (log/error ex "Stop error"))))]
+
+      (.addShutdownHook (Runtime/getRuntime) (Thread. stop))
+
+      stop)))
 
 (defn start-default [& _]
   (let [^UnixDomainSocketAddress address (default-address)]
 
     (Files/deleteIfExists (.getPath address))
 
-    (let [^Runnable stop (start {:address address})]
+    (let [stop (start {:address address})]
 
       (println "Pep server is up and running!")
 
-      (.addShutdownHook (Runtime/getRuntime) (Thread. stop)))))
+      stop)))
 
 (comment
 
@@ -205,9 +209,11 @@
   (.close client-1)
 
 
-  (start-default)
+  (def stop (start-default))
+
+  (stop)
+  
 
   (System/exit 0)
-
 
   )
