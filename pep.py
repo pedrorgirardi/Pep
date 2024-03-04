@@ -5,8 +5,9 @@ import os
 import pathlib
 import re
 import shlex
-import subprocess
 import shutil
+import socket
+import subprocess
 import tempfile
 import threading
 import time
@@ -18,6 +19,7 @@ import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
 from .src import progress
+from .src import op
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -374,6 +376,12 @@ def output_panel(window):
     return window.find_output_panel(OUTPUT_PANEL_NAME) or window.create_output_panel(
         OUTPUT_PANEL_NAME
     )
+
+
+def replace_output_panel_content(panel, characters):
+    panel.run_command("select_all")
+    panel.run_command("left_delete")
+    panel.run_command("insert", {"characters": characters})
 
 
 # ---
@@ -2940,6 +2948,20 @@ class ScopeInputHandler(sublime_plugin.ListInputHandler):
         return "Scope"
 
 
+class RootPathInputHandler(sublime_plugin.ListInputHandler):
+    def name(self):
+        return "root_path"
+
+    def list_items(self):
+        # The returned value may be a list of item,
+        # or a 2-element tuple containing a list of items,
+        # and an int index of the item to pre-select.
+        return (sublime.active_window().folders(), 0)
+
+    def placeholder(self):
+        return "Root Path"
+
+
 class ReplaceTextInputHandler(sublime_plugin.TextInputHandler):
     def __init__(self, text):
         self.text = text
@@ -4147,9 +4169,9 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
         panel.settings().set("scroll_past_end", False)
 
         panel.set_read_only(False)
-        panel.run_command("select_all")
-        panel.run_command("left_delete")
-        panel.run_command("insert", {"characters": "\n\n".join(usages_content)})
+
+        replace_output_panel_content(panel, "\n\n".join(usages_content))
+
         panel.set_read_only(True)
 
         show_output_panel(self.view.window())
@@ -4278,6 +4300,87 @@ class PgPepViewSummaryStatusCommand(sublime_plugin.TextCommand):
 
         except Exception:
             print("Pep: Error: PgPepViewSummaryStatusCommand", traceback.format_exc())
+
+
+class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        show_output_panel(self.window)
+
+
+class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
+    """
+    Project's diagnostics.
+    """
+
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler()
+
+    def run(self, root_path):
+        def show_diagnostics(root_path, response):
+            contents = ["Diagnostics", f"Root Path: {root_path}"]
+
+            summary = response.get("success", {}).get("summary", {})
+
+            contents.append(
+                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
+            )
+
+            contents.append(
+                f"Errors: {summary.get('error')}, Warnings: {summary.get('warning')}"
+            )
+
+            diagnostics = response.get("success", {}).get("diagnostics", {})
+
+            for index, diagnostic in enumerate(diagnostics.get("error", [])):
+                if location := thingy_location(diagnostic):
+                    contents.append(
+                        f'{index+1}. Error: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                    )
+
+            for index, diagnostic in enumerate(diagnostics.get("warning", [])):
+                if location := thingy_location(diagnostic):
+                    contents.append(
+                        f'{index+1}. Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                    )
+
+            panel = output_panel(self.window)
+            panel.settings().set("gutter", False)
+            panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
+            panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
+            panel.settings().set("highlight_line", False)
+            panel.settings().set("line_numbers", False)
+            panel.settings().set("gutter", False)
+            panel.settings().set("scroll_past_end", False)
+
+            panel.set_read_only(False)
+
+            replace_output_panel_content(panel, "\n\n".join(contents))
+
+            panel.set_read_only(True)
+
+            panel.show_at_center(0)
+
+            show_output_panel(self.window)
+
+        def run_():
+            try:
+                progress.start("Running Diagnostics...")
+
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
+                    client_socket.connect(op.server_default_path())
+
+                    response = op.diagnostics(client_socket, root_path)
+
+                    sublime.set_timeout(
+                        lambda: show_diagnostics(root_path, response), 0
+                    )
+            except Exception:
+                print("Pep: Error: PgPepV2DiagnosticsCommand", traceback.format_exc())
+            finally:
+                progress.stop()
+
+        threading.Thread(target=run_).start()
 
 
 # ---

@@ -79,9 +79,19 @@
   [root-path]
   (let [{:keys [findings summary]} (analyze-paths!
                                      {:skip-lint true
-                                      :output {:canonical-paths true}}
-                                     root-path)]
-    {:diagnostics (group-by :level findings)
+                                      :output
+                                      {:format :json
+                                       :canonical-paths true}}
+                                     root-path)
+
+        diagnostics (group-by :level findings)
+        diagnostics (into {}
+                      (map
+                        (fn [[k v]]
+                          [k (sort-by (juxt :filename :row :col) v)]))
+                      diagnostics)]
+
+    {:diagnostics diagnostics
      :summary summary}))
 
 
