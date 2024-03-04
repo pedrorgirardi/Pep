@@ -37,5 +37,5 @@
 
    :exec-fn cognitect.test-runner.api/test}
 
-  :start-default
-  {:exec-fn pep.server/start-default}}}
+  :start-dev
+  {:exec-fn pep.server/start-dev}}}

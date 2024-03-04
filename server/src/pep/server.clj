@@ -172,14 +172,14 @@
 
       stop)))
 
-(defn start-default [& _]
+(defn start-dev [& _]
   (let [^UnixDomainSocketAddress address (default-address)]
 
     (Files/deleteIfExists (.getPath address))
 
     (let [stop (start {:address address})]
 
-      (println "Pep server is up and running!")
+      (println (format "Server is ready to receive connection on: %s" (.getPath address)))
 
       stop)))
 
@@ -209,7 +209,7 @@
   (.close client-1)
 
 
-  (def stop (start-default))
+  (def stop (start-dev))
 
   (stop)
   
