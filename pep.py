@@ -4317,39 +4317,34 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             return RootPathInputHandler()
 
     def run(self, root_path):
-        window_ = self.window
-
         def show_diagnostics(root_path, response):
-            content = []
+            contents = ["Diagnostics", f"Root Path: {root_path}"]
 
             summary = response.get("success", {}).get("summary", {})
-            diagnostics = response.get("success", {}).get("diagnostics", {})
 
-            content.append("Diagnostics")
-
-            content.append(f"Root Path: {root_path}")
-
-            content.append(
+            contents.append(
                 f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
             )
 
-            content.append(
+            contents.append(
                 f"Errors: {summary.get('error')}, Warnings: {summary.get('warning')}"
             )
 
+            diagnostics = response.get("success", {}).get("diagnostics", {})
+
             for index, diagnostic in enumerate(diagnostics.get("error", [])):
                 if location := thingy_location(diagnostic):
-                    content.append(
+                    contents.append(
                         f'{index+1}. Error: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
                     )
 
             for index, diagnostic in enumerate(diagnostics.get("warning", [])):
                 if location := thingy_location(diagnostic):
-                    content.append(
+                    contents.append(
                         f'{index+1}. Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
                     )
 
-            panel = output_panel(window_)
+            panel = output_panel(self.window)
             panel.settings().set("gutter", False)
             panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
             panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
@@ -4360,15 +4355,17 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
 
             panel.set_read_only(False)
 
-            replace_output_panel_content(panel, "\n\n".join(content))
+            replace_output_panel_content(panel, "\n\n".join(contents))
 
             panel.set_read_only(True)
 
-            show_output_panel(window_)
+            panel.show_at_center(0)
+
+            show_output_panel(self.window)
 
         def run_():
             try:
-                progress.start("")
+                progress.start("Running Diagnostics...")
 
                 with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
                     client_socket.connect(op.server_default_path())
