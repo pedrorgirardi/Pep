@@ -80,8 +80,7 @@
   (let [{:keys [findings summary]} (analyze-paths!
                                      {:skip-lint true
                                       :output
-                                      {:format :json
-                                       :canonical-paths true}}
+                                      {:canonical-paths true}}
                                      root-path)
 
         diagnostics (group-by :level findings)
