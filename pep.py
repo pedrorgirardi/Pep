@@ -4300,18 +4300,29 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.TextCommand):
 
             content = []
 
+            summary = response.get("success", {}).get("summary", {})
             diagnostics = response.get("success", {}).get("diagnostics", {})
 
-            for diagnostic in diagnostics.get("error", []):
+            content.append("Diagnostics")
+
+            content.append(
+                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
+            )
+
+            content.append(
+                f"Errors: {summary.get('error')}, Warnings: {summary.get('warning')}"
+            )
+
+            for index, diagnostic in enumerate(diagnostics.get("error", [])):
                 if location := thingy_location(diagnostic):
                     content.append(
-                        f'- Error: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                        f'{index+1}. Error: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
                     )
 
-            for diagnostic in diagnostics.get("warning", []):
+            for index, diagnostic in enumerate(diagnostics.get("warning", [])):
                 if location := thingy_location(diagnostic):
                     content.append(
-                        f'- Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                        f'{index+1}. Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
                     )
 
             panel = output_panel(self.view.window())
