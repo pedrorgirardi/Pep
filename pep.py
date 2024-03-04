@@ -4302,8 +4302,6 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
         window_ = self.window
 
         def done_(root_path, response):
-            progress.stop()
-
             content = []
 
             summary = response.get("success", {}).get("summary", {})
@@ -4351,13 +4349,13 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             show_output_panel(window_)
 
         def run_():
-            if folders_ := window_.folders():
-                # TODO: How to open more than one folder per window?
-                root_path = folders_[0]
-
+            try:
                 progress.start("")
 
-                try:
+                if folders_ := window_.folders():
+                    # TODO: How to open more than one folder per window?
+                    root_path = folders_[0]
+
                     with socket.socket(
                         socket.AF_UNIX, socket.SOCK_STREAM
                     ) as client_socket:
@@ -4366,10 +4364,10 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
                         response = op.diagnostics(client_socket, root_path)
 
                         sublime.set_timeout(lambda: done_(root_path, response), 0)
-                except Exception:
-                    print("Pep: Error: PgPepDiagnosticsCommand", traceback.format_exc())
-
-                    sublime.set_timeout(lambda: done_(None), 0)
+            except Exception:
+                print("Pep: Error: PgPepV2DiagnosticsCommand", traceback.format_exc())
+            finally:
+                progress.stop()
 
         threading.Thread(target=run_).start()
 
