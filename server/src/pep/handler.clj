@@ -45,6 +45,7 @@
 (defmethod handle "namespace-definitions"
   [{:keys [root-path]}]
   (let [query "SELECT
+                  \"_semantic\",
                   \"name\",
                   \"row\",
                   \"end-row\",
@@ -54,7 +55,7 @@
                 FROM
                   '%s'
                 WHERE
-                  _sem = 'namespace-definitions'
+                  _semantic = 'namespace-definitions'
                 ORDER BY
                   \"name\""
 

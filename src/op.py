@@ -40,7 +40,10 @@ def req(client_socket: socket.socket, data: Dict[str, Any]) -> Dict[str, Any]:
         return json.loads(response[:-1].decode("utf-8"))
 
 
-def diagnostics(client_socket: socket.socket, root_path: str) -> Dict[str, Any]:
+def diagnostics(
+    client_socket: socket.socket,
+    root_path: str,
+) -> Dict[str, Any]:
     data = {
         "op": "diagnostics",
         "root-path": root_path,
@@ -49,13 +52,25 @@ def diagnostics(client_socket: socket.socket, root_path: str) -> Dict[str, Any]:
     return req(client_socket, data)
 
 
-if __name__ == "__main__":
-    # Create a socket object for Unix Domain Socket communication
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
-        client_socket.connect(server_default_path())
+def analyze(
+    client_socket: socket.socket,
+    root_path: str,
+) -> Dict[str, Any]:
+    data = {
+        "op": "analyze",
+        "root-path": root_path,
+    }
 
-        data = {"op": "foo"}
+    return req(client_socket, data)
 
-        response = req(client_socket, data)
 
-        print(response)
+def namespace_definitions(
+    client_socket: socket.socket,
+    root_path: str,
+) -> Dict[str, Any]:
+    data = {
+        "op": "namespace-definitions",
+        "root-path": root_path,
+    }
+
+    return req(client_socket, data)
