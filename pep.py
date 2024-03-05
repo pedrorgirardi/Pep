@@ -4586,6 +4586,9 @@ class PgPepEventListener(sublime_plugin.EventListener):
             set_classpath_analysis(project_path_, {})
 
     def on_pre_close_window(self, window):
+        """
+        Called right before a window is closed.
+        """
         global _client_socket_
 
         if _client_socket_:
