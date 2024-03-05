@@ -93,6 +93,15 @@
     {:diagnostics diagnostics
      :summary summary}))
 
+(defn index
+  "Returns a mapping of filename to its analysis data."
+  [analysis]
+  (let [;; Map different analysis data eg. locals, keywords to a vector.
+        xform (mapcat
+                (fn [[sem data]]
+                  (into [] (map #(assoc % :_sem sem)) data)))]
+    (group-by :filename (into [] xform analysis))))
+
 
 (comment
 
