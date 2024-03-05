@@ -151,6 +151,18 @@ def clientsocket():
     return _client_socket_
 
 
+def with_clientsocket_retry(f):
+    try:
+        return f(clientsocket())
+    except (socket.error, BrokenPipeError):
+        print("Pep: Socket error; Retrying...")
+
+        global _client_socket_
+        _client_socket_ = None
+
+        return f(clientsocket())
+
+
 def project_index(project_path, not_found={}):
     """
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
@@ -4384,7 +4396,9 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Diagnostics...")
 
-                response = op.diagnostics(clientsocket(), root_path)
+                response = with_clientsocket_retry(
+                    lambda c: op.diagnostics(c, root_path)
+                )
 
                 sublime.set_timeout(lambda: handle_response(root_path, response), 0)
             except Exception:
@@ -4435,7 +4449,9 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Analysis...")
 
-                response = op.analyze(clientsocket(), root_path)
+                response = with_clientsocket_retry(
+                    lambda c: op.analyze(c, root_path)
+                )
 
                 sublime.set_timeout(
                     lambda: handle_response(root_path, response),
@@ -4471,7 +4487,9 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("")
 
-                response = op.namespace_definitions(clientsocket(), root_path)
+                response = with_clientsocket_retry(
+                    lambda c: op.namespace_definitions(c, root_path)
+                )
 
                 sublime.set_timeout(
                     lambda: handle_response(root_path, response),
