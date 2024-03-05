@@ -1,8 +1,8 @@
 {
     "folders": [
         {
-            "path": "."
-        }
+            "path": ".",
+        },
     ],
     "pep": {
         "classpath": "clojure -Spath",
@@ -10,6 +10,6 @@
             "tests",
             "server/src",
             "server/test"
-        ]
-    }
+        ],
+    },
 }

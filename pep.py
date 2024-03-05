@@ -4449,9 +4449,7 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Analysis...")
 
-                response = with_clientsocket_retry(
-                    lambda c: op.analyze(c, root_path)
-                )
+                response = with_clientsocket_retry(lambda c: op.analyze(c, root_path))
 
                 sublime.set_timeout(
                     lambda: handle_response(root_path, response),
@@ -4463,6 +4461,18 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
                 progress.stop()
 
         threading.Thread(target=run_).start()
+
+
+class PgPepV2GotoNamespaceWrapperCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        if len(sublime.active_window().folders()) == 1:
+            root_path = sublime.active_window().folders()[0]
+
+            self.window.run_command(
+                "pg_pep_v2_goto_namespace", {"root_path": root_path}
+            )
+        else:
+            self.window.run_command("pg_pep_v2_goto_namespace")
 
 
 class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
