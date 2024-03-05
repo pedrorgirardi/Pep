@@ -12,14 +12,13 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 from zipfile import ZipFile
 
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
-from .src import progress
-from .src import op
+from .src import op, progress
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -151,7 +150,7 @@ def clientsocket():
     return _client_socket_
 
 
-def with_clientsocket_retry(f):
+def with_clientsocket_retry(f: Callable[[socket.socket], Any]) -> Any:
     try:
         return f(clientsocket())
     except (socket.error, BrokenPipeError):
