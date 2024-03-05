@@ -1,8 +1,11 @@
 (ns pep.handler-test
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.test :refer [deftest is]]
 
-   [pep.server :as server])
+   [pep.specs]
+   [pep.server :as server]
+   [pep.handler :as handler])
 
   (:import
    (java.nio.channels SocketChannel)
@@ -37,3 +40,16 @@
             (request c {:op "error"}))))
 
     (stop)))
+
+
+(deftest handle-namespace-definitions-test
+  (let [root-path (System/getProperty "user.dir")]
+
+    (handler/handle
+      {:op "analyze"
+       :root-path root-path})
+
+    (let [response (handler/handle
+                     {:op "namespace-definitions"
+                      :root-path root-path})]
+      (is (s/valid? :pep/namespace-definitions-handler-success response)))))
