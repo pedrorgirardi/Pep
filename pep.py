@@ -136,6 +136,21 @@ _view_analysis_ = {}
 _classpath_analysis_ = {}
 
 
+_client_socket_ = None
+
+
+def clientsocket():
+    global _client_socket_
+
+    if _client_socket_:
+        return _client_socket_
+
+    _client_socket_ = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    _client_socket_.connect(op.server_default_path())
+
+    return _client_socket_
+
+
 def project_index(project_path, not_found={}):
     """
     Mapping of filename to analysis data by semantic, e.g. var-definitions.
@@ -4369,12 +4384,9 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Diagnostics...")
 
-                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
-                    client_socket.connect(op.server_default_path())
+                response = op.diagnostics(clientsocket(), root_path)
 
-                    response = op.diagnostics(client_socket, root_path)
-
-                    sublime.set_timeout(lambda: handle_response(root_path, response), 0)
+                sublime.set_timeout(lambda: handle_response(root_path, response), 0)
             except Exception:
                 print("Pep: Error: PgPepV2DiagnosticsCommand", traceback.format_exc())
             finally:
@@ -4423,15 +4435,12 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Analysis...")
 
-                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
-                    client_socket.connect(op.server_default_path())
+                response = op.analyze(clientsocket(), root_path)
 
-                    response = op.analyze(client_socket, root_path)
-
-                    sublime.set_timeout(
-                        lambda: handle_response(root_path, response),
-                        0,
-                    )
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
             except Exception:
                 print("Pep: Error: PgPepV2AnalyzeCommand", traceback.format_exc())
             finally:
@@ -4462,15 +4471,12 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("")
 
-                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
-                    client_socket.connect(op.server_default_path())
+                response = op.namespace_definitions(clientsocket(), root_path)
 
-                    response = op.namespace_definitions(client_socket, root_path)
-
-                    sublime.set_timeout(
-                        lambda: handle_response(root_path, response),
-                        0,
-                    )
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
             except Exception:
                 print("Pep: Error: PgPepV2GotoNamespaceCommand", traceback.format_exc())
             finally:
@@ -4578,6 +4584,13 @@ class PgPepEventListener(sublime_plugin.EventListener):
             clear_project_index(project_path_)
 
             set_classpath_analysis(project_path_, {})
+
+    def on_pre_close_window(self, window):
+        global _client_socket_
+
+        if _client_socket_:
+            _client_socket_.close()
+            _client_socket_ = None
 
 
 # ---
