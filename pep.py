@@ -4463,16 +4463,14 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
         threading.Thread(target=run_).start()
 
 
-class PgPepV2GotoNamespaceWrapperCommand(sublime_plugin.WindowCommand):
+class PgPepV2GotoNamespaceDefaultsCommand(sublime_plugin.WindowCommand):
     def run(self):
-        if len(sublime.active_window().folders()) == 1:
-            root_path = sublime.active_window().folders()[0]
+        args = None
 
-            self.window.run_command(
-                "pg_pep_v2_goto_namespace", {"root_path": root_path}
-            )
-        else:
-            self.window.run_command("pg_pep_v2_goto_namespace")
+        if len(sublime.active_window().folders()) == 1:
+            args = {"root_path": sublime.active_window().folders()[0]}
+
+        self.window.run_command("pg_pep_v2_goto_namespace", args)
 
 
 class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
