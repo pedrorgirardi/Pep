@@ -67,9 +67,52 @@
 
     {:success rows}))
 
+(defn duckconn []
+  (doto
+    (jdbc/get-connection "jdbc:duckdb:")
+    (jdbc/execute! ["INSTALL json; LOAD json;"])))
+
+(defmethod handle "find-definitions"
+  [{:keys [root-path filename row col]}]
+  (with-open [db (duckconn)]
+    (let [query "SELECT
+                          _semantic,
+                          name,
+                          row,
+                          \"name-row\",
+                          \"name-end-row\",
+                          \"end-row\",
+                          col,
+                          \"end-col\",
+                          filename
+                        FROM
+                          '%s'
+                        WHERE
+                          filename = ?
+                          AND row = ?
+                          AND col <= ?
+                          AND \"end-col\" >= ?"
+
+          query (format query (io/file root-path ".pep" "*.json"))
+
+          at-cursor (jdbc/execute! db [query filename row col col])]
+
+      {:success at-cursor})))
+
 (comment
 
   (def root-path (System/getProperty "user.dir"))
+
+  (require '[clojure.pprint :as pprint])
+
+  (pprint/print-table [:column_name :column_type :null_percentage]
+    (into []
+      (map #(select-keys % [:column_name :column_type :null_percentage]))
+      (with-open [conn (duckconn)]
+        (jdbc/execute! conn
+          [(format "SUMMARIZE SELECT * FROM '%s'"
+             (io/file root-path ".pep" "*.json"))]))))
+
 
   (handle
     {:op "diagnostics"
@@ -82,5 +125,12 @@
   (handle
     {:op "namespace-definitions"
      :root-path root-path})
+
+  (handle
+    {:op "find-definitions"
+     :root-path root-path
+     :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
+     :row 75
+     :col 15})
 
   )
