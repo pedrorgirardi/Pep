@@ -8,7 +8,7 @@
 
   io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}
 
-  ch.qos.logback/logback-classic {:mvn/version "1.5.0"}
+  ch.qos.logback/logback-classic {:mvn/version "1.5.3"}
 
   clj-kondo/clj-kondo {:mvn/version "2024.03.05"}
 
