@@ -5,7 +5,8 @@
 
    [next.jdbc :as jdbc]
 
-   [pep.ana :as ana]))
+   [pep.ana :as ana]
+   [pep.db :as db]))
 
 (defmulti handle
   "Multimethod to handle client requests.
@@ -76,22 +77,30 @@
   [{:keys [root-path filename row col]}]
   (with-open [db (duckconn)]
     (let [query "SELECT
-                          _semantic,
-                          name,
-                          row,
+                          \"_semantic\",
+                          \"name\",
+
+                          \"row\",
+                          \"end-row\",
+                          \"col\",
+                          \"end-col\",
+
                           \"name-row\",
                           \"name-end-row\",
-                          \"end-row\",
-                          col,
-                          \"end-col\",
-                          filename
+                          \"name-col\",
+                          \"name-end-col\",
+
+                          \"alias-row\",
+                          \"alias-end-row\",
+                          \"alias-col\",
+                          \"alias-end-col\"
+
+                          \"filename\"
                         FROM
                           '%s'
                         WHERE
-                          filename = ?
-                          AND row = ?
-                          AND col <= ?
-                          AND \"end-col\" >= ?"
+                          \"filename\" = ?
+                          AND \"name-row\" = ?"
 
           query (format query (io/file root-path ".pep" "*.json"))
 
@@ -132,5 +141,12 @@
      :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
      :row 75
      :col 15})
+
+
+  (with-open [conn (db/conn)]
+    (db/at-row conn
+      {:root-path root-path
+       :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
+       :name-row 11}))
 
   )
