@@ -80,8 +80,7 @@
   (let [{:keys [findings summary]} (analyze-paths!
                                      {:skip-lint true
                                       :output
-                                      {:format :json
-                                       :canonical-paths true}}
+                                      {:canonical-paths true}}
                                      root-path)
 
         diagnostics (group-by :level findings)
@@ -93,6 +92,15 @@
 
     {:diagnostics diagnostics
      :summary summary}))
+
+(defn index
+  "Returns a mapping of filename to its analysis data."
+  [analysis]
+  (let [;; Map different analysis data eg. locals, keywords to a vector.
+        xform (mapcat
+                (fn [[sem data]]
+                  (into [] (map #(assoc % :_semantic sem)) data)))]
+    (group-by :filename (into [] xform analysis))))
 
 
 (comment

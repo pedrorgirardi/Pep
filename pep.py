@@ -12,14 +12,13 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import List, Optional
+from typing import Any, Callable, List, Optional, Union
 from zipfile import ZipFile
 
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
-from .src import progress
-from .src import op
+from .src import op, progress
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -50,6 +49,8 @@ TT_NAMESPACE_DEFINITION = "namespace_definition"
 TT_NAMESPACE_USAGE = "namespace_usage"
 TT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 TT_JAVA_CLASS_USAGE = "java_class_usage"
+
+SEM_NS_DEF = "namespace-definitions"
 
 OUTPUT_PANEL_NAME = "pep"
 OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
@@ -132,6 +133,38 @@ _index_ = {}
 _view_analysis_ = {}
 
 _classpath_analysis_ = {}
+
+
+_client_socket_ = None
+
+
+def clientsocket():
+    global _client_socket_
+
+    if _client_socket_:
+        return _client_socket_
+
+    _client_socket_ = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    _client_socket_.connect(op.server_default_path())
+
+    return _client_socket_
+
+
+def with_clientsocket_retry(f: Callable[[socket.socket], Any]) -> Any:
+    try:
+        return f(clientsocket())
+    except (socket.error, BrokenPipeError):
+        print("Pep: Socket error; Retrying...")
+
+        global _client_socket_
+        _client_socket_ = None
+
+        return f(clientsocket())
+
+
+def window_root_path(window: sublime.Window) -> Union[str, None]:
+    if len(window.folders()) == 1:
+        return window.folders()[0]
 
 
 def project_index(project_path, not_found={}):
@@ -1337,7 +1370,7 @@ def keyword_quick_panel_item(thingy_data, opts={}):
 def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]:
     semantic = thingy["_semantic"]
 
-    if semantic == TT_NAMESPACE_DEFINITION:
+    if semantic == TT_NAMESPACE_DEFINITION or semantic == SEM_NS_DEF:
         return namespace_quick_panel_item(thingy, opts)
 
     elif semantic == TT_NAMESPACE_USAGE:
@@ -4317,7 +4350,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             return RootPathInputHandler()
 
     def run(self, root_path):
-        def show_diagnostics(root_path, response):
+        def handle_response(root_path, response):
             contents = ["Diagnostics", f"Root Path: {root_path}"]
 
             summary = response.get("success", {}).get("summary", {})
@@ -4367,16 +4400,115 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Diagnostics...")
 
-                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
-                    client_socket.connect(op.server_default_path())
+                response = with_clientsocket_retry(
+                    lambda c: op.diagnostics(c, root_path)
+                )
 
-                    response = op.diagnostics(client_socket, root_path)
-
-                    sublime.set_timeout(
-                        lambda: show_diagnostics(root_path, response), 0
-                    )
+                sublime.set_timeout(lambda: handle_response(root_path, response), 0)
             except Exception:
                 print("Pep: Error: PgPepV2DiagnosticsCommand", traceback.format_exc())
+            finally:
+                progress.stop()
+
+        threading.Thread(target=run_).start()
+
+
+class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler()
+
+    def run(self, root_path):
+        def handle_response(root_path, response):
+            contents = ["Analysis", f"Root Path: {root_path}"]
+
+            summary = response.get("success", {}).get("summary", {})
+
+            contents.append(
+                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
+            )
+
+            contents.append(
+                f"Errors: {summary.get('error')}, Warnings: {summary.get('warning')}"
+            )
+
+            panel = output_panel(self.window)
+            panel.settings().set("gutter", False)
+            panel.settings().set("highlight_line", False)
+            panel.settings().set("line_numbers", False)
+            panel.settings().set("gutter", False)
+            panel.settings().set("scroll_past_end", False)
+
+            panel.set_read_only(False)
+
+            replace_output_panel_content(panel, "\n\n".join(contents))
+
+            panel.set_read_only(True)
+
+            panel.show_at_center(0)
+
+            show_output_panel(self.window)
+
+        def run_():
+            try:
+                progress.start("Running Analysis...")
+
+                response = with_clientsocket_retry(lambda c: op.analyze(c, root_path))
+
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
+            except Exception:
+                print("Pep: Error: PgPepV2AnalyzeCommand", traceback.format_exc())
+            finally:
+                progress.stop()
+
+        threading.Thread(target=run_).start()
+
+
+class PgPepV2GotoNamespaceDefaultsCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        args = None
+
+        if root_path := window_root_path(self.window):
+            args = {"root_path": root_path}
+
+        self.window.run_command("pg_pep_v2_goto_namespace", args)
+
+
+class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler()
+
+    def run(self, root_path):
+        def handle_response(root_path, response):
+            goto_thingy(
+                self.window,
+                response.get("success"),
+                goto_on_highlight=False,
+                goto_side_by_side=False,
+                quick_panel_item_opts={
+                    "show_filename": False,
+                    "show_row_col": False,
+                },
+            )
+
+        def run_():
+            try:
+                progress.start("")
+
+                response = with_clientsocket_retry(
+                    lambda c: op.namespace_definitions(c, root_path)
+                )
+
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
+            except Exception:
+                print("Pep: Error: PgPepV2GotoNamespaceCommand", traceback.format_exc())
             finally:
                 progress.stop()
 
@@ -4482,6 +4614,16 @@ class PgPepEventListener(sublime_plugin.EventListener):
             clear_project_index(project_path_)
 
             set_classpath_analysis(project_path_, {})
+
+    def on_pre_close_window(self, window):
+        """
+        Called right before a window is closed.
+        """
+        global _client_socket_
+
+        if _client_socket_:
+            _client_socket_.close()
+            _client_socket_ = None
 
 
 # ---

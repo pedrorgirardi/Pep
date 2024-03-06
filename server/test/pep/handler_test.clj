@@ -1,39 +1,21 @@
 (ns pep.handler-test
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.test :refer [deftest is]]
 
-   [pep.server :as server])
-
-  (:import
-   (java.nio.channels SocketChannel)
-   (java.net UnixDomainSocketAddress)))
+   [pep.specs]
+   [pep.handler :as handler]))
 
 (set! *warn-on-reflection* true)
 
-(defn request [^SocketChannel c r]
-  (server/write! c r)
-  (server/with-timeout #(server/read! c) 2))
+(deftest handle-namespace-definitions-test
+  (let [root-path (System/getProperty "user.dir")]
 
-(deftest handle-default-test
-  (let [address (server/random-address)
+    (handler/handle
+      {:op "analyze"
+       :root-path root-path})
 
-        stop (server/start {:address address})]
-
-    (is (= {:success "nop"}
-          (with-open [c (SocketChannel/open ^UnixDomainSocketAddress address)]
-            (request c {:op "Hello!"}))))
-
-    (stop)))
-
-(deftest handle-error-test
-  (let [address (server/random-address)
-
-        stop (server/start {:address address})]
-
-    (is (= {:error
-            {:message "Bad handler."
-             :data {:foo "bar"}}}
-          (with-open [c (SocketChannel/open ^UnixDomainSocketAddress address)]
-            (request c {:op "error"}))))
-
-    (stop)))
+    (let [response (handler/handle
+                     {:op "namespace-definitions"
+                      :root-path root-path})]
+      (is (s/valid? :pep/namespace-definitions-handler-success response)))))

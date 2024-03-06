@@ -145,5 +145,13 @@
     {
         "caption": "Pep 2: Diagnostics",
         "command": "pg_pep_v2_diagnostics"
+    },
+    {
+        "caption": "Pep 2: Analyze",
+        "command": "pg_pep_v2_analyze"
+    },
+    {
+        "caption": "Pep 2: Goto Namespace",
+        "command": "pg_pep_v2_goto_namespace"
     }
 ]

@@ -10,10 +10,7 @@
 
   ch.qos.logback/logback-classic {:mvn/version "1.5.0"}
 
-  clj-kondo/clj-kondo {:mvn/version "2024.02.12"}
-
-  babashka/fs {:mvn/version "0.5.20"}
-  babashka/process {:mvn/version "0.5.21"}
+  clj-kondo/clj-kondo {:mvn/version "2024.03.05"}
 
   com.github.seancorfield/next.jdbc {:mvn/version "1.3.909"}
   org.duckdb/duckdb_jdbc {:mvn/version "0.10.0"}}
