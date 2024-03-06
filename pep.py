@@ -12,7 +12,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 from zipfile import ZipFile
 
 import sublime  # type: ignore
@@ -160,6 +160,11 @@ def with_clientsocket_retry(f: Callable[[socket.socket], Any]) -> Any:
         _client_socket_ = None
 
         return f(clientsocket())
+
+
+def window_root_path(window: sublime.Window) -> Union[str, None]:
+    if len(window.folders()) == 1:
+        return window.folders()[0]
 
 
 def project_index(project_path, not_found={}):
@@ -4466,8 +4471,8 @@ class PgPepV2GotoNamespaceDefaultsCommand(sublime_plugin.WindowCommand):
     def run(self):
         args = None
 
-        if len(sublime.active_window().folders()) == 1:
-            args = {"root_path": sublime.active_window().folders()[0]}
+        if root_path := window_root_path(self.window):
+            args = {"root_path": root_path}
 
         self.window.run_command("pg_pep_v2_goto_namespace", args)
 
