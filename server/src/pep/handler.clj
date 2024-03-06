@@ -69,7 +69,7 @@
 
 (comment
 
-  (def root-path "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server")
+  (def root-path (System/getProperty "user.dir"))
 
   (handle
     {:op "diagnostics"
