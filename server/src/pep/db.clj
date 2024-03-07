@@ -14,17 +14,30 @@
     (jdbc/get-connection "jdbc:duckdb:")
     (jdbc/execute! ["INSTALL json; LOAD json;"])))
 
-(defn find-row
+(defn select-namespace-definitions
+  [conn root-path]
+  (let [sql "SELECT
+                  *
+              FROM
+                  '%s'
+              WHERE
+                  _semantic = 'namespace-definitions'
+              ORDER BY
+                  name"
+
+        sql (format sql (io/file (cache-dir root-path) "*.json"))]
+
+    (jdbc/execute! conn [sql])))
+
+(defn select-row
   [conn root-path {:keys [filename row]}]
   (let [sql "SELECT
-               *
-
+                 *
              FROM
-               '%s'
-
+                 '%s'
              WHERE
-               filename = ?
-               AND (\"name-row\" = ? OR row = ?)"
+                 filename = ?
+                 AND (\"name-row\" = ? OR row = ?)"
 
         sql (format sql (io/file (cache-dir root-path) "*.json"))]
 
