@@ -14,22 +14,23 @@
   Dispatched by `:op`.
 
   Returns a map with either `:success` or `:error`."
-  :op)
+  (fn [_context {:keys [op]}]
+    op))
 
 (defmethod handle :default
-  [_]
+  [_ _]
   {:success "nop"})
 
 (defmethod handle "error"
-  [_]
+  [__ ]
   (throw (ex-info "Bad handler." {:foo :bar})))
 
 (defmethod handle "diagnostics"
-  [{:keys [root-path]}]
+  [_ {:keys [root-path]}]
   {:success (ana/diagnostics root-path)})
 
 (defmethod handle "analyze"
-  [{:keys [root-path]}]
+  [_ {:keys [root-path]}]
   (let [{:keys [summary analysis]} (ana/analyze-paths! root-path)
 
         index (ana/index analysis)]
@@ -44,35 +45,31 @@
     {:success {:summary summary}}))
 
 (defmethod handle "namespace-definitions"
-  [{:keys [root-path]}]
-  (let [namespace-definitions (with-open [conn (db/conn)]
-                                (db/select-namespace-definitions conn root-path))]
-
-    {:success namespace-definitions}))
+  [{:keys [conn]} {:keys [root-path]}]
+  {:success (db/select-namespace-definitions conn root-path)})
 
 (defmethod handle "find-definitions"
-  [{:keys [root-path filename row col]}]
-  (with-open [conn (db/conn)]
-    (let [row-data (db/select-row conn root-path
-                     {:filename filename
-                      :row row})
+  [{:keys [conn]} {:keys [root-path filename row col]}]
+  (let [row-data (db/select-row conn root-path
+                   {:filename filename
+                    :row row})
 
-          prospects (ana/within-range row-data
-                      {:start col
-                       :end col})
+        prospects (ana/within-range row-data
+                    {:start col
+                     :end col})
 
-          prospects (into [] (filter (comp ana/DEFS :_semantic)) prospects)]
+        prospects (into [] (filter (comp ana/DEFS :_semantic)) prospects)]
 
-      (cond
-        (seq prospects)
-        (into []
-          (map
-            (fn [m]
-              (into {} (remove (comp nil? val)) m)))
-          prospects)
+    (cond
+      (seq prospects)
+      (into []
+        (map
+          (fn [m]
+            (into {} (remove (comp nil? val)) m)))
+        prospects)
 
-        :else
-        nil))))
+      :else
+      nil)))
 
 (comment
 

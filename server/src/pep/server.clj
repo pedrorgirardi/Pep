@@ -5,6 +5,7 @@
    [clojure.data.json :as json]
    [clojure.core.async :as async]
 
+   [pep.db :as db]
    [pep.handler :as handler])
 
   (:import
@@ -86,7 +87,9 @@
 
         server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)
 
-        *conn# (atom 0)]
+        *clients# (atom 0)
+
+        conn (db/conn)]
 
     ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
     (.bind server-channel address)
@@ -111,19 +114,19 @@
 
               message-chan (async/chan 1)]
 
-          (swap! *conn# inc)
+          (swap! *clients# inc)
 
-          (log/info (format "🔌 Server: Accepted connection; Client %d" @*conn#))
+          (log/info (format "🔌 Server: Accepted connection; Client %d" @*clients#))
 
           ;; -- Handler
           ;; Process responsible for handling messages.
           (async/thread
-            (log/info (format "🟢 Handler: Started; Client %d" @*conn#))
+            (log/info (format "🟢 Handler: Started; Client %d" @*clients#))
 
             (loop []
               (when-some [message (async/<!! message-chan)]
                 (try
-                  (write! client-channel (handler/handle message))
+                  (write! client-channel (handler/handle {:conn conn} message))
                   (catch Exception ex
                     (write! client-channel
                       {:error
@@ -133,12 +136,12 @@
 
                 (recur)))
 
-            (log/info (format "🔴 Handler: Stopped; Client %d" @*conn#)))
+            (log/info (format "🔴 Handler: Stopped; Client %d" @*clients#)))
 
           ;; -- Acceptor
           ;; Process responsible for reading messages.
           (async/thread
-            (log/info (format "🟢 Acceptor: Started; Client %d" @*conn#))
+            (log/info (format "🟢 Acceptor: Started; Client %d" @*clients#))
 
             (with-open [client-channel client-channel]
               (loop [message (read! client-channel)]
@@ -147,11 +150,11 @@
 
                   (recur (read! client-channel))))
 
-              (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*conn#)))
+              (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*clients#)))
 
             (async/close! message-chan)
 
-            (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
+            (log/info (format "🔴 Acceptor: Stopped; Client %d" @*clients#))))))
 
     (let [^Runnable stop (fn stop []
                            (try
@@ -162,6 +165,8 @@
                              (.shutdownNow acceptor)
 
                              (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
+
+                             (some-> conn .close)
 
                              (log/info "🔴 Server is down")
 
