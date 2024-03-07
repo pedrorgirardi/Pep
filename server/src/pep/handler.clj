@@ -83,7 +83,11 @@
 
       (cond
         (seq prospects)
-        prospects
+        (into []
+          (map
+            (fn [m]
+              (into {} (remove (comp nil? val)) m)))
+          prospects)
 
         :else
         nil))))

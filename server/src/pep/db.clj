@@ -17,32 +17,14 @@
 (defn find-row
   [conn root-path {:keys [filename row]}]
   (let [sql "SELECT
-              \"_semantic\",
-              \"name\",
-              \"doc\",
-    		      \"filename\",
+               *
 
-              \"row\",
-              \"end-row\",
-              \"col\",
-              \"end-col\",
+             FROM
+               '%s'
 
-              \"name-row\",
-              \"name-end-row\",
-              \"name-col\",
-              \"name-end-col\",
-
-              \"alias-row\",
-              \"alias-end-row\",
-              \"alias-col\",
-              \"alias-end-col\"
-
-            FROM
-              '%s'
-
-            WHERE
-              \"filename\" = ?
-              AND (\"name-row\" = ? OR \"row\" = ?)"
+             WHERE
+               filename = ?
+               AND (\"name-row\" = ? OR row = ?)"
 
         sql (format sql (io/file (cache-dir root-path) "*.json"))]
 
