@@ -17,9 +17,20 @@
 (defn select-namespace-definitions
   [conn root-path]
   (let [sql "SELECT
-                  *
+                  _semantic,
+                  name,
+                  doc,
+                  filename,
+                  row,
+                  \"end-row\",
+                  col,
+                  \"end-col\",
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
               FROM
-                  read_json_auto('%s', format='array', union_by_name=true)
+                  read_json_auto('%s', format='array')
               WHERE
                   _semantic = 'namespace-definitions'
               ORDER BY
@@ -34,7 +45,7 @@
   (let [sql "SELECT
                  *
              FROM
-                 read_json_auto('%s', format='array', union_by_name=true)
+                 read_json_auto('%s', format='array')
              WHERE
                  filename = ?
                  AND (\"name-row\" = ? OR row = ?)"
