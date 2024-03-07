@@ -6,6 +6,11 @@
 
    [clj-kondo.core :as clj-kondo]))
 
+(def DEFS
+  #{"namespace-definitions"
+    "var-definitions"
+    "locals"})
+
 (def paths-config
   {:skip-lint true
 
@@ -102,9 +107,11 @@
                   (into [] (map #(assoc % :_semantic sem)) data)))]
     (group-by :filename (into [] xform analysis))))
 
+(defn within-range
+  [data {:keys [start end]}]
+  (into []
+    (filter
+      (fn [{:keys [col name-col end-col name-end-col]}]
+        (<= (or name-col col) start end (or name-end-col end-col))))
+    data))
 
-(comment
-
-  (diagnostics ".")
-
-  )

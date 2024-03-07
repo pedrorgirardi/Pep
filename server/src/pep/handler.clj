@@ -68,45 +68,25 @@
 
     {:success rows}))
 
-(defn duckconn []
-  (doto
-    (jdbc/get-connection "jdbc:duckdb:")
-    (jdbc/execute! ["INSTALL json; LOAD json;"])))
-
 (defmethod handle "find-definitions"
   [{:keys [root-path filename row col]}]
-  (with-open [db (duckconn)]
-    (let [query "SELECT
-                          \"_semantic\",
-                          \"name\",
+  (with-open [conn (db/conn)]
+    (let [row-data (db/find-row conn root-path
+                     {:filename filename
+                      :row row})
 
-                          \"row\",
-                          \"end-row\",
-                          \"col\",
-                          \"end-col\",
+          prospects (ana/within-range row-data
+                      {:start col
+                       :end col})
 
-                          \"name-row\",
-                          \"name-end-row\",
-                          \"name-col\",
-                          \"name-end-col\",
+          prospects (into [] (filter (comp ana/DEFS :_semantic)) prospects)]
 
-                          \"alias-row\",
-                          \"alias-end-row\",
-                          \"alias-col\",
-                          \"alias-end-col\"
+      (cond
+        (seq prospects)
+        prospects
 
-                          \"filename\"
-                        FROM
-                          '%s'
-                        WHERE
-                          \"filename\" = ?
-                          AND \"name-row\" = ?"
-
-          query (format query (io/file root-path ".pep" "*.json"))
-
-          at-cursor (jdbc/execute! db [query filename row col col])]
-
-      {:success at-cursor})))
+        :else
+        nil))))
 
 (comment
 
@@ -117,7 +97,7 @@
   (pprint/print-table [:column_name :column_type :null_percentage]
     (into []
       (map #(select-keys % [:column_name :column_type :null_percentage]))
-      (with-open [conn (duckconn)]
+      (with-open [conn (db/conn)]
         (jdbc/execute! conn
           [(format "SUMMARIZE SELECT * FROM '%s'"
              (io/file root-path ".pep" "*.json"))]))))
@@ -139,14 +119,21 @@
     {:op "find-definitions"
      :root-path root-path
      :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-     :row 75
-     :col 15})
+     :row 48
+     :col 12})
 
 
   (with-open [conn (db/conn)]
-    (db/at-row conn
-      {:root-path root-path
-       :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-       :name-row 11}))
+    (db/find-row conn root-path
+      {:filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
+       :row 85}))
+
+  (with-open [conn (db/conn)]
+    (ana/within-range
+      (db/find-row conn root-path
+        {:filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
+         :row 48})
+      {:start 12 :end 12}))
+
 
   )

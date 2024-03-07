@@ -14,11 +14,13 @@
     (jdbc/get-connection "jdbc:duckdb:")
     (jdbc/execute! ["INSTALL json; LOAD json;"])))
 
-(defn at-row [conn {:keys [root-path filename name-row]}]
+(defn find-row
+  [conn root-path {:keys [filename row]}]
   (let [sql "SELECT
               \"_semantic\",
               \"name\",
-		      \"filename\",
+              \"doc\",
+    		      \"filename\",
 
               \"row\",
               \"end-row\",
@@ -40,11 +42,11 @@
 
             WHERE
               \"filename\" = ?
-              AND \"name-row\" = ?"
+              AND (\"name-row\" = ? OR \"row\" = ?)"
 
         sql (format sql (io/file (cache-dir root-path) "*.json"))]
 
-    (jdbc/execute! conn [sql filename name-row])))
+    (jdbc/execute! conn [sql filename row row])))
 
 (comment
 
