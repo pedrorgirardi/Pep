@@ -94,9 +94,10 @@
     {:op "analyze"
      :root-path root-path})
 
-  (handle
-    {:op "namespace-definitions"
-     :root-path root-path})
+  (with-open [conn (db/conn)]
+    (handle {:conn conn}
+      {:op "namespace-definitions"
+       :root-path root-path}))
 
   (handle
     {:op "find-definitions"

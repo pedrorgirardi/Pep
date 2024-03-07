@@ -19,7 +19,7 @@
   (let [sql "SELECT
                   *
               FROM
-                  '%s'
+                  read_json_auto('%s', format='array', union_by_name=true)
               WHERE
                   _semantic = 'namespace-definitions'
               ORDER BY
@@ -34,7 +34,7 @@
   (let [sql "SELECT
                  *
              FROM
-                 '%s'
+                 read_json_auto('%s', format='array', union_by_name=true)
              WHERE
                  filename = ?
                  AND (\"name-row\" = ? OR row = ?)"
