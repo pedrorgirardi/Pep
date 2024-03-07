@@ -4442,10 +4442,6 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
                 f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
             )
 
-            contents.append(
-                f"Errors: {summary.get('error')}, Warnings: {summary.get('warning')}"
-            )
-
             panel = output_panel(self.window)
             panel.settings().set("gutter", False)
             panel.settings().set("highlight_line", False)
