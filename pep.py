@@ -19,6 +19,7 @@ import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
 from .src import op, progress
+from .src.error import PepSocketError
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -150,16 +151,29 @@ def clientsocket():
     return _client_socket_
 
 
-def with_clientsocket_retry(f: Callable[[socket.socket], Any]) -> Any:
+def clientsocket_retry(retries=1):
     try:
-        return f(clientsocket())
-    except (socket.error, BrokenPipeError):
-        print("Pep: Socket error; Retrying...")
-
+        return clientsocket()
+    except Exception:
         global _client_socket_
         _client_socket_ = None
 
-        return f(clientsocket())
+        if retries > 0:
+            print("Pep: Socket error; Retrying...", retries)
+
+            return clientsocket_retry(retries=retries - 1)
+
+        raise PepSocketError("Can't connect to Pep server.")
+
+
+def with_clientsocket_retry(f: Callable[[socket.socket], Any]) -> Any:
+    try:
+        return f(clientsocket_retry())
+    except PepSocketError:
+        global _client_socket_
+        _client_socket_ = None
+
+        raise
 
 
 def window_root_path(window: sublime.Window) -> Union[str, None]:
