@@ -50,26 +50,32 @@
 
 (defmethod handle "find-definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (let [row-data (db/select-row conn root-path
-                   {:filename filename
-                    :row row})
+  (let [cursor-row (db/select-row conn root-path
+                     {:filename filename
+                      :row row})
 
-        prospects (ana/within-range row-data
+        prospects (ana/within-range cursor-row
                     {:start col
                      :end col})
 
-        prospects (into [] (filter (comp ana/DEFS :_semantic)) prospects)]
+        definitions (into [] (filter (comp ana/DEFS :_semantic)) prospects)]
 
     (cond
-      (seq prospects)
-      (into []
-        (map
-          (fn [m]
-            (into {} (remove (comp nil? val)) m)))
-        prospects)
+      (seq definitions)
+      definitions
 
       :else
-      nil)))
+      (reduce
+        (fn [_ {:keys [_semantic to name]}]
+          (when-let [definitions (db/select-definitions conn root-path
+                                   {:ns to
+                                    :name name
+                                    :_semantic
+                                    ({"local-usages" "locals"
+                                      "var-usages" "var-definitions"} _semantic)})]
+            (reduced definitions)))
+        nil
+        prospects))))
 
 (comment
 
@@ -86,11 +92,11 @@
              (io/file root-path ".pep" "*.json"))]))))
 
 
-  (handle
+  (handle {}
     {:op "diagnostics"
      :root-path root-path})
 
-  (handle
+  (handle {}
     {:op "analyze"
      :root-path root-path})
 
@@ -99,12 +105,13 @@
       {:op "namespace-definitions"
        :root-path root-path}))
 
-  (handle
-    {:op "find-definitions"
-     :root-path root-path
-     :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-     :row 48
-     :col 12})
+  (with-open [conn (db/conn)]
+    (handle {:conn conn}
+      {:op "find-definitions"
+       :root-path root-path
+       :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
+       :row 101
+       :col 22}))
 
 
   (with-open [conn (db/conn)]

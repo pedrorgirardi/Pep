@@ -54,6 +54,23 @@
 
     (jdbc/execute! conn [sql filename row row])))
 
+(defn select-definitions
+  [conn root-path {:keys [_semantic ns name] :as params}]
+  (tap> params)
+
+  (let [sql "SELECT
+                 *
+             FROM
+                 read_json_auto('%s', format='array')
+             WHERE
+                 _semantic = ?
+                 AND ns = ?
+                 AND name = ?"
+
+        sql (format sql (io/file (cache-dir root-path) "*.json"))]
+
+    (jdbc/execute! conn [sql _semantic ns name])))
+
 (comment
 
   (io/file (cache-dir (System/getProperty "user.dir")) "*.json")
