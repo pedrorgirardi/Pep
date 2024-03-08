@@ -183,7 +183,7 @@
 
       stop)))
 
-(defn start-dev [& _]
+(defn start-default [& _]
   (let [^UnixDomainSocketAddress address (default-address)]
 
     (Files/deleteIfExists (.getPath address))
