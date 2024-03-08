@@ -52,6 +52,8 @@ TT_NAMESPACE_USAGE_ALIAS = "namespace_usage_alias"
 TT_JAVA_CLASS_USAGE = "java_class_usage"
 
 SEM_NS_DEF = "namespace-definitions"
+SEM_VAR_DEF = "var-definitions"
+SEM_LOCAL = "locals"
 
 OUTPUT_PANEL_NAME = "pep"
 OUTPUT_PANEL_NAME_PREFIXED = f"output.{OUTPUT_PANEL_NAME}"
@@ -1390,13 +1392,13 @@ def thingy_quick_panel_item(thingy, opts={}) -> Optional[sublime.QuickPanelItem]
     elif semantic == TT_NAMESPACE_USAGE:
         return namespace_usage_quick_panel_item(thingy, opts)
 
-    elif semantic == TT_VAR_DEFINITION:
+    elif semantic == TT_VAR_DEFINITION or semantic == SEM_VAR_DEF:
         return var_quick_panel_item(thingy, opts)
 
     elif semantic == TT_VAR_USAGE:
         return var_usage_quick_panel_item(thingy, opts)
 
-    elif semantic == TT_LOCAL_USAGE:
+    elif semantic == TT_LOCAL_USAGE or semantic == SEM_LOCAL:
         return local_usage_quick_panel_item(thingy, opts)
 
     elif semantic == TT_KEYWORD:
@@ -4519,6 +4521,70 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
                 )
             except Exception:
                 print("Pep: Error: PgPepV2GotoNamespaceCommand", traceback.format_exc())
+            finally:
+                progress.stop()
+
+        threading.Thread(target=run_).start()
+
+
+class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler()
+
+    def run(self, edit, root_path):
+        def handle_response(root_path, response):
+            definitions = response.get("success") or []
+
+            if len(definitions) == 1:
+                location = thingy_location(definitions[0])
+
+                goto(
+                    self.view.window(),
+                    location,
+                    GOTO_DEFAULT_FLAGS,
+                )
+            else:
+                goto_thingy(
+                    self.view.window(),
+                    response.get("success"),
+                    goto_on_highlight=False,
+                    goto_side_by_side=False,
+                    quick_panel_item_opts={
+                        "show_filename": False,
+                        "show_row_col": False,
+                    },
+                )
+
+        def run_():
+            try:
+                progress.start("")
+
+                region = self.view.sel()[0]
+
+                # The second end of the region. In a selection this is the location of the caret. May be less than a.
+                caret = region.b
+
+                row, col = self.view.rowcol(caret)
+
+                response = with_clientsocket_retry(
+                    lambda c: op.find_definitions(
+                        c,
+                        root_path=root_path,
+                        filename=self.view.file_name(),
+                        row=row + 1,
+                        col=col + 1,
+                    )
+                )
+
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
+            except Exception:
+                print(
+                    "Pep: Error: PgPepV2GotoDefinitionCommand", traceback.format_exc()
+                )
             finally:
                 progress.stop()
 

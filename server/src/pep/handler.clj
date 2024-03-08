@@ -8,6 +8,11 @@
    [pep.ana :as ana]
    [pep.db :as db]))
 
+(def xform-kv-not-nillable
+  (map
+    (fn [m]
+      (into {} (remove (comp nil? val)) m))))
+
 (defmulti handle
   "Multimethod to handle client requests.
 
@@ -58,24 +63,23 @@
                     {:start col
                      :end col})
 
-        definitions (into [] (filter (comp ana/DEFS :_semantic)) prospects)]
+        definitions (into [] (filter (comp ana/DEFS :_semantic)) prospects)
 
-    (cond
-      (seq definitions)
-      definitions
+        definitions (cond
+                      (seq definitions)
+                      definitions
 
-      :else
-      (reduce
-        (fn [_ {:keys [_semantic to name]}]
-          (when-let [definitions (db/select-definitions conn root-path
-                                   {:ns to
-                                    :name name
-                                    :_semantic
-                                    ({"local-usages" "locals"
-                                      "var-usages" "var-definitions"} _semantic)})]
-            (reduced definitions)))
-        nil
-        prospects))))
+                      :else
+                      (reduce
+                        (fn [_ prospect]
+                          (when-let [definitions (db/select-definitions conn root-path prospect)]
+                            (reduced definitions)))
+                        nil
+                        prospects))
+
+        definitions (into [] xform-kv-not-nillable definitions)]
+
+    {:success definitions}))
 
 (comment
 
@@ -110,8 +114,8 @@
       {:op "find-definitions"
        :root-path root-path
        :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-       :row 101
-       :col 22}))
+       :row 9
+       :col 18}))
 
 
   (with-open [conn (db/conn)]

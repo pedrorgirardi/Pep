@@ -79,3 +79,21 @@ def namespace_definitions(
     }
 
     return req(client_socket, data)
+
+
+def find_definitions(
+    client_socket: socket.socket,
+    root_path: str,
+    filename: str,
+    row: int,
+    col: int,
+) -> Dict[str, Any]:
+    data = {
+        "op": "find-definitions",
+        "root-path": root_path,
+        "filename": filename,
+        "row": row,
+        "col": col,
+    }
+
+    return req(client_socket, data)

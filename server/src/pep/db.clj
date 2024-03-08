@@ -55,21 +55,49 @@
     (jdbc/execute! conn [sql filename row row])))
 
 (defn select-definitions
-  [conn root-path {:keys [_semantic ns name] :as params}]
-  (tap> params)
+  [conn root-path prospect]
+  (let [{prospect-semantic :_semantic
+         prospect-to :to
+         prospect-name :name
+         prospect-id :id} prospect
 
-  (let [sql "SELECT
-                 *
-             FROM
-                 read_json_auto('%s', format='array')
-             WHERE
-                 _semantic = ?
-                 AND ns = ?
-                 AND name = ?"
+        [sql & params] (case prospect-semantic
+                         "local-usages"
+                         ["SELECT
+                               *
+                            FROM
+                               read_json_auto('%s', format='array')
+                            WHERE
+                               _semantic = 'locals'
+                               AND id = ?"
+                          prospect-id]
 
-        sql (format sql (io/file (cache-dir root-path) "*.json"))]
+                         "namespace-usages"
+                         ["SELECT
+                               *
+                            FROM
+                               read_json_auto('%s', format='array')
+                            WHERE
+                               _semantic = 'namespace-definitions'
+                               AND name = ?"
+                          prospect-to]
 
-    (jdbc/execute! conn [sql _semantic ns name])))
+                         "var-usages"
+                         ["SELECT
+                               *
+                            FROM
+                               read_json_auto('%s', format='array')
+                            WHERE
+                               _semantic = 'var-definitions'
+                               AND ns = ?
+                               AND name = ?"
+                          prospect-to prospect-name])
+
+        sql (format sql (io/file (cache-dir root-path) "*.json"))
+
+        sqlparams (into [sql] params)]
+
+    (jdbc/execute! conn sqlparams)))
 
 (comment
 

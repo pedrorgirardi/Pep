@@ -73,7 +73,13 @@
     (let [outs (java.io.ByteArrayOutputStream.)]
 
       (with-open [^java.io.Writer writer (java.io.BufferedWriter. (java.io.OutputStreamWriter. outs "UTF-8"))]
-        (json/write m writer)
+        (json/write m writer :value-fn (fn [_k v]
+                                         (cond
+                                           (instance? org.duckdb.DuckDBArray v)
+                                           (vec (.getArray ^org.duckdb.DuckDBArray v))
+
+                                           :else
+                                           v)))
         (.write writer "\n"))
 
       (.write c ^ByteBuffer (ByteBuffer/wrap (.toByteArray outs))))))

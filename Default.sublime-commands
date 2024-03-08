@@ -153,5 +153,9 @@
     {
         "caption": "Pep 2: Goto Namespace",
         "command": "pg_pep_v2_goto_namespace"
+    },
+    {
+        "caption": "Pep 2: Goto Definition",
+        "command": "pg_pep_v2_goto_definition"
     }
 ]
