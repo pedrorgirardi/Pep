@@ -1,5 +1,6 @@
 (ns pep.server
   (:require
+   [clojure.pprint :as pprint]
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
@@ -152,6 +153,8 @@
             (with-open [client-channel client-channel]
               (loop [message (read! client-channel)]
                 (when message
+                  (log/info (str "📩 \n" (with-out-str (pprint/pprint message))))
+
                   (async/>!! message-chan message)
 
                   (recur (read! client-channel))))
@@ -220,7 +223,7 @@
   (.close client-1)
 
 
-  (def stop (start-dev))
+  (def stop (start-default))
 
   (stop)
   
