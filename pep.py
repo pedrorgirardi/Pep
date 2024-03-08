@@ -161,7 +161,7 @@ def clientsocket_retry(retries=1):
         _client_socket_ = None
 
         if retries > 0:
-            print("Pep: Socket error; Retrying...", retries)
+            print("Pep Error: Socket error; Retrying...", retries)
 
             return clientsocket_retry(retries=retries - 1)
 
@@ -4356,6 +4356,11 @@ class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
         show_output_panel(self.window)
 
 
+## ------------------------------------------------------------------
+## Pep V2
+## ------------------------------------------------------------------
+
+
 class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
     """
     Project's diagnostics.
@@ -4422,7 +4427,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
 
                 sublime.set_timeout(lambda: handle_response(root_path, response), 0)
             except Exception:
-                print("Pep: Error: PgPepV2DiagnosticsCommand", traceback.format_exc())
+                print("Pep Error:", traceback.format_exc())
             finally:
                 progress.stop()
 
@@ -4472,7 +4477,7 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
                     0,
                 )
             except Exception:
-                print("Pep: Error: PgPepV2AnalyzeCommand", traceback.format_exc())
+                print("Pep Error:", traceback.format_exc())
             finally:
                 progress.stop()
 
@@ -4520,7 +4525,7 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
                     0,
                 )
             except Exception:
-                print("Pep: Error: PgPepV2GotoNamespaceCommand", traceback.format_exc())
+                print("Pep Error:", traceback.format_exc())
             finally:
                 progress.stop()
 
@@ -4535,6 +4540,7 @@ class PgPepV2GotoDefinitionDefaultsCommand(sublime_plugin.TextCommand):
             args = {"root_path": root_path}
 
         self.view.run_command("pg_pep_v2_goto_definition", args)
+
 
 class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
     def input(self, args):
@@ -4591,9 +4597,7 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
                     0,
                 )
             except Exception:
-                print(
-                    "Pep: Error: PgPepV2GotoDefinitionCommand", traceback.format_exc()
-                )
+                print("Pep Error:", traceback.format_exc())
             finally:
                 progress.stop()
 
