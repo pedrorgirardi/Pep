@@ -1,17 +1,5 @@
 <configuration>
 
-    <!-- Console (STDOUT) output. -->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-
-        <!-- Default encoder is ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
-        <encoder>
-            <!-- two-line layout suitable for a terminal -->
-            <pattern>%date{HH:mm:ss.SSS} %-5level %logger [%thread]%n%msg%n</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-
-    </appender>
-
     <!-- The output file configuration for log/all.log -->
     <appender name="ALL_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 
@@ -42,8 +30,8 @@
     </appender>
 
 
-    <!-- The output file configuration for log/app.log -->
-    <appender name="APP_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!-- The output file configuration for log/server.log -->
+    <appender name="SERVER_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 
         <!-- Default encoder is ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
         <encoder>
@@ -51,11 +39,11 @@
         </encoder>
 
         <!-- Default location of log file is log/app.log -->
-        <file>log/app.log</file>
+        <file>log/server.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- Roll over log files daily -->
-            <fileNamePattern>log/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>log/server.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
 
             <!-- And start a new file every 64 MB -->
             <maxFileSize>64 MB</maxFileSize>
@@ -75,12 +63,8 @@
         <appender-ref ref="ALL_LOG_FILE"/>
     </root>
 
-    <logger name="rex" level="DEBUG">
-        <appender-ref ref="APP_LOG_FILE"/>
-    </logger>
-
-    <logger name="dev" level="ALL">
-        <appender-ref ref="STDOUT"/>
+    <logger name="pep" level="DEBUG">
+        <appender-ref ref="SERVER_LOG_FILE"/>
     </logger>
 
 </configuration>
