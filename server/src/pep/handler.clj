@@ -93,8 +93,8 @@
         (map #(select-keys % [:column_name :column_type :null_percentage]))
         (with-open [conn (db/conn)]
           (jdbc/execute! conn
-            [(format "SUMMARIZE SELECT * FROM '%s'"
-               (io/file root-path ".pep" "*.json"))])))))
+            [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array', union_by_name=true)"
+               (io/file #_root-path "/Users/pedro/Developer/Velos/rex.system" ".pep" "*.json"))])))))
 
 
   (handle {}
