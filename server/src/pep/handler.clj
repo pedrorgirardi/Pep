@@ -88,12 +88,13 @@
   (require '[clojure.pprint :as pprint])
 
   (pprint/print-table [:column_name :column_type :null_percentage]
-    (into []
-      (map #(select-keys % [:column_name :column_type :null_percentage]))
-      (with-open [conn (db/conn)]
-        (jdbc/execute! conn
-          [(format "SUMMARIZE SELECT * FROM '%s'"
-             (io/file root-path ".pep" "*.json"))]))))
+    (sort-by :column_name
+      (into []
+        (map #(select-keys % [:column_name :column_type :null_percentage]))
+        (with-open [conn (db/conn)]
+          (jdbc/execute! conn
+            [(format "SUMMARIZE SELECT * FROM '%s'"
+               (io/file root-path ".pep" "*.json"))])))))
 
 
   (handle {}
