@@ -43,16 +43,32 @@
 (defn select-row
   [conn root-path {:keys [filename row]}]
   (let [sql "SELECT
-                 *
+                _semantic,
+                id,
+                name,
+                row,
+                \"end-row\",
+                col,
+                \"end-col\",
+                \"name-row\",
+                \"name-end-row\",
+                \"name-col\",
+                \"name-end-col\",
+                \"ns\",
+                \"to\"
              FROM
                  read_json_auto('%s', format='array')
              WHERE
-                 filename = ?
-                 AND (\"name-row\" = ? OR row = ?)"
+                 \"name-row\" = ?
+                 OR row = ?"
 
-        sql (format sql (io/file (cache-dir root-path) "*.json"))]
+        filename-hash (hash filename)
+        filename-json (str filename-hash ".json")
+        filename-file (io/file (cache-dir root-path) filename-json)
 
-    (jdbc/execute! conn [sql filename row row])))
+        sql (format sql filename-file)]
+
+    (jdbc/execute! conn [sql row row])))
 
 (defn select-definitions
   [conn root-path prospect]
@@ -64,7 +80,7 @@
         [sql & params] (case prospect-semantic
                          "local-usages"
                          ["SELECT
-                               *
+                               _semantic, name, filename, row, col
                             FROM
                                read_json_auto('%s', format='array')
                             WHERE
@@ -74,7 +90,7 @@
 
                          "namespace-usages"
                          ["SELECT
-                               *
+                               _semantic, filename, name, row, col
                             FROM
                                read_json_auto('%s', format='array')
                             WHERE
@@ -84,7 +100,7 @@
 
                          "var-usages"
                          ["SELECT
-                               *
+                               _semantic, filename, name, row, col
                             FROM
                                read_json_auto('%s', format='array')
                             WHERE

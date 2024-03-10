@@ -1,7 +1,9 @@
 (ns pep.handler
   (:require
+   [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
+   [clojure.pprint :as pprint]
 
    [next.jdbc :as jdbc]
 
@@ -79,13 +81,19 @@
 
         definitions (into [] xform-kv-not-nillable definitions)]
 
+    (log/debug
+      (str "\n"
+        (with-out-str
+          (pprint/pprint
+            {:cursor-row cursor-row
+             :prospects prospects
+             :definitions definitions}))))
+
     {:success definitions}))
 
 (comment
 
   (def root-path (System/getProperty "user.dir"))
-
-  (require '[clojure.pprint :as pprint])
 
   (pprint/print-table [:column_name :column_type :null_percentage]
     (sort-by :column_name
