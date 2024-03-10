@@ -80,15 +80,8 @@
           :parallel true
           :config config})))))
 
-(defn diagnostics
-  [root-path]
-  (let [{:keys [findings summary]} (analyze-paths!
-                                     {:skip-lint true
-                                      :output
-                                      {:canonical-paths true}}
-                                     root-path)
-
-        diagnostics (group-by :level findings)
+(defn diagnostics* [{:keys [findings summary]}]
+  (let [diagnostics (group-by :level findings)
         diagnostics (into {}
                       (map
                         (fn [[k v]]
@@ -97,6 +90,15 @@
 
     {:diagnostics diagnostics
      :summary summary}))
+
+(defn diagnostics
+  [root-path]
+  (diagnostics*
+    (analyze-paths!
+      {:skip-lint true
+       :output
+       {:canonical-paths true}}
+      root-path)))
 
 (defn index
   "Returns a mapping of filename to its analysis data."
