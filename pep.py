@@ -4372,6 +4372,11 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
 
     def run(self, root_path):
         def handle_response(root_path, response):
+            if error := response.get("error"):
+                print("Pep Error:", error)
+
+                return
+
             contents = ["Diagnostics", f"Root Path: {root_path}"]
 
             summary = response.get("success", {}).get("summary", {})
@@ -4441,6 +4446,11 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
 
     def run(self, root_path):
         def handle_response(root_path, response):
+            if error := response.get("error"):
+                print("Pep Error:", error)
+
+                return
+
             contents = ["Analysis", f"Root Path: {root_path}"]
 
             summary = response.get("success", {}).get("summary", {})
@@ -4501,6 +4511,11 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
 
     def run(self, root_path):
         def handle_response(root_path, response):
+            if error := response.get("error"):
+                print("Pep Error:", error)
+
+                return
+
             goto_thingy(
                 self.window,
                 response.get("success"),
@@ -4549,6 +4564,11 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, root_path):
         def handle_response(root_path, response):
+            if error := response.get("error"):
+                print("Pep Error:", error)
+
+                return
+
             definitions = response.get("success") or []
 
             if len(definitions) == 1:
