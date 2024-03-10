@@ -42,20 +42,9 @@
 
 (defn select-row
   [conn root-path {:keys [filename row]}]
-  (let [sql "SELECT
-                _semantic,
-                id,
-                name,
-                row,
-                \"end-row\",
-                col,
-                \"end-col\",
-                \"name-row\",
-                \"name-end-row\",
-                \"name-col\",
-                \"name-end-col\",
-                \"ns\",
-                \"to\"
+  (let [;; It's fine to 'select *' because we're looking at a single file.
+        sql "SELECT
+                *
              FROM
                  read_json_auto('%s', format='array')
              WHERE
