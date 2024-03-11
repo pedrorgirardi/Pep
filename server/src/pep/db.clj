@@ -28,7 +28,7 @@
     (jdbc/execute! ["INSTALL json; LOAD json;"])))
 
 (defn select-namespace-definitions
-  [conn root-path]
+  [conn dir]
   (let [sql "SELECT
                   _semantic,
                   name,
@@ -49,12 +49,12 @@
               ORDER BY
                   name"
 
-        sql (format sql (io/file (cache-dir root-path) "*.json"))]
+        sql (format sql (io/file dir "*.json"))]
 
     (jdbc/execute! conn [sql])))
 
 (defn select-row
-  [conn root-path {:keys [filename row]}]
+  [conn dir {:keys [filename row]}]
   (let [;; It's fine to 'select *' because we're looking at a single file.
         sql "SELECT
                 *
@@ -66,14 +66,14 @@
 
         filename-hash (hash filename)
         filename-json (str filename-hash ".json")
-        filename-file (io/file (cache-dir root-path) filename-json)
+        filename-file (io/file dir filename-json)
 
         sql (format sql filename-file)]
 
     (jdbc/execute! conn [sql row row])))
 
 (defn select-definitions
-  [conn root-path prospect]
+  [conn dir prospect]
   (let [{prospect-semantic :_semantic
          prospect-to :to
          prospect-name :name
@@ -111,7 +111,7 @@
                                AND name = ?"
                           prospect-to prospect-name])
 
-        sql (format sql (io/file (cache-dir root-path) "*.json"))
+        sql (format sql (io/file dir "*.json"))
 
         sqlparams (into [sql] params)]
 

@@ -40,24 +40,29 @@
   [_ {:keys [root-path]}]
   (let [{:keys [summary analysis]} (ana/analyze-paths! root-path)
 
-        index (ana/index analysis)]
+        index (ana/index analysis)
 
-    (when-not (.exists (io/file root-path ".pep"))
-      (.mkdir (io/file root-path ".pep")))
+        paths-dir (db/cache-paths-dir root-path)]
+
+    (when-not (.exists paths-dir)
+      (.mkdirs paths-dir))
 
     (doseq [[filename analysis] index]
-      (let [f (io/file root-path ".pep" (format "%s.json" (hash filename)))]
+      (let [filename-hashed (db/filename-hash filename)
+            f (io/file paths-dir (format "%s.json" filename-hashed))]
         (spit f (json/write-str analysis))))
 
     {:success {:summary summary}}))
 
 (defmethod handle "namespace-definitions"
   [{:keys [conn]} {:keys [root-path]}]
-  {:success (db/select-namespace-definitions conn root-path)})
+  {:success (db/select-namespace-definitions conn (db/cache-paths-dir root-path))})
 
 (defmethod handle "find-definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (let [cursor-row (db/select-row conn root-path
+  (let [paths-dir (db/cache-paths-dir root-path)
+
+        cursor-row (db/select-row conn (db/cache-paths-dir root-path)
                      {:filename filename
                       :row row})
 
@@ -74,7 +79,7 @@
                       :else
                       (reduce
                         (fn [_ prospect]
-                          (when-let [definitions (db/select-definitions conn root-path prospect)]
+                          (when-let [definitions (db/select-definitions conn paths-dir prospect)]
                             (reduced definitions)))
                         nil
                         prospects))
@@ -128,13 +133,13 @@
 
 
   (with-open [conn (db/conn)]
-    (db/select-row conn root-path
+    (db/select-row conn (db/cache-paths-dir root-path)
       {:filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
        :row 85}))
 
   (with-open [conn (db/conn)]
     (ana/within-range
-      (db/select-row conn root-path
+      (db/select-row conn (db/cache-paths-dir root-path)
         {:filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
          :row 48})
       {:start 12 :end 12}))
