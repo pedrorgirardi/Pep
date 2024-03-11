@@ -102,7 +102,17 @@
 
                          "var-usages"
                          ["SELECT
-                               _semantic, filename, name, row, col
+                               _semantic,
+                                ns,
+                                name, 
+                                doc,
+                                filename,
+                                row,
+                                col,
+                                \"name-row\",
+                                \"name-end-row\",
+                                \"name-col\",
+                                \"name-end-col\"
                             FROM
                                read_json_auto('%s', format='array')
                             WHERE

@@ -62,36 +62,28 @@
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (let [paths-dir (db/cache-paths-dir root-path)
 
-        cursor-row (db/select-row conn (db/cache-paths-dir root-path)
-                     {:filename filename
-                      :row row})
+        row-data (db/select-row conn (db/cache-paths-dir root-path)
+                   {:filename filename
+                    :row row})
 
-        prospects (ana/within-range cursor-row
-                    {:start col
-                     :end col})
+        caret-data (reduce
+                     (fn [_ data]
+                       (let [start (or (:name-col data) (:col data))
+                             end (or (:name-end-col data) (:end-col data))]
+                         (when (<= start col end)
+                           (reduced data))))
+                     nil
+                     row-data)
 
-        definitions (into [] (filter (comp ana/DEFS :_semantic)) prospects)
-
-        definitions (cond
-                      (seq definitions)
-                      definitions
-
-                      :else
-                      (reduce
-                        (fn [_ prospect]
-                          (when-let [definitions (db/select-definitions conn paths-dir prospect)]
-                            (reduced definitions)))
-                        nil
-                        prospects))
-
+        definitions (db/select-definitions conn paths-dir caret-data)
         definitions (into [] xform-kv-not-nillable definitions)]
 
     (log/debug
       (str "\n"
         (with-out-str
           (pprint/pprint
-            {:cursor-row cursor-row
-             :prospects prospects
+            {:row-data row-data
+             :caret-data caret-data
              :definitions definitions}))))
 
     {:success definitions}))
