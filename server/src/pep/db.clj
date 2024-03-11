@@ -6,8 +6,21 @@
 
 (set! *warn-on-reflection* true)
 
-(defn cache-dir ^java.io.File [root-path]
+(defn cache-dir
+  ^java.io.File [root-path]
   (io/file root-path ".pep"))
+
+(defn cache-paths-dir
+  ^java.io.File [root-path]
+  (io/file (cache-dir root-path) "paths"))
+
+(defn cache-classpath-dir
+  ^java.io.File [root-path]
+  (io/file (cache-dir root-path) "classpath"))
+
+(defn filename-hash
+  [filename]
+  (hash filename))
 
 (defn conn ^java.sql.Connection []
   (doto
@@ -107,5 +120,9 @@
 (comment
 
   (io/file (cache-dir (System/getProperty "user.dir")) "*.json")
+
+  (cache-paths-dir (System/getProperty "user.dir"))
+
+  (cache-classpath-dir (System/getProperty "user.dir"))
 
   )
