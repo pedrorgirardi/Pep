@@ -10,7 +10,7 @@
 
   ch.qos.logback/logback-classic {:mvn/version "1.5.3"}
 
-  clj-kondo/clj-kondo {:mvn/version "2024.03.05"}
+  clj-kondo/clj-kondo {:mvn/version "2024.03.13"}
 
   com.github.seancorfield/next.jdbc {:mvn/version "1.3.909"}
   org.duckdb/duckdb_jdbc {:mvn/version "0.10.0"}}
