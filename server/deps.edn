@@ -6,7 +6,7 @@
   org.clojure/tools.logging {:mvn/version "1.3.0"}
   org.clojure/core.async {:mvn/version "1.6.681"}
 
-  io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}
+  io.github.clojure/tools.build {:git/tag "v0.10.0" :git/sha "8e78bcc"}
 
   ch.qos.logback/logback-classic {:mvn/version "1.5.3"}
 
