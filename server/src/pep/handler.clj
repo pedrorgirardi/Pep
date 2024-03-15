@@ -123,18 +123,4 @@
        :row 9
        :col 18}))
 
-
-  (with-open [conn (db/conn)]
-    (db/select-row conn (db/cache-paths-dir root-path)
-      {:filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-       :row 85}))
-
-  (with-open [conn (db/conn)]
-    (ana/within-range
-      (db/select-row conn (db/cache-paths-dir root-path)
-        {:filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-         :row 48})
-      {:start 12 :end 12}))
-
-
   )
