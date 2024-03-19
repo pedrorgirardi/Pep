@@ -1,10 +1,12 @@
 (ns pep.server
   (:require
+   [clojure.pprint :as pprint]
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
    [clojure.core.async :as async]
 
+   [pep.db :as db]
    [pep.handler :as handler])
 
   (:import
@@ -72,7 +74,13 @@
     (let [outs (java.io.ByteArrayOutputStream.)]
 
       (with-open [^java.io.Writer writer (java.io.BufferedWriter. (java.io.OutputStreamWriter. outs "UTF-8"))]
-        (json/write m writer)
+        (json/write m writer :value-fn (fn [_k v]
+                                         (cond
+                                           (instance? org.duckdb.DuckDBArray v)
+                                           (vec (.getArray ^org.duckdb.DuckDBArray v))
+
+                                           :else
+                                           v)))
         (.write writer "\n"))
 
       (.write c ^ByteBuffer (ByteBuffer/wrap (.toByteArray outs))))))
@@ -86,7 +94,9 @@
 
         server-channel (ServerSocketChannel/open StandardProtocolFamily/UNIX)
 
-        *conn# (atom 0)]
+        *clients# (atom 0)
+
+        conn (db/conn)]
 
     ;; Binds the channel's socket to a local address and configures the socket to listen for connections.
     (.bind server-channel address)
@@ -111,47 +121,53 @@
 
               message-chan (async/chan 1)]
 
-          (swap! *conn# inc)
+          (swap! *clients# inc)
 
-          (log/info (format "🔌 Server: Accepted connection; Client %d" @*conn#))
+          (log/info (format "🔌 Server: Accepted connection; Client %d" @*clients#))
 
           ;; -- Handler
           ;; Process responsible for handling messages.
           (async/thread
-            (log/info (format "🟢 Handler: Started; Client %d" @*conn#))
+            (log/info (format "🟢 Handler: Started; Client %d" @*clients#))
 
             (loop []
               (when-some [message (async/<!! message-chan)]
                 (try
-                  (write! client-channel (handler/handle message))
+                  (let [response (handler/handle {:conn conn} message)]
+                    (write! client-channel response))
                   (catch Exception ex
-                    (write! client-channel
-                      {:error
-                       (merge {:message (ex-message ex)}
-                         (when-let [data (ex-data ex)]
-                           {:data data}))})))
+                    (let [response {:error
+                                    (merge {:message (ex-message ex)}
+                                      (when-let [data (ex-data ex)]
+                                        {:data data}))}]
+
+                      (log/error (str "📤\n" (with-out-str (pprint/pprint response))))
+
+                      (write! client-channel response))))
 
                 (recur)))
 
-            (log/info (format "🔴 Handler: Stopped; Client %d" @*conn#)))
+            (log/info (format "🔴 Handler: Stopped; Client %d" @*clients#)))
 
           ;; -- Acceptor
           ;; Process responsible for reading messages.
           (async/thread
-            (log/info (format "🟢 Acceptor: Started; Client %d" @*conn#))
+            (log/info (format "🟢 Acceptor: Started; Client %d" @*clients#))
 
             (with-open [client-channel client-channel]
               (loop [message (read! client-channel)]
                 (when message
+                  (log/debug (str "📥\n" (with-out-str (pprint/pprint message))))
+
                   (async/>!! message-chan message)
 
                   (recur (read! client-channel))))
 
-              (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*conn#)))
+              (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*clients#)))
 
             (async/close! message-chan)
 
-            (log/info (format "🔴 Acceptor: Stopped; Client %d" @*conn#))))))
+            (log/info (format "🔴 Acceptor: Stopped; Client %d" @*clients#))))))
 
     (let [^Runnable stop (fn stop []
                            (try
@@ -163,6 +179,8 @@
 
                              (Files/deleteIfExists (.getPath ^UnixDomainSocketAddress address))
 
+                             (some-> conn .close)
+
                              (log/info "🔴 Server is down")
 
                              (catch Exception ex
@@ -172,7 +190,7 @@
 
       stop)))
 
-(defn start-dev [& _]
+(defn start-default [& _]
   (let [^UnixDomainSocketAddress address (default-address)]
 
     (Files/deleteIfExists (.getPath address))
@@ -209,7 +227,7 @@
   (.close client-1)
 
 
-  (def stop (start-dev))
+  (def stop (start-default))
 
   (stop)
   
