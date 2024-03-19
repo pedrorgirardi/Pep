@@ -29,7 +29,7 @@
   {:success "nop"})
 
 (defmethod handle "error"
-  [__ ]
+  [_ _]
   (throw (ex-info "Bad handler." {:foo :bar})))
 
 (defmethod handle "diagnostics"
