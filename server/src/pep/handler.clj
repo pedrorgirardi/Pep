@@ -1,7 +1,6 @@
 (ns pep.handler
   (:require
    [clojure.string :as str]
-   [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
    [clojure.pprint :as pprint]
@@ -39,18 +38,18 @@
 
 (defmethod handle "analyze"
   [_ {:keys [root-path filename text]}]
-  (let [{:keys [summary analysis]} (cond
-                                     (not (str/blank? text))
-                                     (let [decoder (java.util.Base64/getDecoder)
-                                           bytes (.decode decoder text)]
-                                       (ana/analyze-text!
-                                         {:text (String. bytes "UTF-8")
-                                          :filename filename}))
+  (let [result (cond
+                 (not (str/blank? text))
+                 (let [decoder (java.util.Base64/getDecoder)
+                       bytes (.decode decoder text)]
+                   (ana/analyze-text!
+                     {:text (String. bytes "UTF-8")
+                      :filename filename}))
 
-                                     :else
-                                     (ana/analyze-paths! root-path))
+                 :else
+                 (ana/analyze-paths! root-path))
 
-        index (ana/index analysis)
+        index (ana/index (:analysis result))
 
         paths-dir (db/cache-paths-dir root-path)]
 
@@ -62,7 +61,7 @@
             f (io/file paths-dir (format "%s.json" filename-hashed))]
         (spit f (json/write-str analysis))))
 
-    {:success {:summary summary}}))
+    {:success (ana/diagnostics* result)}))
 
 (defmethod handle "namespace-definitions"
   [{:keys [conn]} {:keys [root-path]}]
