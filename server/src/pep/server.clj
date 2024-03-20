@@ -164,16 +164,19 @@
               (when-some [message (async/<!! message-chan)]
                 (try
                   (let [response (handler/handle {:conn conn} message)]
-                    (write! client-channel response))
+                    (write! client-channel response)
+
+                    (log/debug (str "📤\n" (with-out-str (pprint/pprint (select-keys message [:op]))))))
+
                   (catch Exception ex
                     (let [response {:error
                                     (merge {:message (ex-message ex)}
                                       (when-let [data (ex-data ex)]
                                         {:data data}))}]
 
-                      (log/error (str "📤\n" (with-out-str (pprint/pprint response))))
+                      (write! client-channel response)
 
-                      (write! client-channel response))))
+                      (log/error (str "📤 💀\n" (with-out-str (pprint/pprint response)))))))
 
                 (recur)))
 
@@ -187,7 +190,7 @@
             (with-open [client-channel client-channel]
               (loop [message (read! client-channel)]
                 (when message
-                  (log/debug (str "📥\n" (with-out-str (pprint/pprint message))))
+                  (log/debug (str "📥\n" (with-out-str (pprint/pprint (select-keys message [:op])))))
 
                   (async/>!! message-chan message)
 

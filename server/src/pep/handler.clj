@@ -88,14 +88,6 @@
         definitions (db/select-definitions conn paths-dir caret-data)
         definitions (into [] xform-kv-not-nillable definitions)]
 
-    (log/debug
-      (str "\n"
-        (with-out-str
-          (pprint/pprint
-            {:row-data row-data
-             :caret-data caret-data
-             :definitions definitions}))))
-
     {:success definitions}))
 
 (comment
