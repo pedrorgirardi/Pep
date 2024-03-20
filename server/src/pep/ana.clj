@@ -64,6 +64,19 @@
     (when-not (.exists dir)
       (.mkdir dir))))
 
+(defn analyze-text!
+  "Analyze paths with clj-kondo."
+  ([{:keys [filename text]}]
+   (analyze-text! paths-config
+     {:text text
+      :filename filename}))
+  ([config {:keys [filename text]}]
+   (with-in-str text
+     (clj-kondo/run!
+       {:lint ["-"]
+        :filename (or filename "-")
+        :config config}))))
+
 (defn analyze-paths!
   "Analyze paths with clj-kondo."
   ([root-path]

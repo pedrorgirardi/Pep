@@ -3,6 +3,7 @@ import os
 import socket
 import tempfile
 import threading
+import base64
 from typing import Any, Dict
 
 from .error import PepSocketError
@@ -23,7 +24,7 @@ def req(client_socket: socket.socket, data: Dict[str, Any]) -> Dict[str, Any]:
         # On error, an exception is raised,
         # and there is no way to determine how much data, if any, was successfully sent.
         try:
-            client_socket.sendall(json.dumps(data).encode("utf-8"))
+            client_socket.sendall(f"{json.dumps(data)}\n".encode("utf-8"))
         except Exception as e:
             raise PepSocketError(str(e))
 
@@ -64,6 +65,25 @@ def analyze(
     data = {
         "op": "analyze",
         "root-path": root_path,
+    }
+
+    return req(client_socket, data)
+
+
+def analyze_text(
+    client_socket: socket.socket,
+    root_path: str,
+    text: str,
+    filename: str,
+) -> Dict[str, Any]:
+    text_bytes = text.encode()
+    text_encoded = base64.b64encode(text_bytes).decode()
+
+    data = {
+        "op": "analyze",
+        "root-path": root_path,
+        "text": text_encoded,
+        "filename": filename,
     }
 
     return req(client_socket, data)

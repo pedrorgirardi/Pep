@@ -1813,41 +1813,6 @@ def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
 
 
-def analyze_classpath_v2(window):
-    def f():
-        args = [
-            "clojure",
-            "-X",
-            "pep.sublime/analyze-classpath",
-            ":project_base_name",
-            project_base_name(window),
-            ":project_path",
-            project_path(window),
-        ]
-
-        print(args)
-
-        t0 = time.time()
-
-        process = subprocess.run(
-            args,
-            cwd=pathlib.Path(sublime.packages_path(), "Pep", "backend"),
-            text=True,
-            capture_output=True,
-            startupinfo=startupinfo(),
-        )
-
-        print(process)
-
-        process.check_returncode()
-
-        print(
-            f"Pep Debug: Classpath analysis v2 is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
-        )
-
-    threading.Thread(target=f, daemon=True).start()
-
-
 def index_analysis(analysis: dict) -> dict:
     """
     Analyze paths to create indexes for var and namespace definitions, and keywords.
@@ -4627,6 +4592,39 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
 # ---
 
 
+def analyze_view_v2(view):
+    def handle_response(root_path, response):
+        if error := response.get("error"):
+            print("Pep Error:", error)
+
+            return
+
+        print(f"Pep Debug: {response}")
+
+    def run_():
+        try:
+            # TODO: It doesn't seem right to default to the first folder.
+            root_path = view.window().folders()[0]
+
+            response = with_clientsocket_retry(
+                lambda c: op.analyze_text(
+                    c,
+                    root_path=root_path,
+                    text=view_text(view),
+                    filename=view.file_name(),
+                )
+            )
+
+            sublime.set_timeout(
+                lambda: handle_response(root_path, response),
+                0,
+            )
+        except Exception:
+            print("Pep Error:", traceback.format_exc())
+
+    threading.Thread(target=run_).start()
+
+
 class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
     These 'actions' are configured via settings.
@@ -4657,11 +4655,15 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
         if analyze_view:
             analyze_view_async(self.view, afs)
+            analyze_view_v2(self.view)
 
     def highlight(self):
         self.is_highlight_pending = False
 
         highlight_thingy(self.view)
+
+    def on_load(self):
+        analyze_view_v2(self.view)
 
     def on_activated_async(self):
         self.analyze()
