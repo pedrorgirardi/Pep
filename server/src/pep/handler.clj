@@ -1,6 +1,5 @@
 (ns pep.handler
   (:require
-   [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
    [clojure.pprint :as pprint]
@@ -9,6 +8,8 @@
 
    [pep.ana :as ana]
    [pep.db :as db]))
+
+(set! *warn-on-reflection* true)
 
 (def xform-kv-not-nillable
   (map
@@ -36,18 +37,33 @@
   [_ {:keys [root-path]}]
   {:success (ana/diagnostics root-path)})
 
-(defmethod handle "analyze"
+(defmethod handle "v1/analyze_paths"
   [_ {:keys [root-path filename text]}]
-  (let [result (cond
-                 (not (str/blank? text))
-                 (let [decoder (java.util.Base64/getDecoder)
-                       bytes (.decode decoder text)]
-                   (ana/analyze-text!
-                     {:text (String. bytes "UTF-8")
-                      :filename filename}))
+  (let [result (ana/analyze-paths! root-path)
 
-                 :else
-                 (ana/analyze-paths! root-path))
+        index (ana/index (:analysis result))
+
+        paths-dir (db/cache-paths-dir root-path)]
+
+    (when-not (.exists paths-dir)
+      (.mkdirs paths-dir))
+
+    (doseq [[filename analysis] index]
+      (let [filename-hashed (db/filename-hash filename)
+            f (io/file paths-dir (format "%s.json" filename-hashed))]
+        (spit f (json/write-str analysis))))
+
+    {:success (ana/diagnostics* result)}))
+
+(defmethod handle "v1/analyze_text"
+  [_ {:keys [root-path filename text]}]
+  (let [^java.util.Base64$Decoder decoder (java.util.Base64/getDecoder)
+
+        bytes (.decode decoder ^String text)
+
+        result (ana/analyze-text!
+                 {:text (String. bytes "UTF-8")
+                  :filename (or filename "-")})
 
         index (ana/index (:analysis result))
 

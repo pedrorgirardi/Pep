@@ -58,12 +58,12 @@ def diagnostics(
     return req(client_socket, data)
 
 
-def analyze(
+def analyze_paths(
     client_socket: socket.socket,
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "analyze",
+        "op": "v1/analyze_paths",
         "root-path": root_path,
     }
 
@@ -80,7 +80,7 @@ def analyze_text(
     text_encoded = base64.b64encode(text_bytes).decode()
 
     data = {
-        "op": "analyze",
+        "op": "v1/analyze_text",
         "root-path": root_path,
         "text": text_encoded,
         "filename": filename,

@@ -6,6 +6,8 @@
 
    [clj-kondo.core :as clj-kondo]))
 
+(set! *warn-on-reflection* true)
+
 (def DEFS
   #{"namespace-definitions"
     "var-definitions"
@@ -74,7 +76,7 @@
    (with-in-str text
      (clj-kondo/run!
        {:lint ["-"]
-        :filename (or filename "-")
+        :filename filename
         :config config}))))
 
 (defn analyze-paths!

@@ -14,6 +14,7 @@ import time
 import traceback
 from typing import Any, Callable, List, Optional, Union
 from zipfile import ZipFile
+import pprint
 
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
@@ -1654,7 +1655,7 @@ def analyze_view_v2(view):
 
             return
 
-        print(f"Pep Debug: {response}")
+        pprint.pprint(response)
 
     def run_():
         try:
@@ -1666,7 +1667,7 @@ def analyze_view_v2(view):
                     c,
                     root_path=root_path,
                     text=view_text(view),
-                    filename=view.file_name(),
+                    filename=view.file_name() or f"unnamed_{view.id()}.clj",
                 )
             )
 
@@ -4478,7 +4479,9 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Analysis...")
 
-                response = with_clientsocket_retry(lambda c: op.analyze(c, root_path))
+                response = with_clientsocket_retry(
+                    lambda c: op.analyze_paths(c, root_path)
+                )
 
                 sublime.set_timeout(
                     lambda: handle_response(root_path, response),
