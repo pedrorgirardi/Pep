@@ -3,6 +3,7 @@ import inspect
 import json
 import os
 import pathlib
+import pprint
 import re
 import shlex
 import shutil
@@ -123,7 +124,6 @@ def af_status_summary(context, analysis):
 
 # Default functions to run after analysis.
 DEFAULT_VIEW_ANALYSIS_FUNCTIONS = [
-    af_annotate,
     af_highlight_thingy,
     af_status_summary,
 ]
@@ -1647,6 +1647,43 @@ def analyze_view_async(view, afs=DEFAULT_VIEW_ANALYSIS_FUNCTIONS):
     threading.Thread(target=lambda: analyze_view(view, afs=afs), daemon=True).start()
 
 
+def analyze_view_v2(view):
+    def handle_response(root_path, response):
+        if error := response.get("error"):
+            print("Pep Error:", error)
+
+            return
+
+        pprint.pprint(response)
+
+        diagnostics = response.get("success", {}).get("diagnostics", {})
+
+        annotate_view_v2(view, diagnostics)
+
+    def run_():
+        try:
+            # TODO: It doesn't seem right to default to the first folder.
+            root_path = view.window().folders()[0]
+
+            response = with_clientsocket_retry(
+                lambda c: op.analyze_text(
+                    c,
+                    root_path=root_path,
+                    text=view_text(view),
+                    filename=view.file_name() or f"unnamed_{view.id()}.clj",
+                )
+            )
+
+            sublime.set_timeout(
+                lambda: handle_response(root_path, response),
+                0,
+            )
+        except Exception:
+            print("Pep Error:", traceback.format_exc())
+
+    threading.Thread(target=run_).start()
+
+
 def analyze_classpath(window):
     """
     Analyze classpath to create indexes for var and namespace definitions.
@@ -1811,41 +1848,6 @@ def analyze_paths(window):
 
 def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
-
-
-def analyze_classpath_v2(window):
-    def f():
-        args = [
-            "clojure",
-            "-X",
-            "pep.sublime/analyze-classpath",
-            ":project_base_name",
-            project_base_name(window),
-            ":project_path",
-            project_path(window),
-        ]
-
-        print(args)
-
-        t0 = time.time()
-
-        process = subprocess.run(
-            args,
-            cwd=pathlib.Path(sublime.packages_path(), "Pep", "backend"),
-            text=True,
-            capture_output=True,
-            startupinfo=startupinfo(),
-        )
-
-        print(process)
-
-        process.check_returncode()
-
-        print(
-            f"Pep Debug: Classpath analysis v2 is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
-        )
-
-    threading.Thread(target=f, daemon=True).start()
 
 
 def index_analysis(analysis: dict) -> dict:
@@ -2949,6 +2951,80 @@ def annotate_view(view):
         elif finding["level"] == "warning":
             warning_region_set.append(finding_region(finding))
             warning_minihtml_set.append(finding_minihtml(finding))
+
+    redish = view.style_for_scope("region.redish").get("foreground")
+    orangish = view.style_for_scope("region.orangish").get("foreground")
+
+    view.add_regions(
+        "pg_pep_analysis_error",
+        error_region_set,
+        scope="region.redish",
+        annotations=error_minihtml_set,
+        annotation_color=redish or "red",
+        flags=(
+            sublime.DRAW_SQUIGGLY_UNDERLINE
+            | sublime.DRAW_NO_FILL
+            | sublime.DRAW_NO_OUTLINE
+        ),
+    )
+
+    view.add_regions(
+        "pg_pep_analysis_warning",
+        warning_region_set,
+        scope="region.orangish",
+        annotations=warning_minihtml_set,
+        annotation_color=orangish or "orange",
+        flags=(
+            sublime.DRAW_SQUIGGLY_UNDERLINE
+            | sublime.DRAW_NO_FILL
+            | sublime.DRAW_NO_OUTLINE
+        ),
+    )
+
+
+def annotate_view_v2(view, diagnostics):
+    def finding_region(finding):
+        line_start = finding["row"] - 1
+        line_end = (finding.get("end-row") or finding.get("row")) - 1
+        col_start = finding["col"] - 1
+        col_end = (finding.get("end-col") or finding.get("col")) - 1
+
+        pa = view.text_point(line_start, col_start)
+        pb = view.text_point(line_end, col_end)
+
+        return sublime.Region(pa, pb)
+
+    def finding_minihtml(finding):
+        return f"""
+        <body>
+            <div>
+                <span style="font-size:{annotation_font_size(view.window())}">
+                    {htmlify(finding["message"])}
+                </span>
+            </div>
+        </body>
+        """
+
+    # Erase regions from previous analysis.
+    erase_analysis_regions(view)
+
+    # Skip annotation if view explicitly set the custom setting to disable it.
+    if view.settings().get(SETTING_ANNOTATE_VIEW) is False:
+        return
+
+    warning_region_set = []
+    warning_minihtml_set = []
+
+    error_region_set = []
+    error_minihtml_set = []
+
+    for finding in diagnostics.get("error", []):
+        error_region_set.append(finding_region(finding))
+        error_minihtml_set.append(finding_minihtml(finding))
+
+    for finding in diagnostics.get("warning", []):
+        warning_region_set.append(finding_region(finding))
+        warning_minihtml_set.append(finding_minihtml(finding))
 
     redish = view.style_for_scope("region.redish").get("foreground")
     orangish = view.style_for_scope("region.orangish").get("foreground")
@@ -4480,7 +4556,9 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             try:
                 progress.start("Running Analysis...")
 
-                response = with_clientsocket_retry(lambda c: op.analyze(c, root_path))
+                response = with_clientsocket_retry(
+                    lambda c: op.analyze_paths(c, root_path)
+                )
 
                 sublime.set_timeout(
                     lambda: handle_response(root_path, response),
@@ -4646,6 +4724,7 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         super().__init__(view)
 
         self.analyzer = None
+        self.analyzer_v2 = None
         self.highlighter = None
         self.is_highlight_pending = False
 
@@ -4658,22 +4737,42 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         if analyze_view:
             analyze_view_async(self.view, afs)
 
+    def analyze_v2(self):
+        analyze_view = True
+
+        if self.view.is_scratch():
+            analyze_view = analyze_scratch_view(self.view.window())
+
+        if analyze_view:
+            analyze_view_v2(self.view)
+
     def highlight(self):
         self.is_highlight_pending = False
 
         highlight_thingy(self.view)
 
+    def on_load(self):
+        self.analyze()
+        self.analyze_v2()
+
     def on_activated_async(self):
         self.analyze()
+        self.analyze_v2()
 
     def on_modified_async(self):
         if self.analyzer:
             self.analyzer.cancel()
 
+        if self.analyzer_v2:
+            self.analyzer_v2.cancel()
+
         analysis_delay_ = analysis_delay(self.view.window())
 
         self.analyzer = threading.Timer(analysis_delay_, self.analyze)
         self.analyzer.start()
+
+        self.analyzer_v2 = threading.Timer(analysis_delay_, self.analyze_v2)
+        self.analyzer_v2.start()
 
     def on_selection_modified_async(self):
         if self.highlighter:

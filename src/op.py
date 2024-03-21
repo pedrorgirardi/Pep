@@ -3,6 +3,7 @@ import os
 import socket
 import tempfile
 import threading
+import base64
 from typing import Any, Dict
 
 from .error import PepSocketError
@@ -23,7 +24,7 @@ def req(client_socket: socket.socket, data: Dict[str, Any]) -> Dict[str, Any]:
         # On error, an exception is raised,
         # and there is no way to determine how much data, if any, was successfully sent.
         try:
-            client_socket.sendall(json.dumps(data).encode("utf-8"))
+            client_socket.sendall(f"{json.dumps(data)}\n".encode("utf-8"))
         except Exception as e:
             raise PepSocketError(str(e))
 
@@ -50,20 +51,39 @@ def diagnostics(
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "diagnostics",
+        "op": "v1/diagnostics",
         "root-path": root_path,
     }
 
     return req(client_socket, data)
 
 
-def analyze(
+def analyze_paths(
     client_socket: socket.socket,
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "analyze",
+        "op": "v1/analyze_paths",
         "root-path": root_path,
+    }
+
+    return req(client_socket, data)
+
+
+def analyze_text(
+    client_socket: socket.socket,
+    root_path: str,
+    text: str,
+    filename: str,
+) -> Dict[str, Any]:
+    text_bytes = text.encode()
+    text_encoded = base64.b64encode(text_bytes).decode()
+
+    data = {
+        "op": "v1/analyze_text",
+        "root-path": root_path,
+        "text": text_encoded,
+        "filename": filename,
     }
 
     return req(client_socket, data)
@@ -74,7 +94,7 @@ def namespace_definitions(
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "namespace-definitions",
+        "op": "v1/namespace_definitions",
         "root-path": root_path,
     }
 
@@ -89,7 +109,7 @@ def find_definitions(
     col: int,
 ) -> Dict[str, Any]:
     data = {
-        "op": "find-definitions",
+        "op": "v1/find_definitions",
         "root-path": root_path,
         "filename": filename,
         "row": row,

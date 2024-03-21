@@ -46,7 +46,7 @@
       (finally
         (.shutdownNow executor)))))
 
-(defn read! [^SocketChannel c]
+(defn read!_ [^SocketChannel c]
   (when (.isConnected c)
     (let [buffer (java.nio.ByteBuffer/allocate 1024)
 
@@ -68,6 +68,36 @@
               (json/read reader :key-fn keyword)))
           (catch Exception ex
             (log/error ex "An error occurred while reading/decoding message.")))))))
+
+(defn read! [^SocketChannel c]
+  (when (.isConnected c)
+    (let [;; Buffer's capacity, in bytes.
+          capacity 1024
+
+          buffer (java.nio.ByteBuffer/allocate capacity)
+
+          out (java.io.ByteArrayOutputStream.)
+
+          newline (byte 10)]
+
+      (loop []
+        (let [n (.read c buffer)]
+          (when (> n 0)
+            (let [bytes (byte-array n)]
+              (.flip buffer)
+              (.get buffer bytes)
+              (.write out bytes)
+              (.clear buffer)
+
+              (when-not (= newline (last bytes))
+                (recur))))))
+
+      (try
+        (with-open [reader (io/reader (.toByteArray out))]
+          (json/read reader :key-fn keyword))
+        (catch Exception ex
+          (log/error ex "An error occurred while reading/decoding message."))))))
+
 
 (defn write! [^SocketChannel c m]
   (when (.isConnected c)
@@ -134,16 +164,19 @@
               (when-some [message (async/<!! message-chan)]
                 (try
                   (let [response (handler/handle {:conn conn} message)]
-                    (write! client-channel response))
+                    (write! client-channel response)
+
+                    (log/debug (str "📤\n" (with-out-str (pprint/pprint (select-keys message [:op]))))))
+
                   (catch Exception ex
                     (let [response {:error
                                     (merge {:message (ex-message ex)}
                                       (when-let [data (ex-data ex)]
                                         {:data data}))}]
 
-                      (log/error (str "📤\n" (with-out-str (pprint/pprint response))))
+                      (write! client-channel response)
 
-                      (write! client-channel response))))
+                      (log/error (str "📤 💀\n" (with-out-str (pprint/pprint response)))))))
 
                 (recur)))
 
@@ -157,7 +190,7 @@
             (with-open [client-channel client-channel]
               (loop [message (read! client-channel)]
                 (when message
-                  (log/debug (str "📥\n" (with-out-str (pprint/pprint message))))
+                  (log/debug (str "📥\n" (with-out-str (pprint/pprint (select-keys message [:op])))))
 
                   (async/>!! message-chan message)
 

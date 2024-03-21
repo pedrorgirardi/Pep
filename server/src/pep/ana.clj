@@ -6,6 +6,8 @@
 
    [clj-kondo.core :as clj-kondo]))
 
+(set! *warn-on-reflection* true)
+
 (def DEFS
   #{"namespace-definitions"
     "var-definitions"
@@ -63,6 +65,19 @@
   (let [dir (io/file root-path ".clj-kondo")]
     (when-not (.exists dir)
       (.mkdir dir))))
+
+(defn analyze-text!
+  "Analyze paths with clj-kondo."
+  ([{:keys [filename text]}]
+   (analyze-text! paths-config
+     {:text text
+      :filename filename}))
+  ([config {:keys [filename text]}]
+   (with-in-str text
+     (clj-kondo/run!
+       {:lint ["-"]
+        :filename filename
+        :config config}))))
 
 (defn analyze-paths!
   "Analyze paths with clj-kondo."

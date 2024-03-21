@@ -1,6 +1,5 @@
 (ns pep.handler
   (:require
-   [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
    [clojure.pprint :as pprint]
@@ -9,6 +8,8 @@
 
    [pep.ana :as ana]
    [pep.db :as db]))
+
+(set! *warn-on-reflection* true)
 
 (def xform-kv-not-nillable
   (map
@@ -32,17 +33,17 @@
   [_ _]
   (throw (ex-info "Bad handler." {:foo :bar})))
 
-(defmethod handle "diagnostics"
+(defmethod handle "v1/diagnostics"
   [_ {:keys [root-path]}]
   {:success (ana/diagnostics root-path)})
 
-(defmethod handle "analyze"
-  [_ {:keys [root-path]}]
-  (let [{:keys [summary analysis]} (ana/analyze-paths! root-path)
+(defmethod handle "v1/analyze_paths"
+  [_ {:keys [root-path filename text]}]
+  (let [result (ana/analyze-paths! root-path)
 
-        index (ana/index analysis)
+        index (ana/index (:analysis result))
 
-        paths-dir (db/cache-paths-dir root-path)]
+        paths-dir (db/cache-dir root-path)]
 
     (when-not (.exists paths-dir)
       (.mkdirs paths-dir))
@@ -52,17 +53,41 @@
             f (io/file paths-dir (format "%s.json" filename-hashed))]
         (spit f (json/write-str analysis))))
 
-    {:success {:summary summary}}))
+    {:success (ana/diagnostics* result)}))
 
-(defmethod handle "namespace-definitions"
+(defmethod handle "v1/analyze_text"
+  [_ {:keys [root-path filename text]}]
+  (let [^java.util.Base64$Decoder decoder (java.util.Base64/getDecoder)
+
+        bytes (.decode decoder ^String text)
+
+        result (ana/analyze-text!
+                 {:text (String. bytes "UTF-8")
+                  :filename (or filename "-")})
+
+        index (ana/index (:analysis result))
+
+        paths-dir (db/cache-dir root-path)]
+
+    (when-not (.exists paths-dir)
+      (.mkdirs paths-dir))
+
+    (doseq [[filename analysis] index]
+      (let [filename-hashed (db/filename-hash filename)
+            f (io/file paths-dir (format "%s.json" filename-hashed))]
+        (spit f (json/write-str analysis))))
+
+    {:success (ana/diagnostics* result)}))
+
+(defmethod handle "v1/namespace_definitions"
   [{:keys [conn]} {:keys [root-path]}]
-  {:success (db/select-namespace-definitions conn (db/cache-paths-dir root-path))})
+  {:success (db/select-namespace-definitions conn (db/cache-dir root-path))})
 
-(defmethod handle "find-definitions"
+(defmethod handle "v1/find_definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (let [paths-dir (db/cache-paths-dir root-path)
+  (let [paths-dir (db/cache-dir root-path)
 
-        row-data (db/select-row conn (db/cache-paths-dir root-path)
+        row-data (db/select-row conn (db/cache-dir root-path)
                    {:filename filename
                     :row row})
 
@@ -77,14 +102,6 @@
 
         definitions (db/select-definitions conn paths-dir caret-data)
         definitions (into [] xform-kv-not-nillable definitions)]
-
-    (log/debug
-      (str "\n"
-        (with-out-str
-          (pprint/pprint
-            {:row-data row-data
-             :caret-data caret-data
-             :definitions definitions}))))
 
     {:success definitions}))
 
@@ -103,21 +120,21 @@
 
 
   (handle {}
-    {:op "diagnostics"
+    {:op "v1/diagnostics"
      :root-path root-path})
 
   (handle {}
-    {:op "analyze"
+    {:op "v1/analyze_paths"
      :root-path root-path})
 
   (with-open [conn (db/conn)]
     (handle {:conn conn}
-      {:op "namespace-definitions"
+      {:op "v1/namespace-definitions"
        :root-path root-path}))
 
   (with-open [conn (db/conn)]
     (handle {:conn conn}
-      {:op "find-definitions"
+      {:op "v1/find-definitions"
        :root-path root-path
        :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
        :row 9

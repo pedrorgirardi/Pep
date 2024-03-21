@@ -10,7 +10,7 @@
   (let [user-dir (System/getProperty "user.dir")
 
         response (handler/handle {}
-                   {:op "analyze"
+                   {:op "v1/analyze_paths"
                     :root-path (io/file user-dir "pep.talk")})]
 
     (testing "Successful analysis"
@@ -21,7 +21,7 @@
 
         {:keys [success]} (with-open [conn (db/conn)]
                             (handler/handle {:conn conn}
-                              {:op "namespace-definitions"
+                              {:op "v1/namespace-definitions"
                                :root-path (io/file user-dir "pep.talk")}))]
 
     (testing "Successful analysis"
@@ -42,7 +42,7 @@
     (testing "Local binding"
       (let [{:keys [success]} (with-open [conn (db/conn)]
                                 (handler/handle {:conn conn}
-                                  {:op "find-definitions"
+                                  {:op "v1/find-definitions"
                                    :root-path root-path
                                    :filename reference-clj-filename
                                    :row 9
@@ -58,7 +58,7 @@
     (testing "Var definitions"
       (let [{:keys [success]} (with-open [conn (db/conn)]
                                 (handler/handle {:conn conn}
-                                  {:op "find-definitions"
+                                  {:op "v1/find-definitions"
                                    :root-path root-path
                                    :filename reference-clj-filename
                                    :row 7
