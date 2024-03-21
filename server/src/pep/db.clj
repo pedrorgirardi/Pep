@@ -107,7 +107,7 @@
 (defmethod select-definitions-sqlparams "namespace-definitions"
   [dir {prospect-name :name}]
   (let [sql "SELECT
-                 _semantic, filename, name, row, col
+                 _semantic, filename, name, row, col, \"name-row\", \"name-col\"
               FROM
                  read_json_auto('%s', format='array')
               WHERE
@@ -121,7 +121,7 @@
 (defmethod select-definitions-sqlparams "namespace-usages"
   [dir {prospect-to :to}]
   (let [sql "SELECT
-                 _semantic, filename, name, row, col
+                 _semantic, filename, name, row, col, \"name-row\", \"name-col\"
               FROM
                  read_json_auto('%s', format='array')
               WHERE
