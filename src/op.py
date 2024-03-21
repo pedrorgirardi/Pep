@@ -94,7 +94,7 @@ def namespace_definitions(
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "v1/namespace-definitions",
+        "op": "v1/namespace_definitions",
         "root-path": root_path,
     }
 
@@ -109,7 +109,7 @@ def find_definitions(
     col: int,
 ) -> Dict[str, Any]:
     data = {
-        "op": "v1/find-definitions",
+        "op": "v1/find_definitions",
         "root-path": root_path,
         "filename": filename,
         "row": row,

@@ -79,11 +79,11 @@
 
     {:success (ana/diagnostics* result)}))
 
-(defmethod handle "v1/namespace-definitions"
+(defmethod handle "v1/namespace_definitions"
   [{:keys [conn]} {:keys [root-path]}]
   {:success (db/select-namespace-definitions conn (db/cache-dir root-path))})
 
-(defmethod handle "v1/find-definitions"
+(defmethod handle "v1/find_definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (let [paths-dir (db/cache-dir root-path)
 
