@@ -43,7 +43,7 @@
 
         index (ana/index (:analysis result))
 
-        paths-dir (db/cache-paths-dir root-path)]
+        paths-dir (db/cache-dir root-path)]
 
     (when-not (.exists paths-dir)
       (.mkdirs paths-dir))
@@ -67,7 +67,7 @@
 
         index (ana/index (:analysis result))
 
-        paths-dir (db/cache-paths-dir root-path)]
+        paths-dir (db/cache-dir root-path)]
 
     (when-not (.exists paths-dir)
       (.mkdirs paths-dir))
@@ -81,13 +81,13 @@
 
 (defmethod handle "v1/namespace-definitions"
   [{:keys [conn]} {:keys [root-path]}]
-  {:success (db/select-namespace-definitions conn (db/cache-paths-dir root-path))})
+  {:success (db/select-namespace-definitions conn (db/cache-dir root-path))})
 
 (defmethod handle "v1/find-definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (let [paths-dir (db/cache-paths-dir root-path)
+  (let [paths-dir (db/cache-dir root-path)
 
-        row-data (db/select-row conn (db/cache-paths-dir root-path)
+        row-data (db/select-row conn (db/cache-dir root-path)
                    {:filename filename
                     :row row})
 
