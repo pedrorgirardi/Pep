@@ -27,6 +27,20 @@
       (let [f (io/file cache-dir (str (db/filename-hash filename) ".json"))]
         (spit f (json/write-str analysis))))))
 
+(defn caret
+  [conn root-path {:keys [filename row col]}]
+  (let [selected-row (db/select-row conn (db/cache-dir root-path)
+                       {:filename filename
+                        :row row})]
+    (reduce
+      (fn [_ data]
+        (let [start (or (:name-col data) (:col data))
+              end (or (:name-end-col data) (:end-col data))]
+          (when (<= start col end)
+            (reduced data))))
+      nil
+      selected-row)))
+
 (defmulti handle
   "Multimethod to handle client requests.
 
@@ -72,29 +86,29 @@
 
 (defmethod handle "v1/namespace_definitions"
   [{:keys [conn]} {:keys [root-path]}]
-  {:success (db/select-namespace-definitions conn (db/cache-dir root-path))})
+  (let [definitions (db/select-namespace-definitions conn (db/cache-dir root-path))
+
+        ;; Into a set to remove duplicates (CLJC):
+        definitions (into #{} definitions)]
+
+    {:success definitions}))
 
 (defmethod handle "v1/find_definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (let [paths-dir (db/cache-dir root-path)
+  (if-let [prospect (caret conn root-path
+                      {:filename filename
+                       :row row
+                       :col col})]
+    (let [dir (db/cache-dir root-path)
 
-        row-data (db/select-row conn (db/cache-dir root-path)
-                   {:filename filename
-                    :row row})
+          definitions (db/select-definitions conn dir prospect)
 
-        caret-data (reduce
-                     (fn [_ data]
-                       (let [start (or (:name-col data) (:col data))
-                             end (or (:name-end-col data) (:end-col data))]
-                         (when (<= start col end)
-                           (reduced data))))
-                     nil
-                     row-data)
+          ;; Into a set to remove duplicates (CLJC):
+          definitions (into #{} xform-kv-not-nillable definitions)]
+      {:success definitions})
 
-        definitions (db/select-definitions conn paths-dir caret-data)
-        definitions (into [] xform-kv-not-nillable definitions)]
-
-    {:success definitions}))
+    ;; Nothing found under caret.
+    {:success #{}}))
 
 (comment
 

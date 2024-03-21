@@ -3,3 +3,9 @@
 
 (defn hello []
   (println "Hello, there!"))
+
+(comment
+
+  (hello)
+
+  )
