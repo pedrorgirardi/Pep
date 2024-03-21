@@ -4760,10 +4760,16 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
         self.analyze_v2()
 
     def on_modified_async(self):
+        if self.analyzer:
+            self.analyzer.cancel()
+
         if self.analyzer_v2:
             self.analyzer_v2.cancel()
 
         analysis_delay_ = analysis_delay(self.view.window())
+
+        self.analyzer = threading.Timer(analysis_delay_, self.analyze)
+        self.analyzer.start()
 
         self.analyzer_v2 = threading.Timer(analysis_delay_, self.analyze_v2)
         self.analyzer_v2.start()
