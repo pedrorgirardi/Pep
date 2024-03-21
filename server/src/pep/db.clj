@@ -63,68 +63,72 @@
 
     (jdbc/execute! conn [sql row row])))
 
+(defmulti select-definitions-sqlparams
+  "Returns SQL & params to query definitions per semantic."
+  (fn [_dir prospect]
+    (:_semantic prospect)))
+
+(defmethod select-definitions-sqlparams "local-usages"
+  [dir {prospect-filename :filename
+        prospect-id :id}]
+  (let [sql "SELECT
+                 _semantic, name, filename, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'locals'
+                 AND id = ?"
+
+        filename-json (str (filename-hash prospect-filename) ".json")
+        filename-file (io/file dir filename-json)
+
+        sql (format sql filename-file)]
+
+    [sql prospect-id]))
+
+(defmethod select-definitions-sqlparams "namespace-usages"
+  [dir {prospect-to :to}]
+  (let [sql "SELECT
+                 _semantic, filename, name, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'namespace-definitions'
+                 AND name = ?"
+
+        sql (format sql (io/file dir "*.json"))]
+
+    [sql prospect-to]))
+
+(defmethod select-definitions-sqlparams "var-usages"
+  [dir {prospect-to :to
+        prospect-name :name}]
+  (let [sql "SELECT
+                 _semantic,
+                  ns,
+                  name,
+                  doc,
+                  filename,
+                  row,
+                  col,
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'var-definitions'
+                 AND ns = ?
+                 AND name = ?"
+
+        sql (format sql (io/file dir "*.json"))]
+
+    [sql prospect-to prospect-name]))
+
 (defn select-definitions
   [conn dir prospect]
-  (let [{prospect-semantic :_semantic
-         prospect-to :to
-         prospect-name :name
-         prospect-filename :filename
-         prospect-id :id} prospect
-
-        sqlparams (case prospect-semantic
-                    "local-usages"
-                    (let [sql "SELECT
-                                   _semantic, name, filename, row, col
-                                FROM
-                                   read_json_auto('%s', format='array')
-                                WHERE
-                                   _semantic = 'locals'
-                                   AND id = ?"
-
-                          filename-json (str (filename-hash prospect-filename) ".json")
-                          filename-file (io/file dir filename-json)
-
-                          sql (format sql filename-file)]
-
-                      [sql prospect-id])
-
-                    "namespace-usages"
-                    (let [sql "SELECT
-                                   _semantic, filename, name, row, col
-                                FROM
-                                   read_json_auto('%s', format='array')
-                                WHERE
-                                   _semantic = 'namespace-definitions'
-                                   AND name = ?"
-
-                          sql (format sql (io/file dir "*.json"))]
-
-                      [sql prospect-to])
-
-                    "var-usages"
-                    (let [sql "SELECT
-                                   _semantic,
-                                    ns,
-                                    name,
-                                    doc,
-                                    filename,
-                                    row,
-                                    col,
-                                    \"name-row\",
-                                    \"name-end-row\",
-                                    \"name-col\",
-                                    \"name-end-col\"
-                                FROM
-                                   read_json_auto('%s', format='array')
-                                WHERE
-                                   _semantic = 'var-definitions'
-                                   AND ns = ?
-                                   AND name = ?"
-
-                          sql (format sql (io/file dir "*.json"))]
-
-                      [sql prospect-to prospect-name]))]
-
+  (let [sqlparams (select-definitions-sqlparams dir prospect)]
     (jdbc/execute! conn sqlparams)))
 
 
