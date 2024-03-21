@@ -33,7 +33,7 @@
   [_ _]
   (throw (ex-info "Bad handler." {:foo :bar})))
 
-(defmethod handle "diagnostics"
+(defmethod handle "v1/diagnostics"
   [_ {:keys [root-path]}]
   {:success (ana/diagnostics root-path)})
 
@@ -79,11 +79,11 @@
 
     {:success (ana/diagnostics* result)}))
 
-(defmethod handle "namespace-definitions"
+(defmethod handle "v1/namespace-definitions"
   [{:keys [conn]} {:keys [root-path]}]
   {:success (db/select-namespace-definitions conn (db/cache-paths-dir root-path))})
 
-(defmethod handle "find-definitions"
+(defmethod handle "v1/find-definitions"
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (let [paths-dir (db/cache-paths-dir root-path)
 
@@ -120,21 +120,21 @@
 
 
   (handle {}
-    {:op "diagnostics"
+    {:op "v1/diagnostics"
      :root-path root-path})
 
   (handle {}
-    {:op "analyze"
+    {:op "v1/analyze_paths"
      :root-path root-path})
 
   (with-open [conn (db/conn)]
     (handle {:conn conn}
-      {:op "namespace-definitions"
+      {:op "v1/namespace-definitions"
        :root-path root-path}))
 
   (with-open [conn (db/conn)]
     (handle {:conn conn}
-      {:op "find-definitions"
+      {:op "v1/find-definitions"
        :root-path root-path
        :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
        :row 9

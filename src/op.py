@@ -51,7 +51,7 @@ def diagnostics(
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "diagnostics",
+        "op": "v1/diagnostics",
         "root-path": root_path,
     }
 
@@ -94,7 +94,7 @@ def namespace_definitions(
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "namespace-definitions",
+        "op": "v1/namespace-definitions",
         "root-path": root_path,
     }
 
@@ -109,7 +109,7 @@ def find_definitions(
     col: int,
 ) -> Dict[str, Any]:
     data = {
-        "op": "find-definitions",
+        "op": "v1/find-definitions",
         "root-path": root_path,
         "filename": filename,
         "row": row,
