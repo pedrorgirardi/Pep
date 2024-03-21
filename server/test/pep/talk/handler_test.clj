@@ -160,14 +160,15 @@
                 (map #(dissoc % :filename))
                 success)))))
 
-    (testing "Var definitions"
+    (testing "Var `x` from definition"
       (let [{:keys [success]} (with-open [conn (db/conn)]
                                 (handler/handle {:conn conn}
                                   {:op "v1/find_definitions"
                                    :root-path root-path
                                    :filename reference-clj-filename
-                                   :row 7
-                                   :col 11}))]
+                                   :row 3
+                                   :col 6}))]
+
         (is (= #{{:_semantic "var-definitions"
                   :row 3
                   :col 1
@@ -179,17 +180,39 @@
                   :ns "pep.talk.reference"}}
               (into #{}
                 (map #(dissoc % :filename))
-                success))))
+                success)))))
 
-      (testing "CLJC"
-        (let [{:keys [success]} (with-open [conn (db/conn)]
-                                  (handler/handle {:conn conn}
-                                    {:op "v1/find_definitions"
-                                     :root-path root-path
-                                     :filename common-cljc-filename
-                                     :row 9
-                                     :col 8}))]
-          (is (= 1 (count success))))))))
+    (testing "Var `x` from usage"
+      (let [{:keys [success]} (with-open [conn (db/conn)]
+                                (handler/handle {:conn conn}
+                                  {:op "v1/find_definitions"
+                                   :root-path root-path
+                                   :filename reference-clj-filename
+                                   :row 7
+                                   :col 11}))]
+
+        (is (= #{{:_semantic "var-definitions"
+                  :row 3
+                  :col 1
+                  :name "x"
+                  :name-row 3
+                  :name-end-row 3
+                  :name-col 6
+                  :name-end-col 7
+                  :ns "pep.talk.reference"}}
+              (into #{}
+                (map #(dissoc % :filename))
+                success)))))
+
+    (testing "No duplicates on *.cljc"
+      (let [{:keys [success]} (with-open [conn (db/conn)]
+                                (handler/handle {:conn conn}
+                                  {:op "v1/find_definitions"
+                                   :root-path root-path
+                                   :filename common-cljc-filename
+                                   :row 9
+                                   :col 8}))]
+        (is (= 1 (count success)))))))
 
 
 (comment

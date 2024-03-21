@@ -68,6 +68,24 @@
   (fn [_dir prospect]
     (:_semantic prospect)))
 
+(defmethod select-definitions-sqlparams "locals"
+  [dir {prospect-filename :filename
+        prospect-id :id}]
+  (let [sql "SELECT
+                 _semantic, name, filename, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'locals'
+                 AND id = ?"
+
+        filename-json (str (filename-hash prospect-filename) ".json")
+        filename-file (io/file dir filename-json)
+
+        sql (format sql filename-file)]
+
+    [sql prospect-id]))
+
 (defmethod select-definitions-sqlparams "local-usages"
   [dir {prospect-filename :filename
         prospect-id :id}]
@@ -86,6 +104,20 @@
 
     [sql prospect-id]))
 
+(defmethod select-definitions-sqlparams "namespace-definitions"
+  [dir {prospect-name :name}]
+  (let [sql "SELECT
+                 _semantic, filename, name, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'namespace-definitions'
+                 AND name = ?"
+
+        sql (format sql (io/file dir "*.json"))]
+
+    [sql prospect-name]))
+
 (defmethod select-definitions-sqlparams "namespace-usages"
   [dir {prospect-to :to}]
   (let [sql "SELECT
@@ -99,6 +131,32 @@
         sql (format sql (io/file dir "*.json"))]
 
     [sql prospect-to]))
+
+(defmethod select-definitions-sqlparams "var-definitions"
+  [dir {prospect-ns :ns
+        prospect-name :name}]
+  (let [sql "SELECT
+                 _semantic,
+                  ns,
+                  name,
+                  doc,
+                  filename,
+                  row,
+                  col,
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'var-definitions'
+                 AND ns = ?
+                 AND name = ?"
+
+        sql (format sql (io/file dir "*.json"))]
+
+    [sql prospect-ns prospect-name]))
 
 (defmethod select-definitions-sqlparams "var-usages"
   [dir {prospect-to :to
