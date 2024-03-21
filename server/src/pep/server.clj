@@ -96,12 +96,16 @@
 
       ;; Without this check `json/read` might throw an EOF exception:
       (when (pos? (.size out))
-        (try
-          (with-open [reader (io/reader (.toByteArray out))]
-            (json/read reader :key-fn keyword))
-          (catch Exception ex
-            (log/error ex "An error occurred while reading/decoding message.")))))))
+        (with-open [reader (io/reader (.toByteArray out))]
+          (json/read reader :key-fn keyword))))))
 
+(defn safe-read! [^SocketChannel c]
+  (try
+    (read! c)
+    (catch Exception ex
+      (log/error ex "An error occurred while reading/decoding message.")
+
+      nil)))
 
 (defn write! [^SocketChannel c m]
   (when (.isConnected c)
@@ -192,13 +196,13 @@
             (log/info (format "🟢 Acceptor: Started; Client %d" @*clients#))
 
             (with-open [client-channel client-channel]
-              (loop [message (read! client-channel)]
+              (loop [message (safe-read! client-channel)]
                 (when message
                   (log/debug (str "📥\n" (with-out-str (pprint/pprint (select-keys message [:op])))))
 
                   (async/>!! message-chan message)
 
-                  (recur (read! client-channel))))
+                  (recur (safe-read! client-channel))))
 
               (log/info (format "🟠 Acceptor: Client is disconnected; Client %d" @*clients#)))
 
