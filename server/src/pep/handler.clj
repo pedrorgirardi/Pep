@@ -24,7 +24,7 @@
       (.mkdirs cache-dir))
 
     (doseq [[filename analysis] (ana/index analysis)]
-      (let [f (io/file cache-dir (str (db/filename-hash filename) ".json"))]
+      (let [f (io/file cache-dir (db/filename-cache filename))]
         (spit f (json/write-str analysis))))))
 
 (defn caret

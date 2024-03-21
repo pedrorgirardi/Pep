@@ -10,9 +10,17 @@
   ^java.io.File [root-path]
   (io/file root-path ".pep"))
 
-(defn filename-hash
+(defn filename-cache-hash
+  "Returns a hash for filename that will be used in cache."
   [filename]
   (hash filename))
+
+(defn filename-cache
+  "Returns filename as used in cache.
+
+  Filenames in the cache directory are hashed and added a .json extension."
+  [filename]
+  (str (filename-cache-hash filename) ".json"))
 
 (defn conn ^java.sql.Connection []
   (doto
@@ -56,7 +64,7 @@
                  \"name-row\" = ?
                  OR row = ?"
 
-        filename-json (str (filename-hash filename) ".json")
+        filename-json (filename-cache filename)
         filename-file (io/file dir filename-json)
 
         sql (format sql filename-file)]
@@ -79,7 +87,7 @@
                  _semantic = 'locals'
                  AND id = ?"
 
-        filename-json (str (filename-hash prospect-filename) ".json")
+        filename-json (filename-cache prospect-filename)
         filename-file (io/file dir filename-json)
 
         sql (format sql filename-file)]
@@ -97,7 +105,7 @@
                  _semantic = 'locals'
                  AND id = ?"
 
-        filename-json (str (filename-hash prospect-filename) ".json")
+        filename-json (filename-cache prospect-filename)
         filename-file (io/file dir filename-json)
 
         sql (format sql filename-file)]
