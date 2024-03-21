@@ -56,8 +56,7 @@
                  \"name-row\" = ?
                  OR row = ?"
 
-        filename-hash (hash filename)
-        filename-json (str filename-hash ".json")
+        filename-json (str (filename-hash filename) ".json")
         filename-file (io/file dir filename-json)
 
         sql (format sql filename-file)]
@@ -69,55 +68,65 @@
   (let [{prospect-semantic :_semantic
          prospect-to :to
          prospect-name :name
+         prospect-filename :filename
          prospect-id :id} prospect
 
-        [sql & params] (case prospect-semantic
-                         "local-usages"
-                         ["SELECT
-                               _semantic, name, filename, row, col
-                            FROM
-                               read_json_auto('%s', format='array')
-                            WHERE
-                               _semantic = 'locals'
-                               AND id = ?"
-                          prospect-id]
+        sqlparams (case prospect-semantic
+                    "local-usages"
+                    (let [sql "SELECT
+                                   _semantic, name, filename, row, col
+                                FROM
+                                   read_json_auto('%s', format='array')
+                                WHERE
+                                   _semantic = 'locals'
+                                   AND id = ?"
 
-                         "namespace-usages"
-                         ["SELECT
-                               _semantic, filename, name, row, col
-                            FROM
-                               read_json_auto('%s', format='array')
-                            WHERE
-                               _semantic = 'namespace-definitions'
-                               AND name = ?"
-                          prospect-to]
+                          filename-json (str (filename-hash prospect-filename) ".json")
+                          filename-file (io/file dir filename-json)
 
-                         "var-usages"
-                         ["SELECT
-                               _semantic,
-                                ns,
-                                name, 
-                                doc,
-                                filename,
-                                row,
-                                col,
-                                \"name-row\",
-                                \"name-end-row\",
-                                \"name-col\",
-                                \"name-end-col\"
-                            FROM
-                               read_json_auto('%s', format='array')
-                            WHERE
-                               _semantic = 'var-definitions'
-                               AND ns = ?
-                               AND name = ?"
-                          prospect-to prospect-name])
+                          sql (format sql filename-file)]
 
-        sql (format sql (io/file dir "*.json"))
+                      [sql prospect-id])
 
-        sqlparams (into [sql] params)]
+                    "namespace-usages"
+                    (let [sql "SELECT
+                                   _semantic, filename, name, row, col
+                                FROM
+                                   read_json_auto('%s', format='array')
+                                WHERE
+                                   _semantic = 'namespace-definitions'
+                                   AND name = ?"
+
+                          sql (format sql (io/file dir "*.json"))]
+
+                      [sql prospect-to])
+
+                    "var-usages"
+                    (let [sql "SELECT
+                                   _semantic,
+                                    ns,
+                                    name,
+                                    doc,
+                                    filename,
+                                    row,
+                                    col,
+                                    \"name-row\",
+                                    \"name-end-row\",
+                                    \"name-col\",
+                                    \"name-end-col\"
+                                FROM
+                                   read_json_auto('%s', format='array')
+                                WHERE
+                                   _semantic = 'var-definitions'
+                                   AND ns = ?
+                                   AND name = ?"
+
+                          sql (format sql (io/file dir "*.json"))]
+
+                      [sql prospect-to prospect-name]))]
 
     (jdbc/execute! conn sqlparams)))
+
 
 (comment
 
