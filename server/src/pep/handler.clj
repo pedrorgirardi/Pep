@@ -16,6 +16,17 @@
     (fn [m]
       (into {} (remove (comp nil? val)) m))))
 
+(defn persist-analysis!
+  [root-path {:keys [analysis]}]
+  (let [cache-dir (db/cache-dir root-path)]
+
+    (when-not (.exists cache-dir)
+      (.mkdirs cache-dir))
+
+    (doseq [[filename analysis] (ana/index analysis)]
+      (let [f (io/file cache-dir (str (db/filename-hash filename) ".json"))]
+        (spit f (json/write-str analysis))))))
+
 (defmulti handle
   "Multimethod to handle client requests.
 
@@ -39,19 +50,9 @@
 
 (defmethod handle "v1/analyze_paths"
   [_ {:keys [root-path filename text]}]
-  (let [result (ana/analyze-paths! root-path)
+  (let [result (ana/analyze-paths! root-path)]
 
-        index (ana/index (:analysis result))
-
-        paths-dir (db/cache-dir root-path)]
-
-    (when-not (.exists paths-dir)
-      (.mkdirs paths-dir))
-
-    (doseq [[filename analysis] index]
-      (let [filename-hashed (db/filename-hash filename)
-            f (io/file paths-dir (format "%s.json" filename-hashed))]
-        (spit f (json/write-str analysis))))
+    (persist-analysis! root-path result)
 
     {:success (ana/diagnostics* result)}))
 
@@ -63,19 +64,9 @@
 
         result (ana/analyze-text!
                  {:text (String. bytes "UTF-8")
-                  :filename (or filename "-")})
+                  :filename (or filename "-")})]
 
-        index (ana/index (:analysis result))
-
-        paths-dir (db/cache-dir root-path)]
-
-    (when-not (.exists paths-dir)
-      (.mkdirs paths-dir))
-
-    (doseq [[filename analysis] index]
-      (let [filename-hashed (db/filename-hash filename)
-            f (io/file paths-dir (format "%s.json" filename-hashed))]
-        (spit f (json/write-str analysis))))
+    (persist-analysis! root-path result)
 
     {:success (ana/diagnostics* result)}))
 
