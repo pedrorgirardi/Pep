@@ -81,7 +81,9 @@
           newline (byte 10)]
 
       (loop []
-        (let [n (.read c buffer)]
+        (let [;; Number of bytes read, possibly zero,
+              ;; or -1 if the channel has reached end-of-stream.
+              n (.read c buffer)]
           (when (> n 0)
             (let [bytes (byte-array n)]
               (.flip buffer)
@@ -92,6 +94,7 @@
               (when-not (= newline (last bytes))
                 (recur))))))
 
+      ;; Without this check `json/read` might throw an EOF exception:
       (when (pos? (.size out))
         (try
           (with-open [reader (io/reader (.toByteArray out))]
