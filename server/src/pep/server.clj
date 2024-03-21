@@ -254,6 +254,10 @@
   (stop)
 
 
+  (with-open [_ (SocketChannel/open ^UnixDomainSocketAddress addr)]
+    ;; Do nothing.
+    nil)
+
   (with-open [c (SocketChannel/open ^UnixDomainSocketAddress addr)]
     (write! c {:op "Hello!"})
     (with-timeout #(read! c) 2))
