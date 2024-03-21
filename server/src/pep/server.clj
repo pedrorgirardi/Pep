@@ -92,11 +92,12 @@
               (when-not (= newline (last bytes))
                 (recur))))))
 
-      (try
-        (with-open [reader (io/reader (.toByteArray out))]
-          (json/read reader :key-fn keyword))
-        (catch Exception ex
-          (log/error ex "An error occurred while reading/decoding message."))))))
+      (when (pos? (.size out))
+        (try
+          (with-open [reader (io/reader (.toByteArray out))]
+            (json/read reader :key-fn keyword))
+          (catch Exception ex
+            (log/error ex "An error occurred while reading/decoding message.")))))))
 
 
 (defn write! [^SocketChannel c m]
