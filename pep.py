@@ -4661,11 +4661,11 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_thingy(
                     self.view.window(),
                     response.get("success"),
-                    goto_on_highlight=False,
+                    goto_on_highlight=True,
                     goto_side_by_side=False,
                     quick_panel_item_opts={
-                        "show_filename": False,
-                        "show_row_col": False,
+                        "show_filename": True,
+                        "show_row_col": True,
                     },
                 )
 

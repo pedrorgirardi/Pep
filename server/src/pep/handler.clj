@@ -89,7 +89,9 @@
   (let [definitions (db/select-namespace-definitions conn (db/cache-dir root-path))
 
         ;; Into a set to remove duplicates (CLJC):
-        definitions (into #{} definitions)]
+        definitions (into #{} definitions)
+
+        definitions (sort-by (juxt :filename :row :col) definitions)]
 
     {:success definitions}))
 
@@ -104,7 +106,9 @@
           definitions (db/select-definitions conn dir prospect)
 
           ;; Into a set to remove duplicates (CLJC):
-          definitions (into #{} xform-kv-not-nillable definitions)]
+          definitions (into #{} xform-kv-not-nillable definitions)
+
+          definitions (sort-by (juxt :filename :row :col) definitions)]
       {:success definitions})
 
     ;; Nothing found under caret.
