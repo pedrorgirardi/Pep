@@ -3,6 +3,7 @@ import inspect
 import json
 import os
 import pathlib
+import pprint
 import re
 import shlex
 import shutil
@@ -14,7 +15,6 @@ import time
 import traceback
 from typing import Any, Callable, List, Optional, Union
 from zipfile import ZipFile
-import pprint
 
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
