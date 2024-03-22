@@ -41,6 +41,11 @@
       nil
       selected-row)))
 
+(defn sort-by-filename-row-col
+  "Sort by `:filename`, `row` and `col`."
+  [coll]
+  (sort-by (juxt :filename :row :col) coll))
+
 (defmulti handle
   "Multimethod to handle client requests.
 
@@ -87,11 +92,8 @@
 (defmethod handle "v1/namespace_definitions"
   [{:keys [conn]} {:keys [root-path]}]
   (let [definitions (db/select-namespace-definitions conn (db/cache-dir root-path))
-
-        ;; Into a set to remove duplicates (CLJC):
         definitions (into #{} definitions)
-
-        definitions (sort-by (juxt :filename :row :col) definitions)]
+        definitions (sort-by-filename-row-col definitions)]
 
     {:success definitions}))
 
@@ -104,11 +106,9 @@
     (let [dir (db/cache-dir root-path)
 
           definitions (db/select-definitions conn dir prospect)
-
-          ;; Into a set to remove duplicates (CLJC):
           definitions (into #{} xform-kv-not-nillable definitions)
-
-          definitions (sort-by (juxt :filename :row :col) definitions)]
+          definitions (sort-by-filename-row-col definitions)]
+      
       {:success definitions})
 
     ;; Nothing found under caret.
@@ -124,7 +124,7 @@
 
           references (db/select-references conn dir prospect {:scope :file})
           references (into #{} xform-kv-not-nillable references)
-          references (sort-by (juxt :filename :row :col) references)]
+          references (sort-by-filename-row-col references)]
 
       {:success
        {:scope :file
