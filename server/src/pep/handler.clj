@@ -135,16 +135,29 @@
 
 (comment
 
-  @(def root-path (System/getProperty "user.dir"))
+  @(def root-path (.getParent (io/file (System/getProperty "user.dir"))))
 
-  (pprint/print-table [:column_name :column_type :null_percentage]
-    (sort-by :column_name
-      (into []
-        (map #(select-keys % [:column_name :column_type :null_percentage]))
-        (with-open [conn (db/conn)]
-          (jdbc/execute! conn
-            [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array')"
-               (io/file root-path ".pep" "*.json"))])))))
+  @(def filename (.getPath (io/file root-path ".pep" "*.json")))
 
+  (defn summarize [sqlparams]
+    (pprint/print-table [:column_name :column_type :null_percentage]
+      (sort-by :null_percentage
+        (into []
+          (map #(select-keys % [:column_name :column_type :null_percentage]))
+          (with-open [conn (db/conn)]
+            (jdbc/execute! conn sqlparams))))))
+
+  (summarize
+    [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array')"
+       filename)])
+
+  (summarize
+    [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array') WHERE _semantic = 'var-definitions'"
+       filename)])
+
+  (summarize
+    [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array') WHERE _semantic = 'var-usages'"
+       filename)])
+  
 
   )
