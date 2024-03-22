@@ -261,8 +261,46 @@
                  :col 19}]
               (result-references result)))))
 
+    (testing "Vars"
+      (let [references [{:_semantic "var-definitions"
+                         :name "x"
+                         :ns "pep.talk.reference"
+                         :row 3
+                         :col 1
+                         :name-row 3
+                         :name-end-row 3
+                         :name-col 6
+                         :name-end-col 7}
+                        {:_semantic "var-usages"
+                         :name "x"
+                         :from "pep.talk.reference"
+                         :to "pep.talk.reference"
+                         :row 7
+                         :col 11
+                         :name-row 7
+                         :name-end-row 7
+                         :name-col 11
+                         :name-end-col 12}]]
 
-    ))
+        (testing "Caret at definition"
+          (let [result (with-open [conn (db/conn)]
+                         (handler/handle {:conn conn}
+                           {:op "v1/find_references_in_file"
+                            :root-path root-path
+                            :filename reference-clj-filename
+                            :row 3
+                            :col 6}))]
+            (is (= references (result-references result)))))
+
+        (testing "Caret at usage"
+          (let [result (with-open [conn (db/conn)]
+                         (handler/handle {:conn conn}
+                           {:op "v1/find_references_in_file"
+                            :root-path root-path
+                            :filename reference-clj-filename
+                            :row 7
+                            :col 11}))]
+            (is (= references (result-references result)))))))))
 
 
 (comment

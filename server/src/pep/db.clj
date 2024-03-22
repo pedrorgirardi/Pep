@@ -75,22 +75,8 @@
 
     (jdbc/execute! conn [sql row row])))
 
-(defn select-locals-by-id
-  "Select `locals` and `local-usages` by ID."
-  [conn json {local-id :id}]
-  (let [sql "SELECT
-                 _semantic, name, filename, row, col
-              FROM
-                 read_json_auto('%s', format='array')
-              WHERE
-                 id = ?"
-
-        sql (format sql json)]
-
-    (jdbc/execute! conn [sql local-id])))
-
 (defn select-var-definitions-sqlparams
-  [filename {var-ns :ns var-name :name}]
+  [json {var-ns :ns var-name :name}]
   (let [sql "SELECT
                  _semantic,
                   ns,
@@ -109,34 +95,50 @@
                  AND ns = ?
                  AND name = ?"
 
-        sql (format sql filename)]
+        sql (format sql json)]
 
     [sql var-ns var-name]))
+
+(defn select-var-definitions
+  [conn json {var-ns :ns
+              var-name :name}]
+  (jdbc/execute! conn
+    (select-var-definitions-sqlparams json
+      {:ns var-ns
+       :name var-name})))
 
 (defn select-var-usages-sqlparams
-  [filename {var-ns :ns var-name :name}]
+  [json {var-ns :ns var-name :name}]
   (let [sql "SELECT
-                 _semantic,
-                  from,
-                  \"to\",
-                  name,
-                  filename,
-                  row,
-                  col,
-                  \"name-row\",
-                  \"name-end-row\",
-                  \"name-col\",
-                  \"name-end-col\"
-              FROM
-                 read_json_auto('%s', format='array')
-              WHERE
-                 _semantic = 'var-usages'
-                 AND to = ?
-                 AND name = ?"
+               \"_semantic\",
+                \"from\",
+                \"to\",
+                \"name\",
+                \"filename\",
+                \"row\",
+                \"col\",
+                \"name-row\",
+                \"name-end-row\",
+                \"name-col\",
+                \"name-end-col\"
+            FROM
+               read_json_auto('%s', format='array')
+            WHERE
+               \"_semantic\" = 'var-usages'
+               AND \"to\" = ?
+               AND \"name\" = ?"
 
-        sql (format sql filename)]
+        sql (format sql json)]
 
     [sql var-ns var-name]))
+
+(defn select-var-usages
+  [conn json {var-ns :ns
+              var-name :name}]
+  (jdbc/execute! conn
+    (select-var-usages-sqlparams json
+      {:ns var-ns
+       :name var-name})))
 
 
 (defmulti select-definitions-sqlparams
@@ -230,8 +232,11 @@
     (jdbc/execute! conn sqlparams)))
 
 
-(defn select-locals-sqlparams
-  [dir {:keys [filename id]}]
+;; -- References
+
+(defn select-local-references
+  "Select `locals` and `local-usages` by ID."
+  [conn json {local-id :id}]
   (let [sql "SELECT
                  _semantic, name, filename, row, col
               FROM
@@ -239,13 +244,23 @@
               WHERE
                  id = ?"
 
-        filename-json (filename-cache filename)
-        filename-file (io/file dir filename-json)
+        sql (format sql json)]
 
-        sql (format sql filename-file)]
+    (jdbc/execute! conn [sql local-id])))
 
-    [sql id]))
+(defn select-var-references
+  "Select `var-definitions` and `var-usages` by namespace and name."
+  [conn json {var-ns :ns
+              var-name :name}]
+  (let [definitions (select-var-definitions conn json
+                      {:ns var-ns
+                       :name var-name})
 
+        usages (select-var-usages conn json
+                 {:ns var-ns
+                  :name var-name})]
+
+    (into [] cat [definitions usages])))
 
 (defmulti select-references
   (fn [_conn _json prospect]
@@ -253,11 +268,25 @@
 
 (defmethod select-references "locals"
   [conn json {local-id :id}]
-  (select-locals-by-id conn json {:id local-id}))
+  (select-local-references conn json {:id local-id}))
 
 (defmethod select-references "local-usages"
   [conn json {local-id :id}]
-  (select-locals-by-id conn json {:id local-id}))
+  (select-local-references conn json {:id local-id}))
+
+(defmethod select-references "var-definitions"
+  [conn json {var-ns :ns
+              var-name :name}]
+  (select-var-references conn json
+    {:ns var-ns
+     :name var-name}))
+
+(defmethod select-references "var-usages"
+  [conn json {var-ns :to
+              var-name :name}]
+  (select-var-references conn json
+    {:ns var-ns
+     :name var-name}))
 
 
 (comment
