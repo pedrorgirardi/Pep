@@ -244,16 +244,6 @@
 
 (comment
 
-  (def addr (default-address))
-
-  (Files/deleteIfExists (.getPath addr))
-
-
-  (def stop (start {:address addr}))
-
-  (stop)
-
-
   (with-open [_ (SocketChannel/open ^UnixDomainSocketAddress addr)]
     ;; Do nothing.
     nil)
@@ -278,5 +268,19 @@
   
 
   (System/exit 0)
+
+  )
+
+
+(comment
+
+  (def addr (default-address))
+
+  (Files/deleteIfExists (.getPath addr))
+
+
+  (def stop (start {:address addr}))
+
+  (stop)
 
   )

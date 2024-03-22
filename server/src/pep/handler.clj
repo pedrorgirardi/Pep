@@ -135,7 +135,7 @@
 
 (comment
 
-  (def root-path (System/getProperty "user.dir"))
+  @(def root-path (System/getProperty "user.dir"))
 
   (pprint/print-table [:column_name :column_type :null_percentage]
     (sort-by :column_name
@@ -143,29 +143,8 @@
         (map #(select-keys % [:column_name :column_type :null_percentage]))
         (with-open [conn (db/conn)]
           (jdbc/execute! conn
-            [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array', union_by_name=true)"
-               (io/file #_root-path "/Users/pedro/Developer/Velos/rex.system" ".pep" "*.json"))])))))
+            [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array')"
+               (io/file root-path ".pep" "*.json"))])))))
 
-
-  (handle {}
-    {:op "v1/diagnostics"
-     :root-path root-path})
-
-  (handle {}
-    {:op "v1/analyze_paths"
-     :root-path root-path})
-
-  (with-open [conn (db/conn)]
-    (handle {:conn conn}
-      {:op "v1/namespace-definitions"
-       :root-path root-path}))
-
-  (with-open [conn (db/conn)]
-    (handle {:conn conn}
-      {:op "v1/find-definitions"
-       :root-path root-path
-       :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-       :row 9
-       :col 18}))
 
   )
