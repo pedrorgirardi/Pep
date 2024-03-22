@@ -214,6 +214,56 @@
                                    :col 8}))]
         (is (= 1 (count success)))))))
 
+(deftest handle-v1-find-references-in-file-test
+  (let [user-dir (System/getProperty "user.dir")
+
+        root-path (io/file user-dir "pep.talk")
+
+        reference-clj-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "reference.clj"))
+
+        result-references (fn [result]
+                            (into []
+                              (map #(dissoc % :filename))
+                              (get-in result [:success :references])))]
+
+    (testing "Locals"
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/find_references_in_file"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 9
+                        :col 7}))]
+        (is (= [{:name "a"
+                 :_semantic "locals"
+                 :row 9
+                 :col 7}
+                {:name "a"
+                 :_semantic "local-usages"
+                 :row 9
+                 :col 19}]
+              (result-references result))))
+
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/find_references_in_file"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 9
+                        :col 20}))]
+        (is (= [{:name "a"
+                 :_semantic "locals"
+                 :row 9
+                 :col 7}
+                {:name "a"
+                 :_semantic "local-usages"
+                 :row 9
+                 :col 19}]
+              (result-references result)))))
+
+
+    ))
+
 
 (comment
 

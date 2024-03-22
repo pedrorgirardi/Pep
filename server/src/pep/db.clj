@@ -198,6 +198,48 @@
     (jdbc/execute! conn sqlparams)))
 
 
+(defn select-locals-sqlparams
+  [dir {:keys [filename id]}]
+  (let [sql "SELECT
+                 _semantic, name, filename, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 id = ?"
+
+        filename-json (filename-cache filename)
+        filename-file (io/file dir filename-json)
+
+        sql (format sql filename-file)]
+
+    [sql id]))
+
+(defmulti select-references-sqlparams
+  "Returns SQL & params to query references per semantic."
+  (fn [_dir prospect _opts]
+    (:_semantic prospect)))
+
+(defmethod select-references-sqlparams "locals"
+  [dir {prospect-filename :filename
+        prospect-id :id} _opts]
+  (select-locals-sqlparams dir
+    {:filename prospect-filename
+     :id prospect-id}))
+
+(defmethod select-references-sqlparams "local-usages"
+  [dir {prospect-filename :filename
+        prospect-id :id} _opts]
+  (select-locals-sqlparams dir
+    {:filename prospect-filename
+     :id prospect-id}))
+
+(defn select-references
+  ([conn dir prospect]
+   (select-references conn dir prospect nil))
+  ([conn dir prospect opts]
+   (let [sqlparams (select-references-sqlparams dir prospect opts)]
+     (jdbc/execute! conn sqlparams))))
+
 (comment
 
   (io/file (cache-dir (System/getProperty "user.dir")) "*.json")

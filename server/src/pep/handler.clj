@@ -114,6 +114,25 @@
     ;; Nothing found under caret.
     {:success #{}}))
 
+(defmethod handle "v1/find_references_in_file"
+  [{:keys [conn]} {:keys [root-path filename row col]}]
+  (if-let [prospect (caret conn root-path
+                      {:filename filename
+                       :row row
+                       :col col})]
+    (let [dir (db/cache-dir root-path)
+
+          references (db/select-references conn dir prospect {:scope :file})
+          references (into #{} xform-kv-not-nillable references)
+          references (sort-by (juxt :filename :row :col) references)]
+
+      {:success
+       {:scope :file
+        :references references}})
+
+    ;; Nothing found under caret.
+    {:success nil}))
+
 (comment
 
   (def root-path (System/getProperty "user.dir"))
