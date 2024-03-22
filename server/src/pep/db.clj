@@ -71,6 +71,56 @@
 
     (jdbc/execute! conn [sql row row])))
 
+(defn select-var-definitions-sqlparams
+  [filename {var-ns :ns var-name :name}]
+  (let [sql "SELECT
+                 _semantic,
+                  ns,
+                  name,
+                  filename,
+                  row,
+                  col,
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'var-definitions'
+                 AND ns = ?
+                 AND name = ?"
+
+        sql (format sql filename)]
+
+    [sql var-ns var-name]))
+
+(defn select-var-usages-sqlparams
+  [filename {var-ns :ns var-name :name}]
+  (let [sql "SELECT
+                 _semantic,
+                  from,
+                  \"to\",
+                  name,
+                  filename,
+                  row,
+                  col,
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 _semantic = 'var-usages'
+                 AND to = ?
+                 AND name = ?"
+
+        sql (format sql filename)]
+
+    [sql var-ns var-name]))
+
+
 (defmulti select-definitions-sqlparams
   "Returns SQL & params to query definitions per semantic."
   (fn [_dir prospect]
@@ -143,54 +193,18 @@
 (defmethod select-definitions-sqlparams "var-definitions"
   [dir {prospect-ns :ns
         prospect-name :name}]
-  (let [sql "SELECT
-                 _semantic,
-                  ns,
-                  name,
-                  doc,
-                  filename,
-                  row,
-                  col,
-                  \"name-row\",
-                  \"name-end-row\",
-                  \"name-col\",
-                  \"name-end-col\"
-              FROM
-                 read_json_auto('%s', format='array')
-              WHERE
-                 _semantic = 'var-definitions'
-                 AND ns = ?
-                 AND name = ?"
-
-        sql (format sql (io/file dir "*.json"))]
-
-    [sql prospect-ns prospect-name]))
+  (let [filename (io/file dir "*.json")]
+    (select-var-definitions-sqlparams filename
+      {:ns prospect-ns
+       :name prospect-name})))
 
 (defmethod select-definitions-sqlparams "var-usages"
   [dir {prospect-to :to
         prospect-name :name}]
-  (let [sql "SELECT
-                 _semantic,
-                  ns,
-                  name,
-                  doc,
-                  filename,
-                  row,
-                  col,
-                  \"name-row\",
-                  \"name-end-row\",
-                  \"name-col\",
-                  \"name-end-col\"
-              FROM
-                 read_json_auto('%s', format='array')
-              WHERE
-                 _semantic = 'var-definitions'
-                 AND ns = ?
-                 AND name = ?"
-
-        sql (format sql (io/file dir "*.json"))]
-
-    [sql prospect-to prospect-name]))
+  (let [filename (io/file dir "*.json")]
+    (select-var-definitions-sqlparams filename
+      {:ns prospect-to
+       :name prospect-name})))
 
 (defn select-definitions
   [conn dir prospect]
