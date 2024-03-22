@@ -26,13 +26,17 @@
   ^java.io.File [root-path filename]
   (io/file (cache-dir root-path) (filename-cache filename)))
 
+(defn cache-*json-file
+  ^java.io.File [root-path]
+  (io/file (cache-dir root-path) "*.json"))
+
 (defn conn ^java.sql.Connection []
   (doto
     (jdbc/get-connection "jdbc:duckdb:")
     (jdbc/execute! ["INSTALL json; LOAD json;"])))
 
-(defn select-namespace-definitions
-  [conn dir]
+(defn select-namespaces
+  [conn json]
   (let [sql "SELECT
                   _semantic,
                   name,
@@ -53,7 +57,7 @@
               ORDER BY
                   name"
 
-        sql (format sql (io/file dir "*.json"))]
+        sql (format sql json)]
 
     (jdbc/execute! conn [sql])))
 

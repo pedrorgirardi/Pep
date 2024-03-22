@@ -4610,7 +4610,7 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
                 progress.start("")
 
                 response = with_clientsocket_retry(
-                    lambda c: op.namespace_definitions(c, root_path)
+                    lambda c: op.namespaces(c, root_path)
                 )
 
                 sublime.set_timeout(

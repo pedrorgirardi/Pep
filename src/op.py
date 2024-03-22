@@ -89,12 +89,12 @@ def analyze_text(
     return req(client_socket, data)
 
 
-def namespace_definitions(
+def namespaces(
     client_socket: socket.socket,
     root_path: str,
 ) -> Dict[str, Any]:
     data = {
-        "op": "v1/namespace_definitions",
+        "op": "v1/namespaces",
         "root-path": root_path,
     }
 

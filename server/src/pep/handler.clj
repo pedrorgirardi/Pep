@@ -89,9 +89,9 @@
 
     {:success (ana/diagnostics* result)}))
 
-(defmethod handle "v1/namespace_definitions"
+(defmethod handle "v1/namespaces"
   [{:keys [conn]} {:keys [root-path]}]
-  (let [definitions (db/select-namespace-definitions conn (db/cache-dir root-path))
+  (let [definitions (db/select-namespaces conn (db/cache-*json-file root-path))
         definitions (into #{} definitions)
         definitions (sort-by-filename-row-col definitions)]
 

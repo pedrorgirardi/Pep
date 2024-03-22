@@ -113,7 +113,7 @@
 
         {:keys [success]} (with-open [conn (db/conn)]
                             (handler/handle {:conn conn}
-                              {:op "v1/namespace_definitions"
+                              {:op "v1/namespaces"
                                :root-path (io/file user-dir "pep.talk")}))]
 
     (testing "Successful analysis"
