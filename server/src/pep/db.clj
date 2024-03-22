@@ -22,6 +22,10 @@
   [filename]
   (str (filename-cache-hash filename) ".json"))
 
+(defn cache-json-file
+  ^java.io.File [root-path filename]
+  (io/file (cache-dir root-path) (filename-cache filename)))
+
 (defn conn ^java.sql.Connection []
   (doto
     (jdbc/get-connection "jdbc:duckdb:")
@@ -70,6 +74,20 @@
         sql (format sql filename-file)]
 
     (jdbc/execute! conn [sql row row])))
+
+(defn select-locals-by-id
+  "Select `locals` and `local-usages` by ID."
+  [conn json {local-id :id}]
+  (let [sql "SELECT
+                 _semantic, name, filename, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                 id = ?"
+
+        sql (format sql json)]
+
+    (jdbc/execute! conn [sql local-id])))
 
 (defn select-var-definitions-sqlparams
   [filename {var-ns :ns var-name :name}]
@@ -228,31 +246,19 @@
 
     [sql id]))
 
-(defmulti select-references-sqlparams
-  "Returns SQL & params to query references per semantic."
-  (fn [_dir prospect _opts]
+
+(defmulti select-references
+  (fn [_conn _json prospect]
     (:_semantic prospect)))
 
-(defmethod select-references-sqlparams "locals"
-  [dir {prospect-filename :filename
-        prospect-id :id} _opts]
-  (select-locals-sqlparams dir
-    {:filename prospect-filename
-     :id prospect-id}))
+(defmethod select-references "locals"
+  [conn json {local-id :id}]
+  (select-locals-by-id conn json {:id local-id}))
 
-(defmethod select-references-sqlparams "local-usages"
-  [dir {prospect-filename :filename
-        prospect-id :id} _opts]
-  (select-locals-sqlparams dir
-    {:filename prospect-filename
-     :id prospect-id}))
+(defmethod select-references "local-usages"
+  [conn json {local-id :id}]
+  (select-locals-by-id conn json {:id local-id}))
 
-(defn select-references
-  ([conn dir prospect]
-   (select-references conn dir prospect nil))
-  ([conn dir prospect opts]
-   (let [sqlparams (select-references-sqlparams dir prospect opts)]
-     (jdbc/execute! conn sqlparams))))
 
 (comment
 

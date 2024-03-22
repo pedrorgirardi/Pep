@@ -120,15 +120,14 @@
                       {:filename filename
                        :row row
                        :col col})]
-    (let [dir (db/cache-dir root-path)
+    (let [cache-file (db/cache-json-file root-path filename)
 
-          references (db/select-references conn dir prospect {:scope :file})
+          references (db/select-references conn cache-file prospect)
           references (into #{} xform-kv-not-nillable references)
           references (sort-by-filename-row-col references)]
 
       {:success
-       {:scope :file
-        :references references}})
+       {:references references}})
 
     ;; Nothing found under caret.
     {:success nil}))
