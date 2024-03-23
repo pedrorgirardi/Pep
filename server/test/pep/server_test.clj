@@ -32,7 +32,7 @@
 
     (is (= {:error
             {:message "Bad handler."
-             :data {:foo "bar"}}}
+             :data {:message {:op "error"}}}}
           (with-open [c (SocketChannel/open ^UnixDomainSocketAddress address)]
             (request c {:op "error"}))))
 
