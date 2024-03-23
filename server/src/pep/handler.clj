@@ -12,11 +12,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def xform-kv-not-nillable
-  (map
-    (fn [m]
-      (into {} (remove (comp nil? val)) m))))
-
 (defn persist-analysis!
   [root-path {:keys [analysis]}]
   (let [cache-dir (db/cache-dir root-path)]
@@ -56,11 +51,6 @@
             acc)))
       #{}
       row-data)))
-
-(defn sort-by-filename-row-col
-  "Sort by `:filename`, `row` and `col`."
-  [coll]
-  (sort-by (juxt :filename :row :col) coll))
 
 (defmulti handle
   "Multimethod to handle client requests.
