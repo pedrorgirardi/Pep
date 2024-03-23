@@ -26,6 +26,20 @@
       nil
       row-data)))
 
+(defn  v1-find_definitions
+  [{:keys [conn]} {:keys [root-path filename row col]}]
+  (when-let [prospect (caret conn root-path
+                        {:filename filename
+                         :row row
+                         :col col})]
+    (let [dir (db/cache-dir root-path)
+
+          definitions (db/select-definitions conn dir prospect)
+          definitions (into #{} xform-kv-not-nillable definitions)
+          definitions (sort-by-filename-row-col definitions)]
+
+      definitions)))
+
 (defn v1-find-references-in-file
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (when-let [prospect (caret conn root-path

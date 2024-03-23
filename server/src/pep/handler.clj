@@ -114,21 +114,14 @@
     {:success definitions}))
 
 (defmethod handle "v1/find_definitions"
-  [{:keys [conn]} {:keys [root-path filename row col]}]
-  (if-let [prospect (caret conn root-path
-                      {:filename filename
-                       :row row
-                       :col col})]
-    (let [dir (db/cache-dir root-path)
-
-          definitions (db/select-definitions conn dir prospect)
-          definitions (into #{} xform-kv-not-nillable definitions)
-          definitions (sort-by-filename-row-col definitions)]
-      
-      {:success definitions})
-
-    ;; Nothing found under caret.
-    {:success nil}))
+  [context message]
+  (try
+    {:success
+     (op/v1-find_definitions context message)}
+    (catch Exception ex
+      {:error
+       {:message (ex-message ex)
+        :data message}})))
 
 (defmethod handle "v1/find_references_in_file"
   [context message]
