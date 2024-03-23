@@ -4,7 +4,8 @@
    [clojure.tools.deps :as deps]
    [clojure.tools.build.api :as b]
 
-   [clj-kondo.core :as clj-kondo]))
+   [clj-kondo.core :as clj-kondo]
+   [nano-id.core :refer [nano-id]]))
 
 (set! *warn-on-reflection* true)
 
@@ -124,7 +125,7 @@
                   (into []
                     (map
                       #(assoc %
-                         :_id (str (random-uuid))
+                         :_id (nano-id 10)
                          :_semantic sem))
                     data)))]
     (group-by :filename (into [] xform analysis))))
