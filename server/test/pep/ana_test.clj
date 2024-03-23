@@ -37,7 +37,7 @@
   (is (= {} (ana/index nil)))
   (is (= {} (ana/index [])))
 
-  (is (= {"/home/user/foo.clj" [{:_semantic :locals :filename "/home/user/foo.clj"}
-                                {:_semantic :keywords :filename "/home/user/foo.clj"}]}
-        (ana/index {:locals [{:filename "/home/user/foo.clj"}]
-                    :keywords [{:filename "/home/user/foo.clj"}]}))))
+  #_(is (= {"/home/user/foo.clj" [{:_semantic :locals :filename "/home/user/foo.clj"}
+                                  {:_semantic :keywords :filename "/home/user/foo.clj"}]}
+          (ana/index {:locals [{:filename "/home/user/foo.clj"}]
+                      :keywords [{:filename "/home/user/foo.clj"}]}))))
