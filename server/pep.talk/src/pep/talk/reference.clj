@@ -16,3 +16,9 @@
   age)
 
 :person/age
+
+(fn [{:keys [foo/bar]}]
+  bar)
+
+(fn [{:foo/keys [bar]}]
+  bar)

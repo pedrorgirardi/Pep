@@ -29,9 +29,9 @@
 
 (defn caret
   [conn root-path {:keys [filename row col]}]
-  (let [selected-row (db/select-row conn (db/cache-dir root-path)
-                       {:filename filename
-                        :row row})]
+  (let [row-data (db/select-row conn (db/cache-dir root-path)
+                   {:filename filename
+                    :row row})]
     (reduce
       (fn [_ data]
         (let [start (or (:name-col data) (:col data))
@@ -39,7 +39,22 @@
           (when (<= start col end)
             (reduced data))))
       nil
-      selected-row)))
+      row-data)))
+
+(defn caret*
+  [conn root-path {:keys [filename row col]}]
+  (let [row-data (db/select-row conn (db/cache-dir root-path)
+                   {:filename filename
+                    :row row})]
+    (reduce
+      (fn [acc data]
+        (let [start (or (:name-col data) (:col data))
+              end (or (:name-end-col data) (:end-col data))]
+          (if (<= start col end)
+            (conj acc data)
+            acc)))
+      #{}
+      row-data)))
 
 (defn sort-by-filename-row-col
   "Sort by `:filename`, `row` and `col`."

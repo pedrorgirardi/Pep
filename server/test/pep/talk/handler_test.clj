@@ -6,6 +6,76 @@
    [pep.db :as db]
    [pep.handler :as handler]))
 
+(deftest handle-analyze-test
+  (let [user-dir (System/getProperty "user.dir")
+
+        response (handler/handle {}
+                   {:op "v1/analyze_paths"
+                    :root-path (io/file user-dir "pep.talk")})]
+
+    (testing "Successful analysis"
+      (is (contains? response :success)))))
+
+(deftest caret*-test
+  (let [user-dir (System/getProperty "user.dir")
+
+        root-path (io/file user-dir "pep.talk")
+
+        reference-clj-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "reference.clj"))]
+
+    (is (= #{{:_semantic "keywords"
+              :keys-destructuring-ns-modifier true
+              :ns "person"}}
+          (into #{}
+            (map #(select-keys % [:_semantic :ns :keys-destructuring-ns-modifier]))
+            (with-open [conn (db/conn)]
+              (handler/caret* conn root-path
+                {:filename reference-clj-filename
+                 :row 15
+                 :col 14})))))
+
+    (testing "Two 'definitions' at the same location"
+      (is (= #{"locals" "keywords"}
+            (into #{}
+              (map :_semantic)
+              (with-open [conn (db/conn)]
+                (handler/caret* conn root-path
+                  {:filename reference-clj-filename
+                   :row 15
+                   :col 22}))))))
+
+    (testing "Keys destructuring"
+      (is (= #{{:_semantic "locals"
+                :keys-destructuring nil
+                :keys-destructuring-ns-modifier nil
+                :name "bar"
+                :ns nil}
+               {:_semantic "keywords"
+                :keys-destructuring true
+                :keys-destructuring-ns-modifier nil
+                :name "bar"
+                :ns "foo"}}
+            (into #{}
+              (map #(select-keys % [:_semantic :ns :name :keys-destructuring :keys-destructuring-ns-modifier]))
+              (with-open [conn (db/conn)]
+                (handler/caret* conn root-path
+                  {:filename reference-clj-filename
+                   :row 20
+                   :col 18})))))
+
+      (is (= #{{:_semantic "keywords"
+                :keys-destructuring nil
+                :keys-destructuring-ns-modifier true
+                :ns "foo"
+                :name "keys"}}
+            (into #{}
+              (map #(select-keys % [:_semantic :ns :name :keys-destructuring :keys-destructuring-ns-modifier]))
+              (with-open [conn (db/conn)]
+                (handler/caret* conn root-path
+                  {:filename reference-clj-filename
+                   :row 23
+                   :col 8}))))))))
+
 (deftest caret-test
   (let [user-dir (System/getProperty "user.dir")
 
@@ -122,16 +192,6 @@
                    :row 9
                    :col 6}))
               [:name :_semantic :row :col :name-col]))))))
-
-(deftest handle-analyze-test
-  (let [user-dir (System/getProperty "user.dir")
-
-        response (handler/handle {}
-                   {:op "v1/analyze_paths"
-                    :root-path (io/file user-dir "pep.talk")})]
-
-    (testing "Successful analysis"
-      (is (contains? response :success)))))
 
 (deftest handle-namespace-definitions-test
   (let [user-dir (System/getProperty "user.dir")
