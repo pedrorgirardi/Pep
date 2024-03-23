@@ -1,27 +1,14 @@
 (ns pep.handler
   (:require
    [clojure.java.io :as io]
-   [clojure.data.json :as json]
    [clojure.pprint :as pprint]
 
    [next.jdbc :as jdbc]
 
-   [pep.ana :as ana]
    [pep.db :as db]
    [pep.op :as op]))
 
 (set! *warn-on-reflection* true)
-
-(defn persist-analysis!
-  [root-path {:keys [analysis]}]
-  (let [cache-dir (db/cache-dir root-path)]
-
-    (when-not (.exists cache-dir)
-      (.mkdirs cache-dir))
-
-    (doseq [[filename analysis] (ana/index analysis)]
-      (let [f (io/file cache-dir (db/filename-cache filename))]
-        (spit f (json/write-str analysis))))))
 
 (defn caret
   [conn root-path {:keys [filename row col]}]
@@ -100,32 +87,3 @@
   [context message]
   {:success
    {:references (op/v1-find-references-in-file context message)}})
-
-(comment
-
-  @(def root-path (.getParent (io/file (System/getProperty "user.dir"))))
-
-  @(def filename (.getPath (io/file root-path ".pep" "*.json")))
-
-  (defn summarize [sqlparams]
-    (pprint/print-table [:column_name :column_type :null_percentage]
-      (sort-by :null_percentage
-        (into []
-          (map #(select-keys % [:column_name :column_type :null_percentage]))
-          (with-open [conn (db/conn)]
-            (jdbc/execute! conn sqlparams))))))
-
-  (summarize
-    [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array')"
-       filename)])
-
-  (summarize
-    [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array') WHERE _semantic = 'var-definitions'"
-       filename)])
-
-  (summarize
-    [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array') WHERE _semantic = 'var-usages'"
-       filename)])
-  
-
-  )

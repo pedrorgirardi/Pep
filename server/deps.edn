@@ -21,7 +21,8 @@
   {:jvm-opts ["-Dclojure.server.repl={:port,5555,:accept,clojure.core.server/repl}"]}
 
   :dev
-  {:extra-deps
+  {:extra-paths ["dev"]
+   :extra-deps
    {org.clojure/tools.analyzer.jvm {:mvn/version "1.3.0"}}}
 
   :test
