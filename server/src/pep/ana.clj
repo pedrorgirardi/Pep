@@ -121,6 +121,11 @@
   (let [;; Map different analysis data eg. locals, keywords to a vector.
         xform (mapcat
                 (fn [[sem data]]
-                  (into [] (map #(assoc % :_semantic sem)) data)))]
+                  (into []
+                    (map
+                      #(assoc %
+                         :_id (str (random-uuid))
+                         :_semantic sem))
+                    data)))]
     (group-by :filename (into [] xform analysis))))
 
