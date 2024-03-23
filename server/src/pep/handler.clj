@@ -7,7 +7,8 @@
    [next.jdbc :as jdbc]
 
    [pep.ana :as ana]
-   [pep.db :as db]))
+   [pep.db :as db]
+   [pep.op :as op]))
 
 (set! *warn-on-reflection* true)
 
@@ -130,22 +131,14 @@
     {:success nil}))
 
 (defmethod handle "v1/find_references_in_file"
-  [{:keys [conn]} {:keys [root-path filename row col]}]
-  (if-let [prospect (caret conn root-path
-                      {:filename filename
-                       :row row
-                       :col col})]
-    (let [cache-file (db/cache-json-file root-path filename)
-
-          references (db/select-references conn cache-file prospect)
-          references (into #{} xform-kv-not-nillable references)
-          references (sort-by-filename-row-col references)]
-
-      {:success
-       {:references references}})
-
-    ;; Nothing found under caret.
-    {:success nil}))
+  [context message]
+  (try
+    {:success
+     {:references (op/v1-find-references-in-file context message)}}
+    (catch Exception ex
+      {:error
+       {:message (ex-message ex)
+        :data message}})))
 
 (comment
 
