@@ -11,10 +11,9 @@
     (fn [m]
       (into {} (remove (comp nil? val)) m))))
 
-(defn sort-by-filename-row-col
-  "Sort by `:filename`, `row` and `col`."
-  [coll]
-  (sort-by (juxt :filename :row :col) coll))
+(def comp-filename-row-col
+  "Comparator to sort by `:filename`, `row` and `col`."
+  (juxt :filename :row :col))
 
 (defn caret
   [conn root-path {:keys [filename row col]}]
@@ -93,7 +92,7 @@
   [{:keys [conn]} {:keys [root-path]}]
   (let [namespaces (db/select-namespaces conn (db/cache-*json-file root-path))
         namespaces (into #{} namespaces)
-        namespaces (sort-by-filename-row-col namespaces)]
+        namespaces (sort-by comp-filename-row-col namespaces)]
 
     namespaces))
 
@@ -107,7 +106,7 @@
 
           definitions (db/select-definitions conn dir prospect)
           definitions (into #{} xform-kv-not-nillable definitions)
-          definitions (sort-by-filename-row-col definitions)]
+          definitions (sort-by comp-filename-row-col definitions)]
 
       definitions)))
 
@@ -121,6 +120,6 @@
 
           references (db/select-references conn cache-file prospect)
           references (into #{} xform-kv-not-nillable references)
-          references (sort-by-filename-row-col references)]
+          references (sort-by comp-filename-row-col references)]
 
       references)))
