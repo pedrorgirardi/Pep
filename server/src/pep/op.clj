@@ -26,6 +26,14 @@
       nil
       row-data)))
 
+(defn v1-namespaces
+  [{:keys [conn]} {:keys [root-path]}]
+  (let [namespaces (db/select-namespaces conn (db/cache-*json-file root-path))
+        namespaces (into #{} namespaces)
+        namespaces (sort-by-filename-row-col namespaces)]
+
+    namespaces))
+
 (defn  v1-find_definitions
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (when-let [prospect (caret conn root-path

@@ -106,16 +106,20 @@
     {:success (ana/diagnostics* result)}))
 
 (defmethod handle "v1/namespaces"
-  [{:keys [conn]} {:keys [root-path]}]
-  (let [definitions (db/select-namespaces conn (db/cache-*json-file root-path))
-        definitions (into #{} definitions)
-        definitions (sort-by-filename-row-col definitions)]
-
-    {:success definitions}))
+  [context message]
+  (try
+    ;; TODO: Add namespaces to :namespaces
+    {:success
+     (op/v1-namespaces context message)}
+    (catch Exception ex
+      {:error
+       {:message (ex-message ex)
+        :data message}})))
 
 (defmethod handle "v1/find_definitions"
   [context message]
   (try
+    ;; TODO: Add definitions to :definitions
     {:success
      (op/v1-find_definitions context message)}
     (catch Exception ex
