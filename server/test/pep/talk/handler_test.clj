@@ -45,6 +45,12 @@
                    :col 22}))))))
 
     (testing "Keys destructuring"
+
+      ;; Test `foo/bar` keys-destructuring
+      ;; Example:
+      #_(fn [{:keys [foo/bar]}]
+          bar)
+
       (is (= #{{:_semantic "locals"
                 :keys-destructuring nil
                 :keys-destructuring-ns-modifier nil
@@ -62,6 +68,12 @@
                   {:filename reference-clj-filename
                    :row 20
                    :col 18})))))
+
+
+      ;; Test `:foo/keys` keys-destructuring-ns-modifier
+      ;; Example:
+      #_(fn [{:foo/keys [bar]}]
+          bar)
 
       (is (= #{{:_semantic "keywords"
                 :keys-destructuring nil
