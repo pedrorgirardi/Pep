@@ -23,6 +23,31 @@
                  :row 2
                  :col 2}))))
 
+      (is (= {:_semantic "keywords"
+              :ns "person"
+              :name "name"
+              :row 11
+              :col 1}
+            (select-keys
+              (with-open [conn (db/conn)]
+                (handler/caret conn root-path
+                  {:filename reference-clj-filename
+                   :row 11
+                   :col 11}))
+              [:ns :name :_semantic :row :col])))
+
+      (is (= {:_semantic "locals"
+              :name "age"
+              :row 15
+              :col 21}
+            (select-keys
+              (with-open [conn (db/conn)]
+                (handler/caret conn root-path
+                  {:filename reference-clj-filename
+                   :row 15
+                   :col 22}))
+              [:name :_semantic :row :col])))
+
       (is (= {:name "x"
               :_semantic "var-usages"
               :row 7
@@ -225,6 +250,45 @@
                             (into []
                               (map #(dissoc % :filename))
                               (get-in result [:success :references])))]
+
+    (testing "Keywords"
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/find_references_in_file"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 11
+                        :col 11}))]
+        (is (= [{:_semantic "keywords"
+                 :ns "person"
+                 :name "name"
+                 :row 11
+                 :col 1}
+                {:_semantic "keywords"
+                 :ns "person"
+                 :name "name"
+                 :row 13
+                 :col 2   }]
+              (result-references result))))
+
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/find_references_in_file"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 18
+                        :col 8}))]
+        (is (= [{:_semantic "keywords"
+                 :ns "person"
+                 :name "age"
+                 :row 15
+                 :col 21}
+                {:_semantic "keywords"
+                 :ns "person"
+                 :name "age"
+                 :row 18
+                 :col 1}]
+              (result-references result)))))
 
     (testing "Locals"
       (let [result (with-open [conn (db/conn)]

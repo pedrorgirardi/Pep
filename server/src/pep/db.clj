@@ -252,6 +252,29 @@
 
     (jdbc/execute! conn [sql local-id])))
 
+(defn select-keyword-references
+  "Select `keywords` by namespace and name."
+  [conn json {keyword-ns :ns
+              keyword-name :name}]
+  (let [sql "SELECT
+                 _semantic, ns, name, filename, row, col
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                _semantic = 'keywords'
+                 %s"]
+    (cond
+      keyword-ns
+      (jdbc/execute! conn
+        [(format sql json "AND ns = ? AND name = ?")
+         keyword-ns
+         keyword-name])
+
+      :else
+      (jdbc/execute! conn
+        [(format sql json "AND name = ?")
+         keyword-name]))))
+
 (defn select-var-references
   "Select `var-definitions` and `var-usages` by namespace and name."
   [conn json {var-ns :ns
@@ -269,6 +292,13 @@
 (defmulti select-references
   (fn [_conn _json prospect]
     (:_semantic prospect)))
+
+(defmethod select-references "keywords"
+  [conn json {keyword-ns :ns
+              keyword-name :name}]
+  (select-keyword-references conn json
+    {:ns keyword-ns
+     :name keyword-name}))
 
 (defmethod select-references "locals"
   [conn json {local-id :id}]
