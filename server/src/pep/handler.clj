@@ -80,12 +80,14 @@
         :data message}})))
 
 (defmethod handle "v1/analyze_paths"
-  [_ {:keys [root-path filename text]}]
-  (let [result (ana/analyze-paths! root-path)]
-
-    (persist-analysis! root-path result)
-
-    {:success (ana/diagnostics* result)}))
+  [context message]
+  (try
+    {:success
+     (op/v1-analyze_paths context message)}
+    (catch Exception ex
+      {:error
+       {:message (ex-message ex)
+        :data message}})))
 
 (defmethod handle "v1/analyze_text"
   [_ {:keys [root-path filename text]}]

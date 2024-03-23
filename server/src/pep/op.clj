@@ -1,5 +1,8 @@
 (ns pep.op
   (:require
+   [clojure.java.io :as io]
+   [clojure.data.json :as json]
+
    [pep.db :as db]
    [pep.ana :as ana]))
 
@@ -27,8 +30,27 @@
       nil
       row-data)))
 
+(defn persist-analysis!
+  [root-path {:keys [analysis]}]
+  (let [cache-dir (db/cache-dir root-path)]
+
+    (when-not (.exists cache-dir)
+      (.mkdirs cache-dir))
+
+    (doseq [[filename analysis] (ana/index analysis)]
+      (let [f (io/file cache-dir (db/filename-cache filename))]
+        (spit f (json/write-str analysis))))))
+
+(defn v1-analyze_paths
+  [_context {:keys [root-path]}]
+  (let [result (ana/analyze-paths! root-path)]
+
+    (persist-analysis! root-path result)
+
+    (ana/diagnostics* result)))
+
 (defn v1-diagnostics
-  [_ {:keys [root-path]}]
+  [_context {:keys [root-path]}]
   (ana/diagnostics root-path))
 
 (defn v1-namespaces
