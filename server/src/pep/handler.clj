@@ -127,7 +127,7 @@
       {:success definitions})
 
     ;; Nothing found under caret.
-    {:success #{}}))
+    {:success nil}))
 
 (defmethod handle "v1/find_references_in_file"
   [{:keys [conn]} {:keys [root-path filename row col]}]

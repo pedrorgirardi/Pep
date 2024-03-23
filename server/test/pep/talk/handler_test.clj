@@ -231,7 +231,7 @@
         reference-clj-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "reference.clj"))
         common-cljc-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "common.cljc"))]
 
-    (testing "nil"
+    (testing "Nothing under caret"
       (let [{:keys [success]} (with-open [conn (db/conn)]
                                 (handler/handle {:conn conn}
                                   {:op "v1/find_definitions"
@@ -239,7 +239,7 @@
                                    :filename common-cljc-filename
                                    :row 3
                                    :col 1}))]
-        (is (= #{} success))))
+        (is (= nil success))))
 
     (testing "Local binding"
       (let [{:keys [success]} (with-open [conn (db/conn)]
