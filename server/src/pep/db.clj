@@ -62,7 +62,7 @@
     (jdbc/execute! conn [sql])))
 
 (defn select-row
-  [conn dir {:keys [filename row]}]
+  [conn json {:keys [row]}]
   (let [;; It's fine to 'select *' because we're looking at a single file.
         sql "SELECT
                 *
@@ -72,10 +72,7 @@
                  \"name-row\" = ?
                  OR row = ?"
 
-        filename-json (filename-cache filename)
-        filename-file (io/file dir filename-json)
-
-        sql (format sql filename-file)]
+        sql (format sql json)]
 
     (jdbc/execute! conn [sql row row])))
 

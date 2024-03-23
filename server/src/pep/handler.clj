@@ -29,9 +29,9 @@
 
 (defn caret
   [conn root-path {:keys [filename row col]}]
-  (let [row-data (db/select-row conn (db/cache-dir root-path)
-                   {:filename filename
-                    :row row})]
+  (let [cache-file (db/cache-json-file root-path filename)
+
+        row-data (db/select-row conn cache-file {:row row})]
     (reduce
       (fn [_ data]
         (let [start (or (:name-col data) (:col data))
@@ -43,9 +43,9 @@
 
 (defn caret*
   [conn root-path {:keys [filename row col]}]
-  (let [row-data (db/select-row conn (db/cache-dir root-path)
-                   {:filename filename
-                    :row row})]
+  (let [cache-file (db/cache-json-file root-path filename)
+
+        row-data (db/select-row conn cache-file {:row row})]
     (reduce
       (fn [acc data]
         (let [start (or (:name-col data) (:col data))
