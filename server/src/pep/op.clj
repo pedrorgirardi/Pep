@@ -82,6 +82,13 @@
   [_context {:keys [root-path]}]
   (ana/diagnostics root-path))
 
+(defn v1-under-caret
+  [{:keys [conn]} {:keys [root-path filename row col]}]
+  (caret* conn root-path
+    {:filename filename
+     :row row
+     :col col}))
+
 (defn v1-namespaces
   [{:keys [conn]} {:keys [root-path]}]
   (let [namespaces (db/select-namespaces conn (db/cache-*json-file root-path))

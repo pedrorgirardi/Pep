@@ -27,6 +27,11 @@
   {:success
    (op/v1-diagnostics context message)})
 
+(defmethod handle "v1/under_caret"
+  [context message]
+  {:success
+   (op/v1-under-caret context message)})
+
 (defmethod handle "v1/analyze_paths"
   [context message]
   {:success
