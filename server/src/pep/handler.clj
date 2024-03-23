@@ -71,69 +71,35 @@
 
 (defmethod handle "v1/diagnostics"
   [context message]
-  (try
-    {:success
-     (op/v1-diagnostics context message)}
-    (catch Exception ex
-      {:error
-       {:message (ex-message ex)
-        :data message}})))
+  {:success
+   (op/v1-diagnostics context message)})
 
 (defmethod handle "v1/analyze_paths"
   [context message]
-  (try
-    {:success
-     (op/v1-analyze_paths context message)}
-    (catch Exception ex
-      {:error
-       {:message (ex-message ex)
-        :data message}})))
+  {:success
+   (op/v1-analyze_paths context message)})
 
 (defmethod handle "v1/analyze_text"
-  [_ {:keys [root-path filename text]}]
-  (let [^java.util.Base64$Decoder decoder (java.util.Base64/getDecoder)
-
-        bytes (.decode decoder ^String text)
-
-        result (ana/analyze-text!
-                 {:text (String. bytes "UTF-8")
-                  :filename (or filename "-")})]
-
-    (persist-analysis! root-path result)
-
-    {:success (ana/diagnostics* result)}))
+  [context message]
+  {:success
+   (op/v1-analyze_text context message)})
 
 (defmethod handle "v1/namespaces"
   [context message]
-  (try
-    ;; TODO: Add namespaces to :namespaces
-    {:success
-     (op/v1-namespaces context message)}
-    (catch Exception ex
-      {:error
-       {:message (ex-message ex)
-        :data message}})))
+  ;; TODO: Add namespaces to :namespaces
+  {:success
+   (op/v1-namespaces context message)})
 
 (defmethod handle "v1/find_definitions"
   [context message]
-  (try
-    ;; TODO: Add definitions to :definitions
-    {:success
-     (op/v1-find_definitions context message)}
-    (catch Exception ex
-      {:error
-       {:message (ex-message ex)
-        :data message}})))
+  ;; TODO: Add definitions to :definitions
+  {:success
+   (op/v1-find_definitions context message)})
 
 (defmethod handle "v1/find_references_in_file"
   [context message]
-  (try
-    {:success
-     {:references (op/v1-find-references-in-file context message)}}
-    (catch Exception ex
-      {:error
-       {:message (ex-message ex)
-        :data message}})))
+  {:success
+   {:references (op/v1-find-references-in-file context message)}})
 
 (comment
 

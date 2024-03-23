@@ -49,6 +49,20 @@
 
     (ana/diagnostics* result)))
 
+(defn v1-analyze_text
+  [_context {:keys [root-path filename text]}]
+  (let [^java.util.Base64$Decoder decoder (java.util.Base64/getDecoder)
+
+        bytes (.decode decoder ^String text)
+
+        result (ana/analyze-text!
+                 {:text (String. bytes "UTF-8")
+                  :filename (or filename "-")})]
+
+    (persist-analysis! root-path result)
+
+    (ana/diagnostics* result)))
+
 (defn v1-diagnostics
   [_context {:keys [root-path]}]
   (ana/diagnostics root-path))
