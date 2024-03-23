@@ -1,43 +1,9 @@
 (ns pep.handler
   (:require
-   [clojure.java.io :as io]
-   [clojure.pprint :as pprint]
-
-   [next.jdbc :as jdbc]
-
-   [pep.db :as db]
    [pep.op :as op]))
 
 (set! *warn-on-reflection* true)
 
-(defn caret
-  [conn root-path {:keys [filename row col]}]
-  (let [cache-file (db/cache-json-file root-path filename)
-
-        row-data (db/select-row conn cache-file {:row row})]
-    (reduce
-      (fn [_ data]
-        (let [start (or (:name-col data) (:col data))
-              end (or (:name-end-col data) (:end-col data))]
-          (when (<= start col end)
-            (reduced data))))
-      nil
-      row-data)))
-
-(defn caret*
-  [conn root-path {:keys [filename row col]}]
-  (let [cache-file (db/cache-json-file root-path filename)
-
-        row-data (db/select-row conn cache-file {:row row})]
-    (reduce
-      (fn [acc data]
-        (let [start (or (:name-col data) (:col data))
-              end (or (:name-end-col data) (:end-col data))]
-          (if (<= start col end)
-            (conj acc data)
-            acc)))
-      #{}
-      row-data)))
 
 (defmulti handle
   "Multimethod to handle client requests.
