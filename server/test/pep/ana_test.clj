@@ -29,6 +29,7 @@
 
   (testing "Pep's project paths"
     (is (= #{(io/file "./src")
+             (io/file "./dev")
              (io/file "./test")
              (io/file "./resources")}
           (ana/project-paths ".")))))
