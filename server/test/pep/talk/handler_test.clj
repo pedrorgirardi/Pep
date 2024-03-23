@@ -340,7 +340,7 @@
                  :ns "person"
                  :name "name"
                  :row 13
-                 :col 2   }]
+                 :col 2}]
               (result-references result))))
 
       (let [result (with-open [conn (db/conn)]
