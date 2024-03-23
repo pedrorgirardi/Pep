@@ -83,10 +83,16 @@
 
 (defn v1-under-caret
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (caret* conn root-path
-    {:filename filename
-     :row row
-     :col col}))
+  (let [caret-data (caret* conn root-path
+                     {:filename filename
+                      :row row
+                      :col col})
+
+        caret-data (into #{} xform-kv-not-nillable caret-data)
+
+        caret-data (sort-by comp-filename-row-col caret-data)]
+
+    caret-data))
 
 (defn v1-namespaces
   [{:keys [conn]} {:keys [root-path]}]

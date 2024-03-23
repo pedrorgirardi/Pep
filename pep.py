@@ -4702,6 +4702,97 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
         threading.Thread(target=run_).start()
 
 
+class PgPepV2UnderCaretDefaultsCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        args = None
+
+        if root_path := window_root_path(self.view.window()):
+            args = {"root_path": root_path}
+
+        self.view.run_command("pg_pep_v2_under_caret", args)
+
+
+class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler()
+
+    def run(self, edit, root_path):
+        def handle_response(root_path, response):
+            if error := response.get("error"):
+                print("Pep Error:", error)
+
+                return
+
+            caret_data = response.get("success") or []
+
+            items_html = ""
+
+            for data in caret_data:
+                items_html += f"<h2>{data['_semantic']}</h2>"
+
+                items_html += "<ul>"
+
+                for k, v in data.items():
+                    items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
+
+                items_html += "</ul>"
+
+            html = f"""
+            <style>
+                h2 {{
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    font-family: system;
+                }}
+            </style>
+
+            <body>
+                {items_html}
+            </body>
+            """
+
+            sheet = self.view.window().new_html_sheet(
+                "Under Caret",
+                html,
+                sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
+            )
+
+            self.view.window().focus_sheet(sheet)
+
+        def run_():
+            try:
+                progress.start("")
+
+                region = self.view.sel()[0]
+
+                # The second end of the region. In a selection this is the location of the caret. May be less than a.
+                caret = region.b
+
+                row, col = self.view.rowcol(caret)
+
+                response = with_clientsocket_retry(
+                    lambda c: op.under_caret(
+                        c,
+                        root_path=root_path,
+                        filename=self.view.file_name(),
+                        row=row + 1,
+                        col=col + 1,
+                    )
+                )
+
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
+            except Exception:
+                print("Pep Error:", traceback.format_exc())
+            finally:
+                progress.stop()
+
+        threading.Thread(target=run_).start()
+
+
 # ---
 
 
