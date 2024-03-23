@@ -4458,7 +4458,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             summary = response.get("success", {}).get("summary", {})
 
             contents.append(
-                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
+                f"Files: {summary.get('files')}, Duration: {summary.get('duration')} ms"
             )
 
             contents.append(

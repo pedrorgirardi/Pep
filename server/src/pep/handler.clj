@@ -70,8 +70,14 @@
   (throw (ex-info "Bad handler." {:foo :bar})))
 
 (defmethod handle "v1/diagnostics"
-  [_ {:keys [root-path]}]
-  {:success (ana/diagnostics root-path)})
+  [context message]
+  (try
+    {:success
+     (op/v1-diagnostics context message)}
+    (catch Exception ex
+      {:error
+       {:message (ex-message ex)
+        :data message}})))
 
 (defmethod handle "v1/analyze_paths"
   [_ {:keys [root-path filename text]}]

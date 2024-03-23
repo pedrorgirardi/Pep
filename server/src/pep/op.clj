@@ -1,6 +1,7 @@
 (ns pep.op
   (:require
-   [pep.db :as db]))
+   [pep.db :as db]
+   [pep.ana :as ana]))
 
 (def xform-kv-not-nillable
   (map
@@ -25,6 +26,10 @@
             (reduced data))))
       nil
       row-data)))
+
+(defn v1-diagnostics
+  [_ {:keys [root-path]}]
+  (ana/diagnostics root-path))
 
 (defn v1-namespaces
   [{:keys [conn]} {:keys [root-path]}]
