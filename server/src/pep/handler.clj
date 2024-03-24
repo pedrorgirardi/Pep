@@ -4,7 +4,6 @@
 
 (set! *warn-on-reflection* true)
 
-
 (defmulti handle
   "Multimethod to handle client requests.
 

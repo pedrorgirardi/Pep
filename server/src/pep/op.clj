@@ -6,6 +6,8 @@
    [pep.db :as db]
    [pep.ana :as ana]))
 
+(set! *warn-on-reflection* true)
+
 (def xform-kv-not-nillable
   (map
     (fn [m]

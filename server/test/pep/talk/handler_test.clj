@@ -6,23 +6,25 @@
    [pep.db :as db]
    [pep.handler :as handler]))
 
-(deftest handle-analyze-test
-  (let [user-dir (System/getProperty "user.dir")
+(set! *warn-on-reflection* true)
 
-        response (handler/handle {}
+(defn pep-talk-root-path ^java.io.File []
+  (let [user-dir (System/getProperty "user.dir")]
+    (io/file user-dir "pep.talk")))
+
+(deftest handle-v1-analyze-paths-test
+  (let [response (handler/handle {}
                    {:op "v1/analyze_paths"
-                    :root-path (io/file user-dir "pep.talk")})]
+                    :root-path (pep-talk-root-path)})]
 
     (testing "Successful analysis"
       (is (contains? response :success)))))
 
-(deftest handle-namespace-definitions-test
-  (let [user-dir (System/getProperty "user.dir")
-
-        {:keys [success]} (with-open [conn (db/conn)]
+(deftest handle-v1-namespaces-test
+  (let [{:keys [success]} (with-open [conn (db/conn)]
                             (handler/handle {:conn conn}
                               {:op "v1/namespaces"
-                               :root-path (io/file user-dir "pep.talk")}))]
+                               :root-path (pep-talk-root-path)}))]
 
     (testing "Successful analysis"
       (is (= 3 (count success)))
@@ -34,13 +36,11 @@
               (map #(select-keys % [:_semantic :name]))
               success))))))
 
-(deftest handle-find-definitions-test
-  (let [user-dir (System/getProperty "user.dir")
+(deftest handle-v1-find-definitions-test
+  (let [root-path (pep-talk-root-path)
 
-        root-path (io/file user-dir "pep.talk")
-
-        reference-clj-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "reference.clj"))
-        common-cljc-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "common.cljc"))]
+        reference-clj-filename (.getPath (io/file root-path "src" "pep" "talk" "reference.clj"))
+        common-cljc-filename (.getPath (io/file root-path "src" "pep" "talk" "common.cljc"))]
 
     (testing "Nothing under caret"
       (let [{:keys [success]} (with-open [conn (db/conn)]
@@ -123,11 +123,9 @@
         (is (= 1 (count success)))))))
 
 (deftest handle-v1-find-references-in-file-test
-  (let [user-dir (System/getProperty "user.dir")
+  (let [root-path (pep-talk-root-path)
 
-        root-path (io/file user-dir "pep.talk")
-
-        reference-clj-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "reference.clj"))
+        reference-clj-filename (.getPath (io/file root-path "src" "pep" "talk" "reference.clj"))
 
         result-references (fn [result]
                             (into []
@@ -252,11 +250,9 @@
 
 (comment
 
-  (let [user-dir (System/getProperty "user.dir")
+  (let [root-path (pep-talk-root-path)
 
-        root-path (io/file user-dir "pep.talk")
-
-        common-cljc-filename (.getPath (io/file user-dir "pep.talk" "src" "pep" "talk" "common.cljc"))]
+        common-cljc-filename (.getPath (io/file root-path "src" "pep" "talk" "common.cljc"))]
 
     (with-open [conn (db/conn)]
       (handler/handle {:conn conn}
