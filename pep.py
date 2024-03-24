@@ -4616,7 +4616,14 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
         if "root_path" not in args:
             return RootPathInputHandler()
 
-    def run(self, root_path):
+    def run(
+        self,
+        root_path,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
+    ):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
@@ -4628,11 +4635,11 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
             goto_thingy(
                 self.window,
                 response.get("success"),
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
-                    "show_filename": False,
-                    "show_row_col": False,
+                    "show_filename": show_filename,
+                    "show_row_col": show_row_col,
                 },
             )
 
@@ -4661,7 +4668,15 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
         if "root_path" not in args:
             return RootPathInputHandler()
 
-    def run(self, edit, root_path):
+    def run(
+        self,
+        edit,
+        root_path,
+        goto_on_highlight=True,
+        goto_side_by_side=False,
+        show_namespace=True,
+        show_row_col=False,
+    ):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
@@ -4684,11 +4699,11 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_thingy(
                     self.view.window(),
                     response.get("success"),
-                    goto_on_highlight=True,
-                    goto_side_by_side=False,
+                    goto_on_highlight=goto_on_highlight,
+                    goto_side_by_side=goto_side_by_side,
                     quick_panel_item_opts={
-                        "show_filename": True,
-                        "show_row_col": True,
+                        "show_namespace": show_namespace,
+                        "show_row_col": show_row_col,
                     },
                 )
 
