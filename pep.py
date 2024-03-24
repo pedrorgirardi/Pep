@@ -4774,7 +4774,7 @@ class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
                     font-size: 1.1rem;
                     font-weight: 500;
                     font-family: system;
-                    color: color(var(--yellowish));
+                    color: color(var(--cyanish));
                 }}
             </style>
 
