@@ -4666,7 +4666,7 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
             if error := response.get("error"):
                 print("Pep Error:", error)
 
-                show_error(self.window, error.get("message", "-"))
+                show_error(self.view.window(), error.get("message", "-"))
 
                 return
 
@@ -4723,16 +4723,6 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
                 progress.stop()
 
         threading.Thread(target=run_).start()
-
-
-class PgPepV2UnderCaretDefaultsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        args = None
-
-        if root_path := window_root_path(self.view.window()):
-            args = {"root_path": root_path}
-
-        self.view.run_command("pg_pep_v2_under_caret", args)
 
 
 class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
