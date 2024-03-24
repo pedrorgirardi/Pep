@@ -4611,16 +4611,6 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
         threading.Thread(target=run_).start()
 
 
-class PgPepV2GotoNamespaceDefaultsCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        args = None
-
-        if root_path := window_root_path(self.window):
-            args = {"root_path": root_path}
-
-        self.window.run_command("pg_pep_v2_goto_namespace", args)
-
-
 class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
     def input(self, args):
         if "root_path" not in args:
@@ -4664,16 +4654,6 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
                 progress.stop()
 
         threading.Thread(target=run_).start()
-
-
-class PgPepV2GotoDefinitionDefaultsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        args = None
-
-        if root_path := window_root_path(self.view.window()):
-            args = {"root_path": root_path}
-
-        self.view.run_command("pg_pep_v2_goto_definition", args)
 
 
 class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
