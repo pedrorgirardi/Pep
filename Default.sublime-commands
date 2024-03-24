@@ -144,7 +144,10 @@
     },
     {
         "caption": "Pep 2: Diagnostics",
-        "command": "pg_pep_v2_diagnostics"
+        "command": "pg_pep_v2_run_with_root_path",
+        "args": {
+            "cmd": "pg_pep_v2_diagnostics"
+        }
     },
     {
         "caption": "Pep 2: Analyze",
@@ -168,5 +171,5 @@
                 "operand": "source.clojure"
             }
         ]
-    },
+    }
 ]

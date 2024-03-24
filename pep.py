@@ -4462,6 +4462,16 @@ def show_error(window: sublime.Window, error: str):
     window.focus_sheet(sheet)
 
 
+class PgPepV2RunWithRootPathCommand(sublime_plugin.WindowCommand):
+    def run(self, cmd):
+        args = None
+
+        if root_path := window_root_path(self.window):
+            args = {"root_path": root_path}
+
+        self.window.run_command(cmd, args)
+
+
 class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
     """
     Project's diagnostics.
