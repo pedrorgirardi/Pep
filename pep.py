@@ -4437,6 +4437,31 @@ class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
 ## ------------------------------------------------------------------
 
 
+def show_error(window: sublime.Window, error: str):
+    html = f"""
+            <style>
+                h1 {{
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    font-family: system;
+                    color: color(var(--redish));
+                }}
+            </style>
+
+            <body>
+                <h1>Error</h1>
+
+                <code>{error}</code>
+            </body>
+            """
+
+    sheet = window.new_html_sheet(
+        "Error", html, sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION
+    )
+
+    window.focus_sheet(sheet)
+
+
 class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
     """
     Project's diagnostics.
@@ -4450,6 +4475,8 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
+
+                show_error(self.window, error.get("message", "-"))
 
                 return
 
@@ -4525,6 +4552,8 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             if error := response.get("error"):
                 print("Pep Error:", error)
 
+                show_error(self.window, error.get("message", "-"))
+
                 return
 
             contents = ["Analysis", f"Root Path: {root_path}"]
@@ -4592,6 +4621,8 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
             if error := response.get("error"):
                 print("Pep Error:", error)
 
+                show_error(self.window, error.get("message", "-"))
+
                 return
 
             goto_thingy(
@@ -4644,6 +4675,8 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
+
+                show_error(self.window, error.get("message", "-"))
 
                 return
 
@@ -4721,6 +4754,8 @@ class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
+
+                show_error(self.window, error.get("message", "-"))
 
                 return
 
