@@ -4745,7 +4745,7 @@ class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
             if error := response.get("error"):
                 print("Pep Error:", error)
 
-                show_error(self.window, error.get("message", "-"))
+                show_error(self.view.window(), error.get("message", "-"))
 
                 return
 
