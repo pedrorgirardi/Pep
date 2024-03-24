@@ -4437,6 +4437,41 @@ class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
 ## ------------------------------------------------------------------
 
 
+def show_error(window: sublime.Window, error: str):
+    html = f"""
+            <style>
+                h1 {{
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    font-family: system;
+                    color: color(var(--redish));
+                }}
+            </style>
+
+            <body>
+                <h1>Error</h1>
+
+                <code>{error}</code>
+            </body>
+            """
+
+    sheet = window.new_html_sheet(
+        "Error", html, sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION
+    )
+
+    window.focus_sheet(sheet)
+
+
+class PgPepV2RunWithRootPathCommand(sublime_plugin.WindowCommand):
+    def run(self, cmd):
+        args = None
+
+        if root_path := window_root_path(self.window):
+            args = {"root_path": root_path}
+
+        self.window.run_command(cmd, args)
+
+
 class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
     """
     Project's diagnostics.
@@ -4451,6 +4486,8 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             if error := response.get("error"):
                 print("Pep Error:", error)
 
+                show_error(self.window, error.get("message", "-"))
+
                 return
 
             contents = ["Diagnostics", f"Root Path: {root_path}"]
@@ -4458,7 +4495,7 @@ class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
             summary = response.get("success", {}).get("summary", {})
 
             contents.append(
-                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
+                f"Files: {summary.get('files')}, Duration: {summary.get('duration')} ms"
             )
 
             contents.append(
@@ -4525,6 +4562,8 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
             if error := response.get("error"):
                 print("Pep Error:", error)
 
+                show_error(self.window, error.get("message", "-"))
+
                 return
 
             contents = ["Analysis", f"Root Path: {root_path}"]
@@ -4572,36 +4611,35 @@ class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
         threading.Thread(target=run_).start()
 
 
-class PgPepV2GotoNamespaceDefaultsCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        args = None
-
-        if root_path := window_root_path(self.window):
-            args = {"root_path": root_path}
-
-        self.window.run_command("pg_pep_v2_goto_namespace", args)
-
-
 class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
     def input(self, args):
         if "root_path" not in args:
             return RootPathInputHandler()
 
-    def run(self, root_path):
+    def run(
+        self,
+        root_path,
+        goto_on_highlight=False,
+        goto_side_by_side=False,
+        show_filename=False,
+        show_row_col=False,
+    ):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
+
+                show_error(self.window, error.get("message", "-"))
 
                 return
 
             goto_thingy(
                 self.window,
                 response.get("success"),
-                goto_on_highlight=False,
-                goto_side_by_side=False,
+                goto_on_highlight=goto_on_highlight,
+                goto_side_by_side=goto_side_by_side,
                 quick_panel_item_opts={
-                    "show_filename": False,
-                    "show_row_col": False,
+                    "show_filename": show_filename,
+                    "show_row_col": show_row_col,
                 },
             )
 
@@ -4610,7 +4648,7 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
                 progress.start("")
 
                 response = with_clientsocket_retry(
-                    lambda c: op.namespace_definitions(c, root_path)
+                    lambda c: op.namespaces(c, root_path)
                 )
 
                 sublime.set_timeout(
@@ -4625,25 +4663,25 @@ class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
         threading.Thread(target=run_).start()
 
 
-class PgPepV2GotoDefinitionDefaultsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        args = None
-
-        if root_path := window_root_path(self.view.window()):
-            args = {"root_path": root_path}
-
-        self.view.run_command("pg_pep_v2_goto_definition", args)
-
-
 class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
     def input(self, args):
         if "root_path" not in args:
             return RootPathInputHandler()
 
-    def run(self, edit, root_path):
+    def run(
+        self,
+        edit,
+        root_path,
+        goto_on_highlight=True,
+        goto_side_by_side=False,
+        show_namespace=True,
+        show_row_col=False,
+    ):
         def handle_response(root_path, response):
             if error := response.get("error"):
                 print("Pep Error:", error)
+
+                show_error(self.view.window(), error.get("message", "-"))
 
                 return
 
@@ -4661,11 +4699,11 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
                 goto_thingy(
                     self.view.window(),
                     response.get("success"),
-                    goto_on_highlight=True,
-                    goto_side_by_side=False,
+                    goto_on_highlight=goto_on_highlight,
+                    goto_side_by_side=goto_side_by_side,
                     quick_panel_item_opts={
-                        "show_filename": True,
-                        "show_row_col": True,
+                        "show_namespace": show_namespace,
+                        "show_row_col": show_row_col,
                     },
                 )
 
@@ -4682,6 +4720,90 @@ class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
 
                 response = with_clientsocket_retry(
                     lambda c: op.find_definitions(
+                        c,
+                        root_path=root_path,
+                        filename=self.view.file_name(),
+                        row=row + 1,
+                        col=col + 1,
+                    )
+                )
+
+                sublime.set_timeout(
+                    lambda: handle_response(root_path, response),
+                    0,
+                )
+            except Exception:
+                print("Pep Error:", traceback.format_exc())
+            finally:
+                progress.stop()
+
+        threading.Thread(target=run_).start()
+
+
+class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
+    def input(self, args):
+        if "root_path" not in args:
+            return RootPathInputHandler()
+
+    def run(self, edit, root_path):
+        def handle_response(root_path, response):
+            if error := response.get("error"):
+                print("Pep Error:", error)
+
+                show_error(self.view.window(), error.get("message", "-"))
+
+                return
+
+            caret_data = response.get("success") or []
+
+            items_html = ""
+
+            for data in caret_data:
+                items_html += f"<h2>{data['_semantic']}</h2>"
+
+                items_html += "<ul>"
+
+                for k, v in data.items():
+                    items_html += f"<li>{htmlify(str(k))}: {htmlify(str(v))}</li>"
+
+                items_html += "</ul>"
+
+            html = f"""
+            <style>
+                h2 {{
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    font-family: system;
+                    color: color(var(--cyanish));
+                }}
+            </style>
+
+            <body>
+                {items_html}
+            </body>
+            """
+
+            sheet = self.view.window().new_html_sheet(
+                "Under Caret",
+                html,
+                sublime.SEMI_TRANSIENT | sublime.ADD_TO_SELECTION,
+            )
+
+            self.view.window().focus_sheet(sheet)
+
+        def run_():
+            try:
+                progress.start("")
+
+                region = self.view.sel()[0]
+
+                # The second end of the region. In a selection this is the location of the caret. May be less than a.
+                caret = region.b
+
+                row, col = self.view.rowcol(caret)
+
+                response = with_clientsocket_retry(
+                    lambda c: op.under_caret(
                         c,
                         root_path=root_path,
                         filename=self.view.file_name(),

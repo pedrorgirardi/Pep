@@ -177,14 +177,15 @@
                     (log/debug (str "📤\n" (with-out-str (pprint/pprint (select-keys message [:op]))))))
 
                   (catch Exception ex
+                    (log/error ex "Handler error.")
+
                     (let [response {:error
-                                    (merge {:message (ex-message ex)}
-                                      (when-let [data (ex-data ex)]
-                                        {:data data}))}]
+                                    {:message (ex-message ex)
+                                     :data {:message message}}}]
 
                       (write! client-channel response)
 
-                      (log/error (str "📤 💀\n" (with-out-str (pprint/pprint response)))))))
+                      (log/debug (str "📤 💀\n" (with-out-str (pprint/pprint response)))))))
 
                 (recur)))
 
@@ -244,16 +245,6 @@
 
 (comment
 
-  (def addr (default-address))
-
-  (Files/deleteIfExists (.getPath addr))
-
-
-  (def stop (start {:address addr}))
-
-  (stop)
-
-
   (with-open [_ (SocketChannel/open ^UnixDomainSocketAddress addr)]
     ;; Do nothing.
     nil)
@@ -278,5 +269,19 @@
   
 
   (System/exit 0)
+
+  )
+
+
+(comment
+
+  (def addr (default-address))
+
+  (Files/deleteIfExists (.getPath addr))
+
+  (def stop (start {:address addr}))
+
+
+  (stop)
 
   )

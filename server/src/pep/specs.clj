@@ -1,18 +1,29 @@
 (ns pep.specs
   (:require
+   [clojure.string :as str]
    [clojure.spec.alpha :as s]))
+
+(s/def ::not-blank-string (s/and string? (complement str/blank?)))
+
+(s/def :pep/text ::not-blank-string)
+
+(s/def :pep/root-path ::not-blank-string)
 
 (s/def :pep/_semantic #{"namespace-definitions"})
 
-(s/def :pep/name string?)
+(s/def :pep/name ::not-blank-string)
 
 (s/def :pep/row pos-int?)
+
 (s/def :pep/end-row pos-int?)
 
 (s/def :pep/col pos-int?)
+
 (s/def :pep/end-col pos-int?)
 
-(s/def :pep/filename string?)
+(s/def :pep/filename ::not-blank-string)
+
+(s/def :pep/text ::not-blank-string)
 
 (s/def :pep/namespace-definition
   (s/keys :req-un [:pep/_semantic
@@ -23,6 +34,64 @@
                    :pep/end-col
                    :pep/filename]))
 
-;; Successful response of pep.handler/handle "namespace-definitions".
-(s/def :pep/namespace-definitions-handler-success
+
+;; -- HANDLER MESSAGE & RESPONSE
+;; -----------------------------
+
+;; -- "v1/diagnostics"
+
+(s/def :pep.handler.v1.diagnostics/message
+  (s/keys :req-un [:pep/root-path]))
+
+
+;; -- "v1/under_caret"
+
+(s/def :pep.handler.v1.under-caret/message
+  (s/keys
+    :req-un [:pep/root-path
+             :pep/filename
+             :pep/row
+             :pep/col]))
+
+
+;; -- "v1/analyze_paths"
+;;
+(s/def :pep.handler.v1.analyze-paths/message
+  (s/keys :req-un [:pep/root-path]))
+
+
+;; -- "v1/analyze_text"
+;;
+(s/def :pep.handler.v1.analyze-text/message
+  (s/keys :req-un [:pep/root-path
+                   :pep/filename
+                   :pep/text]))
+
+
+;; -- "v1/namespaces"
+
+(s/def :pep.handler.v1.namespaces/message
+  (s/keys :req-un [:pep/root-path]))
+
+(s/def :pep.handler.v1.namespaces.response/success
   (s/map-of #{:success} (s/coll-of :pep/namespace-definition)))
+
+
+;; -- "v1/find_definitions"
+
+(s/def :pep.handler.v1.find-definitions/message
+  (s/keys
+    :req-un [:pep/root-path
+             :pep/filename
+             :pep/row
+             :pep/col]))
+
+
+;; -- "v1/find_references_in_file"
+
+(s/def :pep.handler.v1.find-references-in-file/message
+  (s/keys
+    :req-un [:pep/root-path
+             :pep/filename
+             :pep/row
+             :pep/col]))

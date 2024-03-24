@@ -144,11 +144,17 @@
     },
     {
         "caption": "Pep 2: Diagnostics",
-        "command": "pg_pep_v2_diagnostics"
+        "command": "pg_pep_v2_run_with_root_path",
+        "args": {
+            "cmd": "pg_pep_v2_diagnostics"
+        }
     },
     {
         "caption": "Pep 2: Analyze",
-        "command": "pg_pep_v2_analyze"
+        "command": "pg_pep_v2_run_with_root_path",
+        "args": {
+            "cmd": "pg_pep_v2_analyze"
+        }
     },
     {
         "caption": "Pep 2: Goto Namespace",
@@ -157,5 +163,16 @@
     {
         "caption": "Pep 2: Goto Definition",
         "command": "pg_pep_v2_goto_definition"
+    },
+    {
+        "caption": "Pep 2: Under Caret",
+        "command": "pg_pep_v2_under_caret",
+        "context": [
+            {
+                "key": "selector",
+                "operator": "equal",
+                "operand": "source.clojure"
+            }
+        ]
     }
 ]

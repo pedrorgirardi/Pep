@@ -1,45 +1,11 @@
 (ns pep.handler
   (:require
-   [clojure.java.io :as io]
-   [clojure.data.json :as json]
-   [clojure.pprint :as pprint]
+   [clojure.spec.alpha :as s]
 
-   [next.jdbc :as jdbc]
-
-   [pep.ana :as ana]
-   [pep.db :as db]))
+   [pep.specs]
+   [pep.op :as op]))
 
 (set! *warn-on-reflection* true)
-
-(def xform-kv-not-nillable
-  (map
-    (fn [m]
-      (into {} (remove (comp nil? val)) m))))
-
-(defn persist-analysis!
-  [root-path {:keys [analysis]}]
-  (let [cache-dir (db/cache-dir root-path)]
-
-    (when-not (.exists cache-dir)
-      (.mkdirs cache-dir))
-
-    (doseq [[filename analysis] (ana/index analysis)]
-      (let [f (io/file cache-dir (db/filename-cache filename))]
-        (spit f (json/write-str analysis))))))
-
-(defn caret
-  [conn root-path {:keys [filename row col]}]
-  (let [selected-row (db/select-row conn (db/cache-dir root-path)
-                       {:filename filename
-                        :row row})]
-    (reduce
-      (fn [_ data]
-        (let [start (or (:name-col data) (:col data))
-              end (or (:name-end-col data) (:end-col data))]
-          (when (<= start col end)
-            (reduced data))))
-      nil
-      selected-row)))
 
 (defmulti handle
   "Multimethod to handle client requests.
@@ -59,94 +25,54 @@
   (throw (ex-info "Bad handler." {:foo :bar})))
 
 (defmethod handle "v1/diagnostics"
-  [_ {:keys [root-path]}]
-  {:success (ana/diagnostics root-path)})
+  [context message]
+  (s/assert :pep.handler.v1.diagnostics/message message)
+
+  {:success
+   (op/v1-diagnostics context message)})
+
+(defmethod handle "v1/under_caret"
+  [context message]
+  (s/assert :pep.handler.v1.under-caret/message message)
+
+  {:success
+   (op/v1-under-caret context message)})
 
 (defmethod handle "v1/analyze_paths"
-  [_ {:keys [root-path filename text]}]
-  (let [result (ana/analyze-paths! root-path)]
+  [context message]
+  (s/assert :pep.handler.v1.analyze-paths/message message)
 
-    (persist-analysis! root-path result)
-
-    {:success (ana/diagnostics* result)}))
+  {:success
+   (op/v1-analyze_paths context message)})
 
 (defmethod handle "v1/analyze_text"
-  [_ {:keys [root-path filename text]}]
-  (let [^java.util.Base64$Decoder decoder (java.util.Base64/getDecoder)
+  [context message]
+  (s/assert :pep.handler.v1.analyze-text/message message)
 
-        bytes (.decode decoder ^String text)
+  {:success
+   (op/v1-analyze_text context message)})
 
-        result (ana/analyze-text!
-                 {:text (String. bytes "UTF-8")
-                  :filename (or filename "-")})]
+(defmethod handle "v1/namespaces"
+  [context message]
+  (s/assert :pep.handler.v1.namespaces/message message)
 
-    (persist-analysis! root-path result)
+  ;; TODO: Add namespaces to :namespaces
 
-    {:success (ana/diagnostics* result)}))
-
-(defmethod handle "v1/namespace_definitions"
-  [{:keys [conn]} {:keys [root-path]}]
-  (let [definitions (db/select-namespace-definitions conn (db/cache-dir root-path))
-
-        ;; Into a set to remove duplicates (CLJC):
-        definitions (into #{} definitions)
-
-        definitions (sort-by (juxt :filename :row :col) definitions)]
-
-    {:success definitions}))
+  (s/assert :pep.handler.v1.namespaces.response/success
+    {:success
+     (op/v1-namespaces context message)}))
 
 (defmethod handle "v1/find_definitions"
-  [{:keys [conn]} {:keys [root-path filename row col]}]
-  (if-let [prospect (caret conn root-path
-                      {:filename filename
-                       :row row
-                       :col col})]
-    (let [dir (db/cache-dir root-path)
+  [context message]
+  (s/assert :pep.handler.v1.find-definitions/message message)
 
-          definitions (db/select-definitions conn dir prospect)
+  ;; TODO: Add definitions to :definitions
+  {:success
+   (op/v1-find_definitions context message)})
 
-          ;; Into a set to remove duplicates (CLJC):
-          definitions (into #{} xform-kv-not-nillable definitions)
+(defmethod handle "v1/find_references_in_file"
+  [context message]
+  (s/assert :pep.handler.v1.find-references-in-file/message message)
 
-          definitions (sort-by (juxt :filename :row :col) definitions)]
-      {:success definitions})
-
-    ;; Nothing found under caret.
-    {:success #{}}))
-
-(comment
-
-  (def root-path (System/getProperty "user.dir"))
-
-  (pprint/print-table [:column_name :column_type :null_percentage]
-    (sort-by :column_name
-      (into []
-        (map #(select-keys % [:column_name :column_type :null_percentage]))
-        (with-open [conn (db/conn)]
-          (jdbc/execute! conn
-            [(format "SUMMARIZE SELECT * FROM read_json_auto('%s', format='array', union_by_name=true)"
-               (io/file #_root-path "/Users/pedro/Developer/Velos/rex.system" ".pep" "*.json"))])))))
-
-
-  (handle {}
-    {:op "v1/diagnostics"
-     :root-path root-path})
-
-  (handle {}
-    {:op "v1/analyze_paths"
-     :root-path root-path})
-
-  (with-open [conn (db/conn)]
-    (handle {:conn conn}
-      {:op "v1/namespace-definitions"
-       :root-path root-path}))
-
-  (with-open [conn (db/conn)]
-    (handle {:conn conn}
-      {:op "v1/find-definitions"
-       :root-path root-path
-       :filename "/Users/pedro/Library/Application Support/Sublime Text/Packages/Pep/server/src/pep/handler.clj"
-       :row 9
-       :col 18}))
-
-  )
+  {:success
+   {:references (op/v1-find-references-in-file context message)}})

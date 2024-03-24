@@ -7,3 +7,18 @@
 (def z (+ x y))
 
 (let [a 1 b 2] (+ a b))
+
+:person/name
+
+{:person/name "Clara"}
+
+(fn [{:person/keys [age]}]
+  age)
+
+:person/age
+
+(fn [{:keys [foo/bar]}]
+  bar)
+
+(fn [{:foo/keys [bar]}]
+  bar)

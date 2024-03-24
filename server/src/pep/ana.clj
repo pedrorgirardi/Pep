@@ -4,7 +4,8 @@
    [clojure.tools.deps :as deps]
    [clojure.tools.build.api :as b]
 
-   [clj-kondo.core :as clj-kondo]))
+   [clj-kondo.core :as clj-kondo]
+   [nano-id.core :refer [nano-id]]))
 
 (set! *warn-on-reflection* true)
 
@@ -121,6 +122,11 @@
   (let [;; Map different analysis data eg. locals, keywords to a vector.
         xform (mapcat
                 (fn [[sem data]]
-                  (into [] (map #(assoc % :_semantic sem)) data)))]
+                  (into []
+                    (map
+                      #(assoc %
+                         :_id (nano-id 10)
+                         :_semantic sem))
+                    data)))]
     (group-by :filename (into [] xform analysis))))
 
