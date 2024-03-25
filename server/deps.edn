@@ -24,7 +24,8 @@
   {:jvm-opts ["-Dclojure.spec.check-asserts=true"]
    :extra-paths ["dev"]
    :extra-deps
-   {org.clojure/tools.analyzer.jvm {:mvn/version "1.3.0"}}}
+   {org.clojure/tools.analyzer.jvm {:mvn/version "1.3.0"}
+    io.github.eerohele/tab {:git/tag "2023-10-03.333", :git/sha "4bb3ede"}}}
 
   :test
   {:extra-paths ["test"]}
