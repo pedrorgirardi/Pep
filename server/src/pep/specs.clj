@@ -23,6 +23,22 @@
 
 (s/def :pep/filename ::not-blank-string)
 
+(s/def :pep/position
+  (s/keys
+    :req-un
+    [:pep/row
+     :pep/col]))
+
+(s/def :pep.region/start :pep/position)
+
+(s/def :pep.region/end :pep/position)
+
+(s/def :pep/region
+  (s/keys
+    :req-un
+    [:pep.region/start
+     :pep.region/end]))
+
 (s/def :pep/text ::not-blank-string)
 
 (s/def :pep/namespace-definition
@@ -52,6 +68,22 @@
              :pep/filename
              :pep/row
              :pep/col]))
+
+
+;; -- "v1/under_caret_reference_regions"
+
+(s/def :pep.handler.v1.under-caret-reference-regions/message
+  (s/keys
+    :req-un [:pep/root-path
+             :pep/filename
+             :pep/row
+             :pep/col]))
+
+(s/def :pep.handler.v1.under-caret-reference-regions.response/regions
+  (s/coll-of :pep/region))
+
+(s/def :pep.handler.v1.under-caret-reference-regions.response/success
+  (s/map-of #{:success} (s/keys :req-un [:pep.handler.v1.under-caret-reference-regions.response/regions])))
 
 
 ;; -- "v1/analyze_paths"

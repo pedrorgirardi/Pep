@@ -239,11 +239,17 @@
   "Select `locals` and `local-usages` by ID."
   [conn json {local-id :id}]
   (let [sql "SELECT
-                 _semantic, name, filename, row, col
+                \"_semantic\",
+                \"name\",
+                \"filename\",
+                \"row\",
+                \"end-row\",
+                \"col\",
+                \"end-col\"
               FROM
                  read_json_auto('%s', format='array')
               WHERE
-                 id = ?"
+                 \"id\" = ?"
 
         sql (format sql json)]
 
@@ -254,22 +260,29 @@
   [conn json {keyword-ns :ns
               keyword-name :name}]
   (let [sql "SELECT
-                 _semantic, ns, name, filename, row, col
+                 \"_semantic\",
+                  \"ns\",
+                  \"name\",
+                  \"filename\",
+                  \"row\",
+                  \"end-row\",
+                  \"col\",
+                  \"end-col\"
               FROM
                  read_json_auto('%s', format='array')
               WHERE
-                _semantic = 'keywords'
+                \"_semantic\" = 'keywords'
                  %s"]
     (cond
       keyword-ns
       (jdbc/execute! conn
-        [(format sql json "AND ns = ? AND name = ?")
+        [(format sql json "AND \"ns\" = ? AND \"name\" = ?")
          keyword-ns
          keyword-name])
 
       :else
       (jdbc/execute! conn
-        [(format sql json "AND name = ?")
+        [(format sql json "AND \"name\" = ?")
          keyword-name]))))
 
 (defn select-var-references

@@ -38,6 +38,14 @@
   {:success
    (op/v1-under-caret context message)})
 
+(defmethod handle "v1/under_caret_reference_regions"
+  [context message]
+  (s/assert :pep.handler.v1.under-caret-reference-regions/message message)
+
+  (s/assert :pep.handler.v1.under-caret-reference-regions.response/success
+    {:success
+     {:regions (op/v1-under-caret-reference-regions context message)}}))
+
 (defmethod handle "v1/analyze_paths"
   [context message]
   (s/assert :pep.handler.v1.analyze-paths/message message)

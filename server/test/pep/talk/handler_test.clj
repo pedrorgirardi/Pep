@@ -8,9 +8,9 @@
 
 (set! *warn-on-reflection* true)
 
-(defn pep-talk-root-path ^java.io.File []
+(defn pep-talk-root-path ^String []
   (let [user-dir (System/getProperty "user.dir")]
-    (io/file user-dir "pep.talk")))
+    (.getPath (io/file user-dir "pep.talk"))))
 
 (deftest handle-v1-analyze-paths-test
   (let [response (handler/handle {}
@@ -144,12 +144,15 @@
                  :ns "person"
                  :name "name"
                  :row 11
-                 :col 1}
+                 :col 1
+                 :end-col 13
+                 :end-row 11}
                 {:_semantic "keywords"
                  :ns "person"
                  :name "name"
                  :row 13
-                 :col 2}]
+                 :col 2
+                 :end-col 14 :end-row 13}]
               (result-references result))))
 
       (let [result (with-open [conn (db/conn)]
@@ -163,12 +166,16 @@
                  :ns "person"
                  :name "age"
                  :row 15
-                 :col 21}
+                 :col 21
+                 :end-col 24
+                 :end-row 15}
                 {:_semantic "keywords"
                  :ns "person"
                  :name "age"
                  :row 18
-                 :col 1}]
+                 :col 1
+                 :end-col 12
+                 :end-row 18}]
               (result-references result)))))
 
     (testing "Locals"
@@ -182,11 +189,15 @@
         (is (= [{:name "a"
                  :_semantic "locals"
                  :row 9
-                 :col 7}
+                 :col 7
+                 :end-col 8
+                 :end-row 9}
                 {:name "a"
                  :_semantic "local-usages"
                  :row 9
-                 :col 19}]
+                 :col 19
+                 :end-col 20
+                 :end-row 9}]
               (result-references result))))
 
       (let [result (with-open [conn (db/conn)]
@@ -199,11 +210,15 @@
         (is (= [{:name "a"
                  :_semantic "locals"
                  :row 9
-                 :col 7}
+                 :col 7
+                 :end-col 8
+                 :end-row 9}
                 {:name "a"
                  :_semantic "local-usages"
                  :row 9
-                 :col 19}]
+                 :col 19
+                 :end-col 20
+                 :end-row 9}]
               (result-references result)))))
 
     (testing "Vars"
@@ -246,6 +261,65 @@
                             :row 7
                             :col 11}))]
             (is (= references (result-references result)))))))))
+
+(deftest handle-v1-under-caret-reference-regions-test
+  (let [root-path (pep-talk-root-path)
+
+        reference-clj-filename (.getPath (io/file root-path "src" "pep" "talk" "reference.clj"))
+
+        result-regions (fn [result]
+                         (get-in result [:success :regions]))]
+
+    (testing "Keywords"
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/under_caret_reference_regions"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 11
+                        :col 11}))]
+
+        (is (= [{:start {:row 11 :col 1}
+                 :end {:row 11 :col 13}}
+
+                {:start {:row 13 :col 2}
+                 :end {:row 13 :col 14}}]
+              (result-regions result)))))
+
+    (testing "Locals"
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/under_caret_reference_regions"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 9
+                        :col 19}))]
+
+        (is (= [{:start {:row 9 :col 7}
+                 :end {:row 9 :col 8}}
+
+                {:start {:row 9 :col 19}
+                 :end {:row 9 :col 20}}]
+              (result-regions result)))))
+
+    (testing "Vars"
+      (let [result (with-open [conn (db/conn)]
+                     (handler/handle {:conn conn}
+                       {:op "v1/under_caret_reference_regions"
+                        :root-path root-path
+                        :filename reference-clj-filename
+                        :row 15
+                        :col 2}))]
+
+        (is (= [{:start {:row 15 :col 2}
+                 :end {:row 15 :col 4}}
+
+                {:start {:row 20 :col 2}
+                 :end {:row 20 :col 4}}
+
+                {:start {:row 23 :col 2}
+                 :end {:row 23 :col 4}}]
+              (result-regions result)))))))
 
 
 (comment

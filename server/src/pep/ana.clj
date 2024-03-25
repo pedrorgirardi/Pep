@@ -130,3 +130,22 @@
                     data)))]
     (group-by :filename (into [] xform analysis))))
 
+(defmulti regions :_semantic)
+
+(defmethod regions :default
+  [{:keys [row
+           name-row
+           col
+           name-col
+           end-row
+           name-end-row
+           end-col
+           name-end-col]}]
+  [{:start
+    {:row (or name-row row)
+     :col (or name-col col)}
+
+    :end
+    {:row (or name-end-row end-row)
+     :col (or name-end-col end-col)}}])
+

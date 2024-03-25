@@ -96,6 +96,24 @@
 
     caret-data))
 
+(defn v1-under-caret-reference-regions
+  [{:keys [conn]} {:keys [root-path filename row col]}]
+  (when-let [prospect (caret conn root-path
+                        {:filename filename
+                         :row row
+                         :col col})]
+    (let [cache-file (db/cache-json-file root-path filename)
+
+          references (db/select-references conn cache-file prospect)
+
+          regions (into []
+                    (comp
+                      (map ana/regions)
+                      cat)
+                    references)]
+
+      regions)))
+
 (defn v1-namespaces
   [{:keys [conn]} {:keys [root-path]}]
   (let [namespaces (db/select-namespaces conn (db/cache-*json-file root-path))
