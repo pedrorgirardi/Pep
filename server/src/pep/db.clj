@@ -2,9 +2,20 @@
   (:require
    [clojure.java.io :as io]
 
-   [next.jdbc :as jdbc]))
+   [next.jdbc :as jdbc]
+   [next.jdbc.result-set :as rs]))
 
 (set! *warn-on-reflection* true)
+
+;; Reference:
+;; https://cljdoc.org/d/com.github.seancorfield/next.jdbc/1.3.925/doc/getting-started/result-set-builders#readablecolumn
+(extend-protocol rs/ReadableColumn
+  org.duckdb.DuckDBArray
+  (read-column-by-label [^org.duckdb.DuckDBArray o]
+    (vec (.getArray o)))
+
+  (read-column-by-index [^org.duckdb.DuckDBArray o _2 _3]
+    (vec (.getArray o))))
 
 (defn cache-dir
   ^java.io.File [root-path]

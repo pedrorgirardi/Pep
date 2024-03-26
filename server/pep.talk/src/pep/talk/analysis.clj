@@ -17,3 +17,5 @@
 
 (let [x 1]
   (inc x))
+
+(defn increment "Increment `x`." [{:keys [x]}] (inc x))
