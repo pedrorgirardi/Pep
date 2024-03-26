@@ -1,9 +1,12 @@
 (ns pep.talk.analysis
-  "Namespace to serve as an example of clj-kondo data anlysis."
+  "Namespace to serve as an example of clj-kondo data anlysis. (With some odd formatting.)"
   (:require
-   [clojure.string :as str :refer [blank?]]))
+   [clojure.string
+    :as str
+    :refer [blank?]]))
 
-(defn hello []
+(defn
+  hello []
   (println "Hello, there!"))
 
 'hello

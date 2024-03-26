@@ -64,13 +64,15 @@
 (defn select-row
   [conn json {:keys [row]}]
   (let [;; It's fine to 'select *' because we're looking at a single file.
+        ;; (`json` is specific for a single file instead of *.json)
         sql "SELECT
                 *
              FROM
                  read_json_auto('%s', format='array')
              WHERE
-                 \"name-row\" = ?
-                 OR row = ?"
+                    \"name-row\"  = ?
+                 OR \"alias-row\" = ?
+                 OR \"row\"       = ?"
 
         sql (format sql json)]
 
