@@ -116,34 +116,6 @@
 
     (jdbc/execute! conn [sql])))
 
-(defn select-row
-  [conn json {:keys [row]}]
-  (let [;; It's fine to 'select *' because we're looking at a single file.
-        ;; (`json` is specific for a single file instead of *.json)
-        sql "SELECT
-                *
-             FROM
-                 read_json_auto('%s', format='array')
-             WHERE
-                 %s"
-
-        r1 (try
-             (jdbc/execute! conn [(format sql json "\"row\" = ?") row])
-             (catch Exception _
-               []))
-
-        r2 (try
-             (jdbc/execute! conn [(format sql json "\"name-row\" = ?") row])
-             (catch Exception _
-               []))
-
-        r3 (try
-             (jdbc/execute! conn [(format sql json "\"alias-row\" = ?") row])
-             (catch Exception _
-               []))]
-
-    (into #{} cat [r1 r2 r3])))
-
 (defn select-under-caret
   [conn json {:keys [filename row col]}]
   (let [;; It's fine to 'select *' because we're looking at a single file.

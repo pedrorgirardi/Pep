@@ -59,17 +59,11 @@
 
 (defn caret
   [conn root-path {:keys [filename row col]}]
-  (let [cache-file (db/cache-json-file root-path filename)
-
-        row-data (db/select-row conn cache-file {:row row})]
-    (reduce
-      (fn [_ data]
-        (let [start (or (:name-col data) (:col data))
-              end (or (:name-end-col data) (:end-col data))]
-          (when (<= start col end)
-            (reduced data))))
-      nil
-      row-data)))
+  (first
+    (caret* conn root-path
+      {:filename filename
+       :row row
+       :col col})))
 
 (defn persist-analysis!
   [root-path {:keys [analysis]}]
