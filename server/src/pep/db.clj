@@ -70,13 +70,24 @@
              FROM
                  read_json_auto('%s', format='array')
              WHERE
-                    \"name-row\"  = ?
-                 OR \"alias-row\" = ?
-                 OR \"row\"       = ?"
+                 %s"
 
-        sql (format sql json)]
+        r1 (try
+             (jdbc/execute! conn [(format sql json "\"row\" = ?") row])
+             (catch Exception _
+               []))
 
-    (jdbc/execute! conn [sql row row row])))
+        r2 (try
+             (jdbc/execute! conn [(format sql json "\"name-row\" = ?") row])
+             (catch Exception _
+               []))
+
+        r3 (try
+             (jdbc/execute! conn [(format sql json "\"alias-row\" = ?") row])
+             (catch Exception _
+               []))]
+
+    (into #{} cat [r1 r2 r3])))
 
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]

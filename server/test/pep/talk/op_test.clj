@@ -12,7 +12,7 @@
 
         response (handler/handle {}
                    {:op "v1/analyze_paths"
-                    :root-path (io/file user-dir "pep.talk")})]
+                    :root-path (.getPath (io/file user-dir "pep.talk"))})]
 
     (testing "Successful analysis"
       (is (contains? response :success)))))
