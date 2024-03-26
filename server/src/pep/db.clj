@@ -76,7 +76,7 @@
 
         sql (format sql json)]
 
-    (jdbc/execute! conn [sql row row])))
+    (jdbc/execute! conn [sql row row row])))
 
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]

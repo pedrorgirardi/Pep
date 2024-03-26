@@ -4756,6 +4756,9 @@ class PgPepV2UnderCaretCommand(sublime_plugin.TextCommand):
 
             caret_data = response.get("success") or []
 
+            if not caret_data:
+                return
+
             items_html = ""
 
             for data in caret_data:

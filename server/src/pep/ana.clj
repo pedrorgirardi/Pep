@@ -14,6 +14,24 @@
     "var-definitions"
     "locals"})
 
+(def view-config
+  {:skip-lint false
+
+   :analysis
+   {:var-definitions true
+    :var-usages true
+    :arglists true
+    :locals true
+    :keywords true
+    :symbols true
+    :java-class-definitions false
+    :java-class-usages true
+    :java-member-definitions false
+    :instance-invocations true}
+
+   :output
+   {:canonical-paths true}})
+
 (def paths-config
   {:skip-lint true
 

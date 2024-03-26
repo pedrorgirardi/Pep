@@ -48,7 +48,7 @@
 
         {:keys [analysis]} (clj-kondo/run!
                              {:lint [(io/file talk-dir "analysis.clj")]
-                              :config ana/paths-config})]
+                              :config ana/view-config})]
 
     (tap> analysis))
   

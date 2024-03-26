@@ -17,6 +17,44 @@
   "Comparator to sort by `:filename`, `row` and `col`."
   (juxt :filename :row :col))
 
+(defn locs [prospect]
+  (into []
+    (comp
+      (map
+        (fn [[start end]]
+          [(get prospect start) (get prospect end)]))
+      (filter
+        (fn [[start end]]
+          (and start end))))
+    (cond
+      (#{"locals"
+         "local-usages"
+         "keywords"} (:_semantic prospect))
+      [[:col :end-col]]
+
+      (#{"namespace-definitions"
+         "var-definitions"
+         "var-usages"} (:_semantic prospect))
+      [[:name-col :name-end-col]]
+
+      (#{"namespace-usages"} (:_semantic prospect))
+      [[:name-col :name-end-col]
+       [:alias-col :alias-end-col]])))
+
+(defn caret*
+  [conn root-path {:keys [filename row col]}]
+  (let [cache-file (db/cache-json-file root-path filename)]
+    (reduce
+      (fn [acc data]
+        (if (some
+              (fn [[start end]]
+                (<= start col end))
+              (locs data))
+          (conj acc data)
+          acc))
+      #{}
+      (db/select-row conn cache-file {:row row}))))
+
 (defn caret
   [conn root-path {:keys [filename row col]}]
   (let [cache-file (db/cache-json-file root-path filename)
@@ -29,21 +67,6 @@
           (when (<= start col end)
             (reduced data))))
       nil
-      row-data)))
-
-(defn caret*
-  [conn root-path {:keys [filename row col]}]
-  (let [cache-file (db/cache-json-file root-path filename)
-
-        row-data (db/select-row conn cache-file {:row row})]
-    (reduce
-      (fn [acc data]
-        (let [start (or (:name-col data) (:col data))
-              end (or (:name-end-col data) (:end-col data))]
-          (if (<= start col end)
-            (conj acc data)
-            acc)))
-      #{}
       row-data)))
 
 (defn persist-analysis!

@@ -12,3 +12,8 @@
 'hello
 
 `str/blank?
+
+:person/name
+
+(let [x 1]
+  (inc x))
