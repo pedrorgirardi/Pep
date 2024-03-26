@@ -19,3 +19,13 @@
   (inc x))
 
 (defn increment "Increment `x`." [{:keys [x]}] (inc x))
+
+(comment
+
+  java.nio.file.Files/deleteIfExists
+
+  (java.nio.file.Files/deleteIfExists "foo")
+  
+  (.toString {:a 1})
+
+  )

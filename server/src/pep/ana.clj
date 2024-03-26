@@ -135,7 +135,8 @@
 
     (#{:namespace-definitions
        :var-definitions
-       :var-usages} semantic)
+       :var-usages
+       :java-class-usages} semantic)
     [[:name-row :name-col :name-end-col]]
 
     (#{:namespace-usages} semantic)

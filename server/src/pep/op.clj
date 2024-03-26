@@ -17,6 +17,13 @@
   "Comparator to sort by `:filename`, `row` and `col`."
   (juxt :filename :row :col))
 
+(defn select-under-caret1
+  [conn json {:keys [row col]}]
+  (first
+    (db/select-under-caret conn json
+      {:row row
+       :col col})))
+
 (defn persist-analysis!
   [root-path {:keys [analysis]}]
   (let [cache-dir (db/cache-dir root-path)]
@@ -69,10 +76,9 @@
 (defn v1-under-caret-reference-regions
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (let [cache-file (db/cache-json-file root-path filename)]
-    (when-let [prospect (first
-                          (db/select-under-caret conn cache-file
-                            {:row row
-                             :col col}))]
+    (when-let [prospect (select-under-caret1 conn cache-file
+                          {:row row
+                           :col col})]
 
       (let [references (db/select-references conn cache-file prospect)
 
@@ -95,10 +101,9 @@
 (defn  v1-find_definitions
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (let [cache-file (db/cache-json-file root-path filename)]
-    (when-let [prospect (first
-                          (db/select-under-caret conn cache-file
-                            {:row row
-                             :col col}))]
+    (when-let [prospect (select-under-caret1 conn cache-file
+                          {:row row
+                           :col col})]
       (let [dir (db/cache-dir root-path)
 
             definitions (db/select-definitions conn dir prospect)
@@ -110,13 +115,10 @@
 (defn v1-find-references-in-file
   [{:keys [conn]} {:keys [root-path filename row col]}]
   (let [cache-file (db/cache-json-file root-path filename)]
-    (when-let [prospect (first
-                          (db/select-under-caret conn cache-file
-                            {:row row
-                             :col col}))]
-      (let [cache-file (db/cache-json-file root-path filename)
-
-            references (db/select-references conn cache-file prospect)
+    (when-let [prospect (select-under-caret1 conn cache-file
+                          {:row row
+                           :col col})]
+      (let [references (db/select-references conn cache-file prospect)
             references (into #{} xform-kv-not-nillable references)
             references (sort-by comp-filename-row-col references)]
 

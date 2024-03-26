@@ -117,7 +117,7 @@
     (jdbc/execute! conn [sql])))
 
 (defn select-under-caret
-  [conn json {:keys [filename row col]}]
+  [conn json {:keys [row col]}]
   (let [;; It's fine to 'select *' because we're looking at a single file.
         ;; (`json` is specific for a single file instead of *.json)
         sql "FROM

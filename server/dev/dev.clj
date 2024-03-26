@@ -53,6 +53,7 @@
     (tap> analysis))
 
 
+
   (with-open [conn (db/conn)]
     (jdbc/execute! conn
       [(format
@@ -64,8 +65,5 @@
              _loc_col_end
           LIMIT 10"
          filename)]))
-
-
-
 
   )
