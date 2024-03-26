@@ -110,9 +110,7 @@
                      {:row row
                       :col col})
 
-        caret-data (into #{} xform-kv-not-nillable caret-data)
-
-        caret-data (sort-by comp-filename-row-col caret-data)]
+        caret-data (into #{} xform-kv-not-nillable caret-data)]
 
     caret-data))
 
