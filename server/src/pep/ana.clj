@@ -14,20 +14,21 @@
     "var-definitions"
     "locals"})
 
-(def view-config
-  {:skip-lint false
+(def view-paths-analysis-config
+  "clj-kondo analysis config for views and paths."
+  {:var-definitions true
+   :var-usages true
+   :arglists true
+   :locals true
+   :keywords true
+   :symbols true
+   :java-class-definitions false
+   :java-class-usages true
+   :java-member-definitions false
+   :instance-invocations true})
 
-   :analysis
-   {:var-definitions true
-    :var-usages true
-    :arglists true
-    :locals true
-    :keywords true
-    :symbols true
-    :java-class-definitions false
-    :java-class-usages true
-    :java-member-definitions false
-    :instance-invocations true}
+(def view-config
+  {:analysis view-paths-analysis-config
 
    :output
    {:canonical-paths true}})
@@ -35,17 +36,7 @@
 (def paths-config
   {:skip-lint true
 
-   :analysis
-   {:var-definitions true
-    :var-usages true
-    :arglists true
-    :locals true
-    :keywords true
-    :symbols true
-    :java-class-definitions false
-    :java-class-usages true
-    :java-member-definitions false
-    :instance-invocations true}
+   :analysis view-paths-analysis-config
 
    :output
    {:canonical-paths true}})
@@ -88,7 +79,7 @@
 (defn analyze-text!
   "Analyze paths with clj-kondo."
   ([{:keys [filename text]}]
-   (analyze-text! paths-config
+   (analyze-text! view-config
      {:text text
       :filename filename}))
   ([config {:keys [filename text]}]
