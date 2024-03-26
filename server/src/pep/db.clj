@@ -41,6 +41,30 @@
   ^java.io.File [root-path]
   (io/file (cache-dir root-path) "*.json"))
 
+(defn locs [prospect]
+  (into []
+    (comp
+      (map
+        (fn [[start end]]
+          [(get prospect start) (get prospect end)]))
+      (filter
+        (fn [[start end]]
+          (and start end))))
+    (cond
+      (#{"locals"
+         "local-usages"
+         "keywords"} (:_semantic prospect))
+      [[:col :end-col]]
+
+      (#{"namespace-definitions"
+         "var-definitions"
+         "var-usages"} (:_semantic prospect))
+      [[:name-col :name-end-col]]
+
+      (#{"namespace-usages"} (:_semantic prospect))
+      [[:name-col :name-end-col]
+       [:alias-col :alias-end-col]])))
+
 (defn conn ^java.sql.Connection []
   (doto
     (jdbc/get-connection "jdbc:duckdb:")
@@ -99,6 +123,19 @@
                []))]
 
     (into #{} cat [r1 r2 r3])))
+
+(defn select-under-caret
+  [conn json {:keys [filename row col]}]
+  (reduce
+    (fn [acc data]
+      (if (some
+            (fn [[start end]]
+              (<= start col end))
+            (locs data))
+        (conj acc data)
+        acc))
+    #{}
+    (select-row conn json {:row row})))
 
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]
