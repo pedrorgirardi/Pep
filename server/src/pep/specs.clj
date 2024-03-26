@@ -23,6 +23,15 @@
 
 (s/def :pep/filename ::not-blank-string)
 
+(s/def :pep/loc
+  (s/keys
+    :req-un
+    [:pep/row
+     :pep/col]))
+
+(s/def :pep/locs
+  (s/coll-of :pep/loc :min-count 1))
+
 (s/def :pep/position
   (s/keys
     :req-un

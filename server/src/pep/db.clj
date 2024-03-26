@@ -1,5 +1,7 @@
 (ns pep.db
   (:require
+   [clojure.core.protocols :refer [Datafiable]]
+   [clojure.datafy :as datafy]
    [clojure.java.io :as io]
 
    [next.jdbc :as jdbc]
@@ -7,15 +9,33 @@
 
 (set! *warn-on-reflection* true)
 
+(extend-protocol Datafiable
+  org.duckdb.DuckDBStruct
+  (datafy [x]
+    (into {} (.getMap x)))
+
+  org.duckdb.DuckDBArray
+  (datafy [x]
+    (into []
+      (map datafy/datafy)
+      (.getArray x))))
+
 ;; Reference:
 ;; https://cljdoc.org/d/com.github.seancorfield/next.jdbc/1.3.925/doc/getting-started/result-set-builders#readablecolumn
 (extend-protocol rs/ReadableColumn
+  org.duckdb.DuckDBStruct
+  (read-column-by-label [^org.duckdb.DuckDBStruct o]
+    (datafy/datafy o))
+
+  (read-column-by-index [^org.duckdb.DuckDBStruct o _2 _3]
+    (datafy/datafy o))
+
   org.duckdb.DuckDBArray
   (read-column-by-label [^org.duckdb.DuckDBArray o]
-    (vec (.getArray o)))
+    (datafy/datafy o))
 
   (read-column-by-index [^org.duckdb.DuckDBArray o _2 _3]
-    (vec (.getArray o))))
+    (datafy/datafy o)))
 
 (defn cache-dir
   ^java.io.File [root-path]
@@ -124,6 +144,23 @@
 
     (into #{} cat [r1 r2 r3])))
 
+(defn select-row2
+  [conn json {:keys [row]}]
+  (let [;; It's fine to 'select *' because we're looking at a single file.
+        ;; (`json` is specific for a single file instead of *.json)
+        sql "SELECT
+                *
+             FROM
+                 read_json_auto('%s', format='array')
+             WHERE
+                 list_filter(_locs, loc -> loc['row'] == ?)"
+
+        sql (format sql json)]
+
+    (tap> (jdbc/execute! conn [sql row]))
+
+    (jdbc/execute! conn [sql row])))
+
 (defn select-under-caret
   [conn json {:keys [filename row col]}]
   (reduce
@@ -135,7 +172,7 @@
         (conj acc data)
         acc))
     #{}
-    (select-row conn json {:row row})))
+    (select-row2 conn json {:row row})))
 
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]

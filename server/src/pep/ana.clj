@@ -1,5 +1,6 @@
 (ns pep.ana
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.java.io :as io]
    [clojure.tools.deps :as deps]
    [clojure.tools.build.api :as b]
@@ -127,17 +128,47 @@
 
 (defn index
   "Returns a mapping of filename to its analysis data."
-  [analysis]
+  [sem->analysis]
   (let [;; Map different analysis data eg. locals, keywords to a vector.
         xform (mapcat
-                (fn [[sem data]]
+                (fn [[sem analysis]]
                   (into []
                     (map
-                      #(assoc %
-                         :_id (nano-id 10)
-                         :_semantic sem))
-                    data)))]
-    (group-by :filename (into [] xform analysis))))
+                      (fn [data]
+                        (assoc data
+                          :_id (nano-id 10)
+                          :_semantic sem
+                          :_locs
+                          (into []
+                            (comp
+                              (map
+                                (fn [[row col]]
+                                  {:row (get data row)
+                                   :col (get data col)}))
+                              (filter
+                                (fn [loc]
+                                  (s/valid? :pep/loc loc))))
+                            (cond
+                              (#{:locals
+                                 :local-usages
+                                 :keywords} sem)
+                              [[:row :col]]
+
+                              (#{:namespace-definitions
+                                 :var-definitions
+                                 :var-usages} sem)
+                              [[:name-row :name-col]]
+
+                              (#{:namespace-usages} sem)
+                              [[:name-row :name-col]
+                               [:alias-row :alias-col]])))))
+                    analysis)))
+
+        analysis (into [] xform sem->analysis)
+
+        filename->analysis (group-by :filename analysis)]
+
+    filename->analysis))
 
 (defmulti regions :_semantic)
 
