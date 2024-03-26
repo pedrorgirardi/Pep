@@ -53,7 +53,9 @@
           (conj acc data)
           acc))
       #{}
-      (db/select-row conn cache-file {:row row}))))
+      (db/select-under-caret conn cache-file
+        {:row row
+         :col col}))))
 
 (defn caret
   [conn root-path {:keys [filename row col]}]
@@ -108,9 +110,10 @@
 
 (defn v1-under-caret
   [{:keys [conn]} {:keys [root-path filename row col]}]
-  (let [caret-data (caret* conn root-path
-                     {:filename filename
-                      :row row
+  (let [cache-file (db/cache-json-file root-path filename)
+
+        caret-data (db/select-under-caret conn cache-file
+                     {:row row
                       :col col})
 
         caret-data (into #{} xform-kv-not-nillable caret-data)

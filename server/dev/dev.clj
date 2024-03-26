@@ -53,25 +53,19 @@
     (tap> analysis))
 
 
-
-
   (with-open [conn (db/conn)]
     (jdbc/execute! conn
       [(format
-         "WITH _locs AS (SELECT _locs FROM read_json_auto('%s', format='array'))
-          SELECT list_filter(_locs, l -> l['row'] == 73);"
+         "FROM
+             (SELECT * EXCLUDE (_locs), unnest(_locs, recursive := true) FROM read_json_auto('%s', format='array'))
+          SELECT
+             _loc_row,
+             _loc_col_start,
+             _loc_col_end
+          LIMIT 10"
          filename)]))
 
 
 
-  (with-open [conn (db/conn)]
-    (jdbc/execute! conn
-      [(format
-         "SELECT
-           list_transform(_locs, l -> l['row'] + 1)
-         FROM
-           read_json_auto('%s', format='array')"
-         filename)]))
-  
 
   )

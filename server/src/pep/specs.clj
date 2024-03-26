@@ -23,14 +23,18 @@
 
 (s/def :pep/filename ::not-blank-string)
 
-(s/def :pep/loc
+(s/def :pep/_loc_row pos-int?)
+
+(s/def :pep/_loc_col_start pos-int?)
+
+(s/def :pep/_loc_col_end pos-int?)
+
+(s/def :pep/_loc
   (s/keys
     :req-un
-    [:pep/row
-     :pep/col]))
-
-(s/def :pep/locs
-  (s/coll-of :pep/loc :min-count 1))
+    [:pep/_loc_row
+     :pep/_loc_col_start
+     :pep/_loc_col_end]))
 
 (s/def :pep/position
   (s/keys

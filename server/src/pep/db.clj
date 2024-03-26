@@ -144,35 +144,21 @@
 
     (into #{} cat [r1 r2 r3])))
 
-(defn select-row2
-  [conn json {:keys [row]}]
-  (let [;; It's fine to 'select *' because we're looking at a single file.
-        ;; (`json` is specific for a single file instead of *.json)
-        sql "SELECT
-                *
-             FROM
-                 read_json_auto('%s', format='array')
-             WHERE
-                 list_filter(_locs, loc -> loc['row'] == ?)"
-
-        sql (format sql json)]
-
-    (tap> (jdbc/execute! conn [sql row]))
-
-    (jdbc/execute! conn [sql row])))
-
 (defn select-under-caret
   [conn json {:keys [filename row col]}]
-  (reduce
-    (fn [acc data]
-      (if (some
-            (fn [[start end]]
-              (<= start col end))
-            (locs data))
-        (conj acc data)
-        acc))
-    #{}
-    (select-row2 conn json {:row row})))
+  (let [;; It's fine to 'select *' because we're looking at a single file.
+        ;; (`json` is specific for a single file instead of *.json)
+        sql "FROM
+               (SELECT * EXCLUDE (_locs), unnest(_locs, recursive := true) FROM read_json_auto('%s', format='array'))
+             WHERE
+                _loc_row = ?
+                AND ? BETWEEN _loc_col_start AND _loc_col_end"
+
+        sql (format sql json)
+
+        rows (jdbc/execute! conn [sql row col])]
+
+    rows))
 
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]

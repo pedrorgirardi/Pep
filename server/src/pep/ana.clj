@@ -126,6 +126,22 @@
        {:canonical-paths true}}
       root-path)))
 
+(defn semlocs [semantic]
+  (cond
+    (#{:locals
+       :local-usages
+       :keywords} semantic)
+    [[:row :col :end-col]]
+
+    (#{:namespace-definitions
+       :var-definitions
+       :var-usages} semantic)
+    [[:name-row :name-col :name-end-col]]
+
+    (#{:namespace-usages} semantic)
+    [[:name-row :name-col :name-end-col]
+     [:alias-row :alias-col :alias-end-col]]))
+
 (defn index
   "Returns a mapping of filename to its analysis data."
   [sem->analysis]
@@ -142,26 +158,14 @@
                           (into []
                             (comp
                               (map
-                                (fn [[row col]]
-                                  {:row (get data row)
-                                   :col (get data col)}))
+                                (fn [[row col-start col-end]]
+                                  {:_loc_row (get data row)
+                                   :_loc_col_start (get data col-start)
+                                   :_loc_col_end (get data col-end)}))
                               (filter
                                 (fn [loc]
-                                  (s/valid? :pep/loc loc))))
-                            (cond
-                              (#{:locals
-                                 :local-usages
-                                 :keywords} sem)
-                              [[:row :col]]
-
-                              (#{:namespace-definitions
-                                 :var-definitions
-                                 :var-usages} sem)
-                              [[:name-row :name-col]]
-
-                              (#{:namespace-usages} sem)
-                              [[:name-row :name-col]
-                               [:alias-row :alias-col]])))))
+                                  (s/valid? :pep/_loc loc))))
+                            (semlocs sem)))))
                     analysis)))
 
         analysis (into [] xform sem->analysis)
