@@ -197,6 +197,23 @@
       {:ns var-ns
        :name var-name})))
 
+(defn select-instance-invocations
+  [conn json {instance-invocation-method-name :method-name}]
+  (let [sql "SELECT
+               \"_semantic\",
+                \"filename\",
+                \"name-row\",
+                \"name-end-row\",
+                \"name-col\",
+                \"name-end-col\"
+            FROM
+               read_json_auto('%s', format='array')
+            WHERE
+               \"_semantic\" = 'instance-invocations'
+               AND \"method-name\" = ?"
+
+        sql (format sql json)]
+   (jdbc/execute! conn [sql instance-invocation-method-name])))
 
 (defmulti select-definitions-sqlparams
   "Returns SQL & params to query definitions per semantic."
@@ -387,6 +404,11 @@
   (select-var-references conn json
     {:ns var-ns
      :name var-name}))
+
+(defmethod select-references "instance-invocations"
+  [conn json {:keys [method-name]}]
+  (select-instance-invocations conn json
+    {:method-name method-name}))
 
 
 (comment
