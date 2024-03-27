@@ -143,7 +143,12 @@
 
     (#{:namespace-usages} semantic)
     [[:name-row :name-col :name-end-col]
-     [:alias-row :alias-col :alias-end-col]]))
+     [:alias-row :alias-col :alias-end-col]]
+
+    ;; It might not have a 'named location'.
+    (#{:java-class-usages} semantic)
+    [[:row :col :end-col]
+     [:name-row :name-col :name-end-col]]))
 
 (defn locs
   [data]
