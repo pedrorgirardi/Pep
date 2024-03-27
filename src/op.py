@@ -76,6 +76,23 @@ def under_caret(
     return req(client_socket, data)
 
 
+def under_caret_reference_regions(
+    client_socket: socket.socket,
+    root_path: str,
+    filename: str,
+    row: int,
+    col: int,
+) -> Dict[str, Any]:
+    data = {
+        "op": "v1/under_caret_reference_regions",
+        "root-path": root_path,
+        "filename": filename,
+        "row": row,
+        "col": col,
+    }
+
+    return req(client_socket, data)
+
 def analyze_paths(
     client_socket: socket.socket,
     root_path: str,

@@ -27,11 +27,12 @@
                                :root-path (pep-talk-root-path)}))]
 
     (testing "Successful analysis"
-      (is (= 3 (count success)))
+      (is (= 4 (count success)))
 
       (is (= #{{:_semantic "namespace-definitions" :name "pep.talk.diagnostic"}
                {:_semantic "namespace-definitions" :name "pep.talk.reference"}
-               {:_semantic "namespace-definitions" :name "pep.talk.common"}}
+               {:_semantic "namespace-definitions" :name "pep.talk.common"}
+               {:_semantic "namespace-definitions" :name "pep.talk.analysis"}}
             (into #{}
               (map #(select-keys % [:_semantic :name]))
               success))))))
