@@ -1654,8 +1654,6 @@ def analyze_view_v2(view):
 
             return
 
-        pprint.pprint(response)
-
         diagnostics = response.get("success", {}).get("diagnostics", {})
 
         annotate_view_v2(view, diagnostics)
@@ -2773,6 +2771,34 @@ def highlight_thingy(view):
             status_message = f"{prefix}{len(regions)}{suffix}"
     else:
         view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
+
+    view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
+
+
+def highlight_regions_v2(view, regions):
+    status_message = ""
+
+    view.erase_regions(HIGHLIGHTED_REGIONS_KEY)
+
+    if regions:
+        window = view.window()
+
+        view.add_regions(
+            HIGHLIGHTED_REGIONS_KEY,
+            regions,
+            scope=setting(window, "highlight_scope", "region.cyanish"),
+            icon="dot" if setting(window, "highlight_gutter", None) else "",
+            flags=sublime.DRAW_NO_FILL
+            if setting(window, "highlight_region", None)
+            else sublime.HIDDEN,
+        )
+
+        if view_status_show_highlighted(window):
+            prefix = view_status_show_highlighted_prefix(window)
+
+            suffix = view_status_show_highlighted_suffix(window)
+
+            status_message = f"{prefix}{len(regions)}{suffix}"
 
     view.set_status(HIGHLIGHTED_STATUS_KEY, status_message)
 
@@ -4437,6 +4463,10 @@ class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
 ## ------------------------------------------------------------------
 
 
+def sel0(view) -> sublime.Region:
+    return view.sel()[0]
+
+
 def show_error(window: sublime.Window, error: str):
     html = f"""
             <style>
@@ -4460,6 +4490,61 @@ def show_error(window: sublime.Window, error: str):
     )
 
     window.focus_sheet(sheet)
+
+
+def highlight_under_caret_regions(view):
+    def handle_response(root_path, response):
+        if error := response.get("error"):
+            print("Pep Error:", error)
+
+            return
+
+        # pprint.pprint(response.get("success").get("regions"))
+
+        regions = []
+
+        for r in response["success"]["regions"] or []:
+            row_start = r["start"]["row"]
+            col_start = r["start"]["col"]
+
+            row_end = r["end"]["row"]
+            col_end = r["end"]["col"]
+
+            start_point = view.text_point(row_start - 1, col_start - 1)
+            end_point = view.text_point(row_end - 1, col_end - 1)
+
+            regions.append(sublime.Region(start_point, end_point))
+
+        highlight_regions_v2(view, regions)
+
+    def run_():
+        try:
+            # TODO: How to handle multiple open folders?
+            root_path = window_root_path(view.window())
+
+            region = sel0(view)
+
+            # The second end of the region. In a selection this is the location of the caret. May be less than a.
+            caret = region.b
+
+            row, col = view.rowcol(caret)
+
+            response = with_clientsocket_retry(
+                lambda c: op.under_caret_reference_regions(
+                    c,
+                    root_path=root_path,
+                    filename=view.file_name(),
+                    row=row + 1,
+                    col=col + 1,
+                )
+            )
+
+            sublime.set_timeout(lambda: handle_response(root_path, response), 0)
+
+        except Exception:
+            print("Pep Error:", traceback.format_exc())
+
+    threading.Thread(target=run_).start()
 
 
 class PgPepV2RunWithRootPathCommand(sublime_plugin.WindowCommand):
@@ -4874,7 +4959,9 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
     def highlight(self):
         self.is_highlight_pending = False
 
-        highlight_thingy(self.view)
+        # highlight_thingy(self.view)
+
+        highlight_under_caret_regions(self.view)
 
     def on_load(self):
         self.analyze()

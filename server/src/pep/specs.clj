@@ -93,7 +93,7 @@
              :pep/col]))
 
 (s/def :pep.handler.v1.under-caret-reference-regions.response/regions
-  (s/coll-of :pep/region))
+  (s/nilable (s/coll-of :pep/region)))
 
 (s/def :pep.handler.v1.under-caret-reference-regions.response/success
   (s/map-of #{:success} (s/keys :req-un [:pep.handler.v1.under-caret-reference-regions.response/regions])))
