@@ -215,6 +215,33 @@
         sql (format sql json)]
    (jdbc/execute! conn [sql instance-invocation-method-name])))
 
+(defn select-java-class-usages
+  [conn json {java-class-usage-class :class
+              java-class-usage-method-name :method-name}]
+  (let [sql "SELECT
+                \"_semantic\",
+                \"filename\",
+                \"row\",
+                \"end-row\",
+                \"col\",
+                \"end-col\",
+                \"name-row\",
+                \"name-end-row\",
+                \"name-col\",
+                \"name-end-col\"
+            FROM
+               read_json_auto('%s', format='array')
+            WHERE
+               \"_semantic\" = 'java-class-usages'
+               AND \"class\" = ?
+               AND \"method-name\" = ?"
+
+        sql (format sql json)]
+   (jdbc/execute! conn
+     [sql
+      java-class-usage-class
+      java-class-usage-method-name])))
+
 (defmulti select-definitions-sqlparams
   "Returns SQL & params to query definitions per semantic."
   (fn [_dir prospect]
@@ -409,6 +436,13 @@
   [conn json {:keys [method-name]}]
   (select-instance-invocations conn json
     {:method-name method-name}))
+
+(defmethod select-references "java-class-usages"
+  [conn json {java-class-usage-clas :class
+              java-class-usage-method-name :method-name}]
+  (select-java-class-usages conn json
+    {:class java-class-usage-clas
+     :method-name java-class-usage-method-name}))
 
 
 (comment
