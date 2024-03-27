@@ -146,30 +146,29 @@
 (defn index
   "Returns a mapping of filename to its analysis data."
   [sem->analysis]
-  (let [;; Map different analysis data eg. locals, keywords to a vector.
-        xform (mapcat
-                (fn [[sem analysis]]
-                  (into []
-                    (map
-                      (fn [data]
-                        (assoc data
-                          :_id (nano-id 10)
-                          :_semantic sem
-                          :_locs
-                          (into []
-                            (comp
-                              (map
-                                (fn [[row col-start col-end]]
-                                  {:_loc_row (get data row)
-                                   :_loc_col_start (get data col-start)
-                                   :_loc_col_end (get data col-end)}))
-                              (filter
-                                (fn [loc]
-                                  (s/valid? :pep/_loc loc))))
-                            (semlocs sem)))))
-                    analysis)))
-
-        analysis (into [] xform sem->analysis)
+  (let [analysis (into []
+                   (mapcat
+                     (fn [[sem analysis]]
+                       (into []
+                         (map
+                           (fn [data]
+                             (assoc data
+                               :_id (nano-id 10)
+                               :_semantic sem
+                               :_locs
+                               (into []
+                                 (comp
+                                   (map
+                                     (fn [[row col-start col-end]]
+                                       {:_loc_row (get data row)
+                                        :_loc_col_start (get data col-start)
+                                        :_loc_col_end (get data col-end)}))
+                                   (filter
+                                     (fn [loc]
+                                       (s/valid? :pep/_loc loc))))
+                                 (semlocs sem)))))
+                         analysis)))
+                   sem->analysis)
 
         filename->analysis (group-by :filename analysis)]
 
