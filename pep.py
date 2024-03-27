@@ -3,7 +3,6 @@ import inspect
 import json
 import os
 import pathlib
-import pprint
 import re
 import shlex
 import shutil
@@ -111,7 +110,7 @@ def af_highlight_thingy(context, analysis):
     """
     if view := context["view"]:
         if automatically_highlight(view.window()):
-            highlight_thingy(view)
+            highlight_under_caret_regions(view)
 
 
 def af_status_summary(context, analysis):
@@ -4417,7 +4416,7 @@ class PgPepReplaceCommand(sublime_plugin.TextCommand):
 
 class PgPepHighlightCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        highlight_thingy(self.view)
+        highlight_under_caret_regions(self.view)
 
 
 class PgPepToggleViewAnnotationsCommand(sublime_plugin.TextCommand):
@@ -4958,8 +4957,6 @@ class PgPepViewListener(sublime_plugin.ViewEventListener):
 
     def highlight(self):
         self.is_highlight_pending = False
-
-        # highlight_thingy(self.view)
 
         highlight_under_caret_regions(self.view)
 
