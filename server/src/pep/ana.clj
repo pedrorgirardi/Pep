@@ -126,7 +126,8 @@
        {:canonical-paths true}}
       root-path)))
 
-(defn semlocs [semantic]
+(defn locs-keyseq
+  [semantic]
   (cond
     (#{:locals
        :local-usages
@@ -143,6 +144,20 @@
     [[:name-row :name-col :name-end-col]
      [:alias-row :alias-col :alias-end-col]]))
 
+(defn locs
+  [data]
+  (into []
+    (comp
+      (map
+        (fn [[row col-start col-end]]
+          {:_loc_row (get data row)
+           :_loc_col_start (get data col-start)
+           :_loc_col_end (get data col-end)}))
+      (filter
+        (fn [loc]
+          (s/valid? :pep/_loc loc))))
+    (locs-keyseq (:_semantic data))))
+
 (defn index
   "Returns a mapping of filename to its analysis data."
   [sem->analysis]
@@ -150,23 +165,15 @@
                    (mapcat
                      (fn [[sem analysis]]
                        (into []
-                         (map
-                           (fn [data]
-                             (assoc data
-                               :_id (nano-id 10)
-                               :_semantic sem
-                               :_locs
-                               (into []
-                                 (comp
-                                   (map
-                                     (fn [[row col-start col-end]]
-                                       {:_loc_row (get data row)
-                                        :_loc_col_start (get data col-start)
-                                        :_loc_col_end (get data col-end)}))
-                                   (filter
-                                     (fn [loc]
-                                       (s/valid? :pep/_loc loc))))
-                                 (semlocs sem)))))
+                         (comp
+                           (map
+                             (fn [data]
+                               (assoc data
+                                 :_id (nano-id 10)
+                                 :_semantic sem)))
+                           (map
+                             (fn [data]
+                               (assoc data :_locs (locs data)))))
                          analysis)))
                    sem->analysis)
 
