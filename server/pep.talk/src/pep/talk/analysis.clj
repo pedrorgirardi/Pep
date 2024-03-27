@@ -28,4 +28,8 @@
   
   (.toString {:a 1})
 
+  (require '[clojure.java.io :as io])
+
+  (.getParent (io/file (System/getProperty "user.dir")))
+
   )
