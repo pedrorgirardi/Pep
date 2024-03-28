@@ -81,16 +81,14 @@
                           {:row row
                            :col col})]
 
-      (let [references (db/select-references conn cache-file prospect)
+      (let [;; TODO
+            ;; It's enough to select _locs column only.
+            ;; Maybe create a 'minimal' select references version with only _locs.
+            references (db/select-references conn cache-file prospect)
 
-            regions (into []
-                      (comp
-                        (map ana/regions)
-                        cat
-                        (filter
-                          (fn [region]
-                            (s/valid? :pep/region region))))
-                      references)]
+            reference-to-region-xform (comp (map ana/regions) cat)
+
+            regions (into [] reference-to-region-xform references)]
 
         regions))))
 
