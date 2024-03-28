@@ -1,5 +1,6 @@
 (ns pep.op
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
 
@@ -85,7 +86,10 @@
             regions (into []
                       (comp
                         (map ana/regions)
-                        cat)
+                        cat
+                        (filter
+                          (fn [region]
+                            (s/valid? :pep/region region))))
                       references)]
 
         regions))))
