@@ -4,8 +4,7 @@
    [clojure.test :refer [deftest testing is]]
 
    [pep.db :as db]
-   [pep.handler :as handler]
-   [pep.op :as op]))
+   [pep.handler :as handler]))
 
 (deftest handle-analyze-test
   (let [user-dir (System/getProperty "user.dir")

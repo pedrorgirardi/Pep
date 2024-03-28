@@ -134,6 +134,20 @@
 
     rows))
 
+(defn select-locs-by-semantic
+  "Select `_locs` by `_semantic`."
+  [conn json {:keys [_semantic]}]
+  (let [sql "SELECT
+                  \"_locs\"
+              FROM
+                 read_json_auto('%s', format='array')
+              WHERE
+                \"_semantic\" = ?"
+
+        sql (format sql json)]
+
+    (jdbc/execute! conn [sql _semantic])))
+
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]
   (let [sql "SELECT
