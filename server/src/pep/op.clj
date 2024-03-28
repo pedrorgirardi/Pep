@@ -1,6 +1,5 @@
 (ns pep.op
   (:require
-   [clojure.spec.alpha :as s]
    [clojure.java.io :as io]
    [clojure.data.json :as json]
 

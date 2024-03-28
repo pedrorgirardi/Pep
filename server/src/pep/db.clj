@@ -310,14 +310,22 @@
                read_json_auto('%s', format='array')
             WHERE
                \"_semantic\" = 'java-class-usages'
-               AND \"class\" = ?
-               AND \"method-name\" = ?"
+               AND \"class\" = ?"]
 
-        sql (format sql json)]
-   (jdbc/execute! conn
-     [sql
-      java-class-usage-class
-      java-class-usage-method-name])))
+    (cond
+      java-class-usage-method-name
+      (let [sql (str sql " AND \"method-name\" = ?")
+            sql (format sql json)]
+        (jdbc/execute! conn
+          [sql
+           java-class-usage-class
+           java-class-usage-method-name]))
+
+      :else
+      (let [sql (format sql json)]
+        (jdbc/execute! conn
+          [sql
+           java-class-usage-class])))))
 
 (defmulti select-definitions-sqlparams
   "Returns SQL & params to query definitions per semantic."

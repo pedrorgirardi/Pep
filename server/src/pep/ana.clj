@@ -137,7 +137,6 @@
     (#{:namespace-definitions
        :var-definitions
        :var-usages
-       :java-class-usages
        :instance-invocations} semantic)
     [[:name-row :name-col :name-end-col]]
 

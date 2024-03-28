@@ -3,7 +3,10 @@
   (:require
    [clojure.string
     :as str
-    :refer [blank?]]))
+    :refer [blank?]])
+
+  (:import
+   (java.nio.file Files)))
 
 (defn
   hello []
@@ -12,6 +15,8 @@
 'hello
 
 `str/blank?
+
+^String
 
 :person/name
 
