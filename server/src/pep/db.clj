@@ -93,7 +93,9 @@
 (defn select-namespaces
   [conn json]
   (let [sql "SELECT
-                  _semantic,
+                  \"_id\",
+                  \"_semantic\",
+                  \"_locs\",
                   name,
                   doc,
                   filename,
@@ -135,7 +137,9 @@
 (defn select-var-definitions-sqlparams
   [json {var-ns :ns var-name :name}]
   (let [sql "SELECT
-                 _semantic,
+                  \"_id\",
+                  \"_semantic\",
+                  \"_locs\",
                   ns,
                   name,
                   filename,
@@ -167,7 +171,9 @@
 (defn select-var-usages-sqlparams
   [json {var-ns :ns var-name :name}]
   (let [sql "SELECT
-               \"_semantic\",
+                \"_id\",
+                \"_semantic\",
+                \"_locs\",
                 \"from\",
                 \"to\",
                 \"name\",
@@ -200,7 +206,9 @@
 (defn select-instance-invocations
   [conn json {instance-invocation-method-name :method-name}]
   (let [sql "SELECT
-               \"_semantic\",
+                \"_id\",
+                \"_semantic\",
+                \"_locs\",
                 \"filename\",
                 \"name-row\",
                 \"name-end-row\",
@@ -218,7 +226,9 @@
 (defn select-ns-definitions
   [conn json {ns-name :name}]
   (let [sql "SELECT
+                  \"_id\",
                   \"_semantic\",
+                  \"_locs\",
                   \"name\",
                   \"filename\",
                   \"row\",
@@ -242,7 +252,9 @@
 (defn select-ns-usages
   [conn json {ns-name :name}]
   (let [sql "SELECT
+                  \"_id\",
                   \"_semantic\",
+                  \"_locs\",
                   \"from\",
                   \"to\",
                   \"filename\",
@@ -268,7 +280,9 @@
   [conn json {java-class-usage-class :class
               java-class-usage-method-name :method-name}]
   (let [sql "SELECT
+                \"_id\",
                 \"_semantic\",
+                \"_locs\",
                 \"filename\",
                 \"row\",
                 \"end-row\",
@@ -300,12 +314,19 @@
   [dir {prospect-filename :filename
         prospect-id :id}]
   (let [sql "SELECT
-                 _semantic, name, filename, row, col
+                  \"_id\",
+                  \"_semantic\",
+                  \"_locs\",
+                  \"id\",
+                  \"name\",
+                  \"filename\",
+                  \"row\",
+                  \"col\"
               FROM
                  read_json_auto('%s', format='array')
               WHERE
-                 _semantic = 'locals'
-                 AND id = ?"
+                 \"_semantic = 'locals'
+                 AND \"id\" = ?"
 
         filename-json (filename-cache prospect-filename)
         filename-file (io/file dir filename-json)
@@ -388,7 +409,9 @@
   "Select `locals` and `local-usages` by ID."
   [conn json {local-id :id}]
   (let [sql "SELECT
+                \"_id\",
                 \"_semantic\",
+                \"_locs\",
                 \"name\",
                 \"filename\",
                 \"row\",
@@ -409,7 +432,9 @@
   [conn json {keyword-ns :ns
               keyword-name :name}]
   (let [sql "SELECT
-                 \"_semantic\",
+                  \"_id\",
+                  \"_semantic\",
+                  \"_locs\",
                   \"ns\",
                   \"name\",
                   \"filename\",
@@ -513,10 +538,3 @@
   (select-java-class-usages conn json
     {:class java-class-usage-clas
      :method-name java-class-usage-method-name}))
-
-
-(comment
-
-  (io/file (cache-dir (System/getProperty "user.dir")) "*.json")
-
-  )

@@ -190,19 +190,18 @@
 (defmulti regions :_semantic)
 
 (defmethod regions :default
-  [{:keys [row
-           name-row
-           col
-           name-col
-           end-row
-           name-end-row
-           end-col
-           name-end-col]}]
-  [{:start
-    {:row (or name-row row)
-     :col (or name-col col)}
+  [{:keys [_locs]}]
+  (into []
+    (map
+      (fn [{:strs [_loc_row
+                   _loc_col_start
+                   _loc_col_end]}]
+        {:start
+         {:row _loc_row
+          :col _loc_col_start}
 
-    :end
-    {:row (or name-end-row end-row)
-     :col (or name-end-col end-col)}}])
+         :end
+         {:row _loc_row
+          :col _loc_col_end}}))
+    _locs))
 
