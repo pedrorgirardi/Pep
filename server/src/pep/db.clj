@@ -215,6 +215,55 @@
         sql (format sql json)]
    (jdbc/execute! conn [sql instance-invocation-method-name])))
 
+(defn select-ns-definitions
+  [conn json {ns-name :name}]
+  (let [sql "SELECT
+                  \"_semantic\",
+                  \"name\",
+                  \"filename\",
+                  \"row\",
+                  \"end-row\",
+                  \"col\",
+                  \"end-col\",
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
+              FROM
+                  read_json_auto('%s', format='array')
+              WHERE
+                  \"_semantic\" = 'namespace-definitions'
+                  AND \"name\" = ?"
+
+        sql (format sql json)]
+
+    (jdbc/execute! conn [sql ns-name])))
+
+(defn select-ns-usages
+  [conn json {ns-name :name}]
+  (let [sql "SELECT
+                  \"_semantic\",
+                  \"from\",
+                  \"to\",
+                  \"filename\",
+                  \"row\",
+                  \"end-row\",
+                  \"col\",
+                  \"end-col\",
+                  \"name-row\",
+                  \"name-end-row\",
+                  \"name-col\",
+                  \"name-end-col\"
+              FROM
+                  read_json_auto('%s', format='array')
+              WHERE
+                  \"_semantic\" = 'namespace-usages'
+                  AND \"to\" = ?"
+
+        sql (format sql json)]
+
+    (jdbc/execute! conn [sql ns-name])))
+
 (defn select-java-class-usages
   [conn json {java-class-usage-class :class
               java-class-usage-method-name :method-name}]
@@ -385,6 +434,17 @@
         [(format sql json "AND \"name\" = ?")
          keyword-name]))))
 
+(defn select-ns-references
+  "Select `namespace-definitions` and `namespace-usages` by name/to."
+  [conn json {ns-name :name}]
+  (let [definitions (select-ns-definitions conn json
+                      {:name ns-name})
+
+        usages (select-ns-usages conn json
+                 {:name ns-name})]
+
+    (into [] cat [definitions usages])))
+
 (defn select-var-references
   "Select `var-definitions` and `var-usages` by namespace and name."
   [conn json {var-ns :ns
@@ -417,6 +477,16 @@
 (defmethod select-references "local-usages"
   [conn json {local-id :id}]
   (select-local-references conn json {:id local-id}))
+
+(defmethod select-references "namespace-definitions"
+  [conn json {ns-name :name}]
+  (select-ns-references conn json
+    {:name ns-name}))
+
+(defmethod select-references "namespace-usages"
+  [conn json {ns-name :to}]
+  (select-ns-references conn json
+    {:name ns-name}))
 
 (defmethod select-references "var-definitions"
   [conn json {var-ns :ns
