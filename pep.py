@@ -6,20 +6,18 @@ import pathlib
 import re
 import shlex
 import shutil
-import socket
 import subprocess
 import tempfile
 import threading
 import time
 import traceback
-from typing import Any, Callable, List, Optional, Union
+from typing import List, Optional
 from zipfile import ZipFile
 
 import sublime  # type: ignore
 import sublime_plugin  # type: ignore
 
-from .src import op, progress
-from .src.error import PepSocketError
+from .plugin import progress
 
 # Flags for creating/opening files in various ways.
 # https://www.sublimetext.com/docs/api_reference.html#sublime.NewFileFlags
@@ -136,51 +134,6 @@ _index_ = {}
 _view_analysis_ = {}
 
 _classpath_analysis_ = {}
-
-
-_client_socket_ = None
-
-
-def clientsocket():
-    global _client_socket_
-
-    if _client_socket_:
-        return _client_socket_
-
-    _client_socket_ = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    _client_socket_.connect(op.server_default_path())
-
-    return _client_socket_
-
-
-def clientsocket_retry(retries=1):
-    try:
-        return clientsocket()
-    except Exception:
-        global _client_socket_
-        _client_socket_ = None
-
-        if retries > 0:
-            print("Pep Error: Socket error; Retrying...", retries)
-
-            return clientsocket_retry(retries=retries - 1)
-
-        raise PepSocketError("Can't connect to Pep server.")
-
-
-def with_clientsocket_retry(f: Callable[[socket.socket], Any]) -> Any:
-    try:
-        return f(clientsocket_retry())
-    except PepSocketError:
-        global _client_socket_
-        _client_socket_ = None
-
-        raise
-
-
-def window_root_path(window: sublime.Window) -> Union[str, None]:
-    if len(window.folders()) == 1:
-        return window.folders()[0]
 
 
 def project_index(project_path, not_found={}):
@@ -1811,41 +1764,6 @@ def analyze_paths(window):
 
 def analyze_paths_async(window):
     threading.Thread(target=lambda: analyze_paths(window), daemon=True).start()
-
-
-def analyze_classpath_v2(window):
-    def f():
-        args = [
-            "clojure",
-            "-X",
-            "pep.sublime/analyze-classpath",
-            ":project_base_name",
-            project_base_name(window),
-            ":project_path",
-            project_path(window),
-        ]
-
-        print(args)
-
-        t0 = time.time()
-
-        process = subprocess.run(
-            args,
-            cwd=pathlib.Path(sublime.packages_path(), "Pep", "backend"),
-            text=True,
-            capture_output=True,
-            startupinfo=startupinfo(),
-        )
-
-        print(process)
-
-        process.check_returncode()
-
-        print(
-            f"Pep Debug: Classpath analysis v2 is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
-        )
-
-    threading.Thread(target=f, daemon=True).start()
 
 
 def index_analysis(analysis: dict) -> dict:
@@ -4356,277 +4274,6 @@ class PgPepShowOutputPanelCommand(sublime_plugin.WindowCommand):
         show_output_panel(self.window)
 
 
-## ------------------------------------------------------------------
-## Pep V2
-## ------------------------------------------------------------------
-
-
-class PgPepV2DiagnosticsCommand(sublime_plugin.WindowCommand):
-    """
-    Project's diagnostics.
-    """
-
-    def input(self, args):
-        if "root_path" not in args:
-            return RootPathInputHandler()
-
-    def run(self, root_path):
-        def handle_response(root_path, response):
-            if error := response.get("error"):
-                print("Pep Error:", error)
-
-                return
-
-            contents = ["Diagnostics", f"Root Path: {root_path}"]
-
-            summary = response.get("success", {}).get("summary", {})
-
-            contents.append(
-                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
-            )
-
-            contents.append(
-                f"Errors: {summary.get('error')}, Warnings: {summary.get('warning')}"
-            )
-
-            diagnostics = response.get("success", {}).get("diagnostics", {})
-
-            for index, diagnostic in enumerate(diagnostics.get("error", [])):
-                if location := thingy_location(diagnostic):
-                    contents.append(
-                        f'{index+1}. Error: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
-                    )
-
-            for index, diagnostic in enumerate(diagnostics.get("warning", [])):
-                if location := thingy_location(diagnostic):
-                    contents.append(
-                        f'{index+1}. Warning: {diagnostic.get("message")}\n{location.get("filename")}:{location.get("line")}:{location.get("column")}'
-                    )
-
-            panel = output_panel(self.window)
-            panel.settings().set("gutter", False)
-            panel.settings().set("result_file_regex", r"^(.*):([0-9]+):([0-9]+)$")
-            panel.settings().set("result_line_regex", r"^(.*):([0-9]+):([0-9]+)$")
-            panel.settings().set("highlight_line", False)
-            panel.settings().set("line_numbers", False)
-            panel.settings().set("gutter", False)
-            panel.settings().set("scroll_past_end", False)
-
-            panel.set_read_only(False)
-
-            replace_output_panel_content(panel, "\n\n".join(contents))
-
-            panel.set_read_only(True)
-
-            panel.show_at_center(0)
-
-            show_output_panel(self.window)
-
-        def run_():
-            try:
-                progress.start("Running Diagnostics...")
-
-                response = with_clientsocket_retry(
-                    lambda c: op.diagnostics(c, root_path)
-                )
-
-                sublime.set_timeout(lambda: handle_response(root_path, response), 0)
-            except Exception:
-                print("Pep Error:", traceback.format_exc())
-            finally:
-                progress.stop()
-
-        threading.Thread(target=run_).start()
-
-
-class PgPepV2AnalyzeCommand(sublime_plugin.WindowCommand):
-    def input(self, args):
-        if "root_path" not in args:
-            return RootPathInputHandler()
-
-    def run(self, root_path):
-        def handle_response(root_path, response):
-            if error := response.get("error"):
-                print("Pep Error:", error)
-
-                return
-
-            contents = ["Analysis", f"Root Path: {root_path}"]
-
-            summary = response.get("success", {}).get("summary", {})
-
-            contents.append(
-                f"Files: {summary.get('files')}, Duration: {summary.get('duration')}"
-            )
-
-            panel = output_panel(self.window)
-            panel.settings().set("gutter", False)
-            panel.settings().set("highlight_line", False)
-            panel.settings().set("line_numbers", False)
-            panel.settings().set("gutter", False)
-            panel.settings().set("scroll_past_end", False)
-
-            panel.set_read_only(False)
-
-            replace_output_panel_content(panel, "\n\n".join(contents))
-
-            panel.set_read_only(True)
-
-            panel.show_at_center(0)
-
-            show_output_panel(self.window)
-
-        def run_():
-            try:
-                progress.start("Running Analysis...")
-
-                response = with_clientsocket_retry(lambda c: op.analyze(c, root_path))
-
-                sublime.set_timeout(
-                    lambda: handle_response(root_path, response),
-                    0,
-                )
-            except Exception:
-                print("Pep Error:", traceback.format_exc())
-            finally:
-                progress.stop()
-
-        threading.Thread(target=run_).start()
-
-
-class PgPepV2GotoNamespaceDefaultsCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        args = None
-
-        if root_path := window_root_path(self.window):
-            args = {"root_path": root_path}
-
-        self.window.run_command("pg_pep_v2_goto_namespace", args)
-
-
-class PgPepV2GotoNamespaceCommand(sublime_plugin.WindowCommand):
-    def input(self, args):
-        if "root_path" not in args:
-            return RootPathInputHandler()
-
-    def run(self, root_path):
-        def handle_response(root_path, response):
-            if error := response.get("error"):
-                print("Pep Error:", error)
-
-                return
-
-            goto_thingy(
-                self.window,
-                response.get("success"),
-                goto_on_highlight=False,
-                goto_side_by_side=False,
-                quick_panel_item_opts={
-                    "show_filename": False,
-                    "show_row_col": False,
-                },
-            )
-
-        def run_():
-            try:
-                progress.start("")
-
-                response = with_clientsocket_retry(
-                    lambda c: op.namespace_definitions(c, root_path)
-                )
-
-                sublime.set_timeout(
-                    lambda: handle_response(root_path, response),
-                    0,
-                )
-            except Exception:
-                print("Pep Error:", traceback.format_exc())
-            finally:
-                progress.stop()
-
-        threading.Thread(target=run_).start()
-
-
-class PgPepV2GotoDefinitionDefaultsCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        args = None
-
-        if root_path := window_root_path(self.view.window()):
-            args = {"root_path": root_path}
-
-        self.view.run_command("pg_pep_v2_goto_definition", args)
-
-
-class PgPepV2GotoDefinitionCommand(sublime_plugin.TextCommand):
-    def input(self, args):
-        if "root_path" not in args:
-            return RootPathInputHandler()
-
-    def run(self, edit, root_path):
-        def handle_response(root_path, response):
-            if error := response.get("error"):
-                print("Pep Error:", error)
-
-                return
-
-            definitions = response.get("success") or []
-
-            if len(definitions) == 1:
-                location = thingy_location(definitions[0])
-
-                goto(
-                    self.view.window(),
-                    location,
-                    GOTO_DEFAULT_FLAGS,
-                )
-            else:
-                goto_thingy(
-                    self.view.window(),
-                    response.get("success"),
-                    goto_on_highlight=False,
-                    goto_side_by_side=False,
-                    quick_panel_item_opts={
-                        "show_filename": False,
-                        "show_row_col": False,
-                    },
-                )
-
-        def run_():
-            try:
-                progress.start("")
-
-                region = self.view.sel()[0]
-
-                # The second end of the region. In a selection this is the location of the caret. May be less than a.
-                caret = region.b
-
-                row, col = self.view.rowcol(caret)
-
-                response = with_clientsocket_retry(
-                    lambda c: op.find_definitions(
-                        c,
-                        root_path=root_path,
-                        filename=self.view.file_name(),
-                        row=row + 1,
-                        col=col + 1,
-                    )
-                )
-
-                sublime.set_timeout(
-                    lambda: handle_response(root_path, response),
-                    0,
-                )
-            except Exception:
-                print("Pep Error:", traceback.format_exc())
-            finally:
-                progress.stop()
-
-        threading.Thread(target=run_).start()
-
-
-# ---
-
-
 class PgPepViewListener(sublime_plugin.ViewEventListener):
     """
     These 'actions' are configured via settings.
@@ -4723,16 +4370,6 @@ class PgPepEventListener(sublime_plugin.EventListener):
             clear_project_index(project_path_)
 
             set_classpath_analysis(project_path_, {})
-
-    def on_pre_close_window(self, window):
-        """
-        Called right before a window is closed.
-        """
-        global _client_socket_
-
-        if _client_socket_:
-            _client_socket_.close()
-            _client_socket_ = None
 
 
 # ---
