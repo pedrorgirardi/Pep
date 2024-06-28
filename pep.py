@@ -3070,7 +3070,7 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
         minihtmls = []
 
         for region in self.view.sel():
-            definition = None
+            definitions = None
 
             if thingy := thingy_at(self.view, view_analysis_, region):
                 thingy_semantic = thingy["_semantic"]
@@ -3081,10 +3081,10 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                 ):
                     # Try to find Var definition in view first,
                     # only if not found try paths and project analysis.
-                    definition = (
-                        find_var_definition(view_analysis_, thingy)
-                        or find_var_definition(paths_analysis_(), thingy)
-                        or find_var_definition(classpath_analysis_, thingy)
+                    definitions = (
+                        find_var_definitions(view_analysis_, thingy)
+                        or find_var_definitions(paths_analysis_(), thingy)
+                        or find_var_definitions(classpath_analysis_, thingy)
                     )
 
                 elif (
@@ -3092,78 +3092,79 @@ class PgPepShowDocCommand(sublime_plugin.TextCommand):
                     or thingy_semantic == TT_NAMESPACE_USAGE
                     or thingy_semantic == TT_NAMESPACE_USAGE_ALIAS
                 ):
-                    definition = (
-                        find_namespace_definition(view_analysis_, thingy)
-                        or find_namespace_definition(paths_analysis_(), thingy)
-                        or find_namespace_definition(classpath_analysis_, thingy)
+                    definitions = (
+                        find_namespace_definitions(view_analysis_, thingy)
+                        or find_namespace_definitions(paths_analysis_(), thingy)
+                        or find_namespace_definitions(classpath_analysis_, thingy)
                     )
 
                 elif thingy_semantic == TT_SYMBOL:
-                    definition = (
-                        find_symbol_definition(view_analysis_, thingy)
-                        or find_symbol_definition(paths_analysis_(), thingy)
-                        or find_symbol_definition(classpath_analysis_, thingy)
+                    definitions = (
+                        find_symbol_definitions(view_analysis_, thingy)
+                        or find_symbol_definitions(paths_analysis_(), thingy)
+                        or find_symbol_definitions(classpath_analysis_, thingy)
                     )
 
-            if definition:
-                # Name
-                # ---
+            if definitions:
+                for definition in definitions:
+                    # Name
+                    # ---
 
-                name = definition.get("name", "")
-                name = inspect.cleandoc(html.escape(name))
+                    name = definition.get("name", "")
+                    name = inspect.cleandoc(html.escape(name))
 
-                ns = definition.get("ns", "")
-                ns = inspect.cleandoc(html.escape(ns))
+                    ns = definition.get("ns", "")
+                    ns = inspect.cleandoc(html.escape(ns))
 
-                qualified_name = f"{ns}/{name}" if ns else name
+                    qualified_name = f"{ns}/{name}" if ns else name
 
-                goto_command_url = sublime.command_url(
-                    "pg_pep_open_file",
-                    {"location": thingy_location(definition)},
-                )
+                    goto_command_url = sublime.command_url(
+                        "pg_pep_open_file",
+                        {"location": thingy_location(definition)},
+                    )
 
-                name_minihtml = f"""
-                <p class="name">
-                    <a href="{goto_command_url}"><b>{qualified_name}</b></a>
-                </p>
-                """
-
-                # Arglists
-                # ---
-
-                arglists = definition.get("arglist-strs", [])
-
-                arglists_minihtml = ""
-
-                if arglists:
-                    arglists_minihtml = """<p class="arglists">"""
-
-                    for arglist in arglists:
-                        arglists_minihtml += f"<code>{htmlify(arglist)}</code><br/>"
-
-                    arglists_minihtml += """</p>"""
-
-                # Doc
-                # ---
-
-                doc = definition.get("doc")
-
-                doc_minihtml = ""
-
-                if doc:
-                    doc = re.sub(r"\s", "&nbsp;", htmlify(doc))
-
-                    doc_minihtml = f"""<p class="doc">{doc}</p>"""
-
-                minihtmls.append(
-                    f"""
-                        {name_minihtml}
-
-                        {arglists_minihtml}
-
-                        {doc_minihtml}
+                    name_minihtml = f"""
+                    <p class="name">
+                        <a href="{goto_command_url}"><b>{qualified_name}</b></a>
+                    </p>
                     """
-                )
+
+                    # Arglists
+                    # ---
+
+                    arglists = definition.get("arglist-strs", [])
+
+                    arglists_minihtml = ""
+
+                    if arglists:
+                        arglists_minihtml = """<p class="arglists">"""
+
+                        for arglist in arglists:
+                            arglists_minihtml += f"<code>{htmlify(arglist)}</code><br/>"
+
+                        arglists_minihtml += """</p>"""
+
+                    # Doc
+                    # ---
+
+                    doc = definition.get("doc")
+
+                    doc_minihtml = ""
+
+                    if doc:
+                        doc = re.sub(r"\s", "&nbsp;", htmlify(doc))
+
+                        doc_minihtml = f"""<p class="doc">{doc}</p>"""
+
+                    minihtmls.append(
+                        f"""
+                            {name_minihtml}
+
+                            {arglists_minihtml}
+
+                            {doc_minihtml}
+                        """
+                    )
 
         if minihtmls:
             content = f"""
