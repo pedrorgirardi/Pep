@@ -1302,6 +1302,7 @@ def finding_quick_panel_item(thingy_data, opts={}):
     return sublime.QuickPanelItem(
         thingy_data["message"],
         annotation=thingy_data["type"],
+        details=f"{thingy_data['row']}:{thingy_data['col']}",
         kind=(
             (sublime.KIND_ID_COLOR_REDISH, "e", "e")
             if thingy_data["level"] == "error"
