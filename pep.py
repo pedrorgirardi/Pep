@@ -2454,33 +2454,6 @@ def find_java_class_usages(analysis, thingy_data) -> List:
     return class_usages
 
 
-# Deprecated
-# See `find_namespace_definitions`
-def find_namespace_definition(analysis, thingy_data) -> Optional[dict]:
-    """
-    Returns a namespace_definition or None.
-
-    `thingy_data` can be either a namespace_definition or namespace_usage.
-    """
-
-    name = thingy_data.get("name", thingy_data.get("to"))
-
-    nindex = analysis_nindex(analysis)
-
-    file_extensions = thingy_file_extensions(thingy_data)
-
-    for namespace_definition in nindex.get(name, []):
-        definition_file_extension = None
-
-        if file_extension_ := file_extension(namespace_definition.get("filename")):
-            definition_file_extension = file_extension_
-        else:
-            definition_file_extension = ".clj"
-
-        if definition_file_extension in file_extensions:
-            return namespace_definition
-
-
 def find_namespace_definitions(analysis, thingy_data) -> List:
     """
     Returns a list of namespace_definition.
@@ -2530,19 +2503,6 @@ def find_namespace_vars_usages(analysis, namespace):
     return usages
 
 
-# Deprecated
-# See `find_keyword_definitions`
-def find_keyword_definition(analysis, keyword):
-    """
-    Returns a keyword which has "definition semantics":
-    - Clojure Spec
-    - re-frame
-    """
-    for keyword_indexed in find_keywords(analysis, keyword):
-        if keyword_indexed.get("reg", None):
-            return keyword_indexed
-
-
 def find_keyword_definitions(analysis, keyword):
     """
     Returns a list of keyword which has "definition semantics":
@@ -2552,18 +2512,6 @@ def find_keyword_definitions(analysis, keyword):
     return [
         keyword_ for keyword_ in find_keywords(analysis, keyword) if keyword_.get("reg")
     ]
-
-
-# Deprecated
-# See `find_symbol_definitions`
-def find_symbol_definition(analysis, sym):
-    """
-    Returns Var definition for symbol `sym`.
-    """
-    k = (symbol_namespace(sym), symbol_name(sym))
-
-    for var_definition in analysis_vindex(analysis).get(k, []):
-        return var_definition
 
 
 def find_symbol_definitions(analysis, sym):
