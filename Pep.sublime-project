@@ -11,5 +11,7 @@
             "server/src",
             "server/test"
         ],
+        "analyze_classpath_on_plugin_loaded": false,
+        "analyze_classpath_on_load_project": false
     },
 }
