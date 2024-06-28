@@ -1,6 +1,7 @@
 import html
 import inspect
 import json
+import logging
 import os
 import pathlib
 import re
@@ -76,6 +77,8 @@ CLJ_KONDO_VIEW_CONFIG = f"{{:analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :ou
 CLJ_KONDO_PATHS_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 CLJ_KONDO_CLASSPATH_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 
+
+logger = logging.getLogger("Pep")
 
 ## -- Analysis Functions
 
@@ -272,10 +275,6 @@ def setting(window, k, not_found):
     v = project_data(window).get(k)
 
     return v if v is not None else settings().get(k, not_found)
-
-
-def is_debug(window):
-    return setting(window, "debug", False)
 
 
 def analysis_applicable_to(window):
@@ -1133,8 +1132,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view.set_scratch(True)
                 view.set_read_only(True)
 
-            if is_debug(window):
-                print(f"Pep Debug: Goto JAR {filename}:{line}:{column}")
+            logger.debug(f"Pep Debug: Goto JAR {filename}:{line}:{column}")
 
             open_jar(filename, window_open_file)
 
@@ -1611,8 +1609,7 @@ def analyze_classpath(window):
 
         sublime.status_message("Analyzing classpath...")
 
-        if is_debug(window):
-            print(f"Pep Debug: Analyzing classpath... {window_project(window)}")
+        logger.debug(f"Pep Debug: Analyzing classpath... {window_project(window)}")
 
         # Analysis doesn't work without a .clj-kondo cache directory:
         clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
@@ -1686,10 +1683,9 @@ def analyze_classpath(window):
                 },
             )
 
-            if is_debug(window):
-                print(
-                    f"Pep Debug: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
-                )
+            logger.debug(
+                f"Pep Debug: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+            )
 
         return True
 
@@ -1714,8 +1710,7 @@ def analyze_paths(window):
 
         sublime.status_message("Analyzing paths...")
 
-        if is_debug(window):
-            print(f"Pep Debug: Analyzing paths... {window_project(window)}")
+        logger.debug(f"Pep Debug: Analyzing paths... {window_project(window)}")
 
         # Analysis doesn't work without a .clj-kondo cache directory:
         clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
@@ -1757,10 +1752,9 @@ def analyze_paths(window):
                 index_analysis(analysis),
             )
 
-            if is_debug(window):
-                print(
-                    f"Pep Debug: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
-                )
+            logger.debug(
+                f"Pep Debug: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+            )
 
 
 def analyze_paths_async(window):
@@ -2893,8 +2887,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
 
-        if is_debug(self.window):
-            print("Pep Debug: Cleared cache")
+        logger.debug("Pep Debug: Cleared cache")
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -4314,8 +4307,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
         Called right before a project is closed.
         """
         if project_path_ := project_path(window):
-            if is_debug(window):
-                print(f"Pep Debug: Clear project cache: {project_path_}")
+            logger.debug(f"Pep Debug: Clear project cache: {project_path_}")
 
             clear_project_index(project_path_)
 
@@ -4326,9 +4318,25 @@ class PgPepEventListener(sublime_plugin.EventListener):
 
 
 def plugin_loaded():
-    if window := sublime.active_window():
-        if setting(window, "analyze_paths_on_plugin_loaded", False):
-            analyze_paths_async(window)
+    active_window = sublime.active_window()
 
-        if setting(window, "analyze_classpath_on_plugin_loaded", False):
-            analyze_classpath_async(window)
+    logging_level = (
+        setting(active_window, "logging_level", "WARNING") if active_window else "WARNING"
+    )
+
+    logging_format = "%(asctime)s %(name)s %(levelname)s %(message)s"
+
+    logging.basicConfig(level=logging_level, format=logging_format)
+
+    logger.debug("loaded plugin")
+
+    if active_window:
+        if setting(active_window, "analyze_paths_on_plugin_loaded", False):
+            analyze_paths_async(active_window)
+
+        if setting(active_window, "analyze_classpath_on_plugin_loaded", False):
+            analyze_classpath_async(active_window)
+
+
+def plugin_unloaded():
+    logger.debug("unloaded plugin")

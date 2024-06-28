@@ -1,5 +1,5 @@
 {
-    "debug": false,
+    "logging_level": "WARNING",
 
     "clj_kondo_path": "clj-kondo",
 
