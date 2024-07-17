@@ -1751,7 +1751,13 @@ def analyze_classpath2(window):
         index = {
             "namespace": {},
             "var": {},
+            "java-class": {},
+            "symbol": {},
+            "keyword": {},
         }
+
+        # Example:
+        # {"var": {"clojure.core/map": {"D": [...], "U": [...]}}}
 
         def index_default():
             return {
@@ -1782,15 +1788,36 @@ def analyze_classpath2(window):
                     D.append(x)
 
             elif k == "var-usages":
-                pass
+                for x in v:
+                    k_ = f"{x['to']}/{x['name']}"
+
+                    U = index["var"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
             elif k == "java-class-usages":
-                pass
-            elif k == "instance-invocations":
-                pass
+                for x in v:
+                    k_ = x["class"]
+
+                    U = index["java-class"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
             elif k == "symbols":
-                pass
+                for x in v:
+                    k_ = x["symbol"]
+
+                    U = index["symbol"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
             elif k == "keywords":
-                pass
+                for x in v:
+                    k_ = f"{x['ns']}/{x['name']}" if x.get("ns") else x["name"]
+
+                    if x.get("reg"):
+                        D = index["keyword"].setdefault(k_, index_default())["D"]
+                        D.append(x)
+
+                    U = index["keyword"].setdefault(k_, index_default())["U"]
+                    U.append(x)
 
         logger.debug(
             f"Classpath analysis (v2) is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
