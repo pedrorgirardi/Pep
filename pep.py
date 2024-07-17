@@ -1796,6 +1796,8 @@ def analyze_classpath2(window):
             f"Classpath analysis (v2) is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
         )
 
+        sublime.set_timeout(lambda: window.settings().set("index", index), 0)
+
 
 def analyze_paths(window):
     """
@@ -3013,6 +3015,11 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
             threading.Thread(
                 target=lambda: analyze_classpath2(self.window), daemon=True
             ).start()
+
+
+class PgPepDebugCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        pprint.pprint(self.window.settings().get("index"))
 
 
 # Deprecated. It should be deleted soon.
