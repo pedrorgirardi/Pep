@@ -78,7 +78,16 @@ CLJ_KONDO_PATHS_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_VIEW_PATHS_ANA
 CLJ_KONDO_CLASSPATH_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 
 
-logger = logging.getLogger("Pep")
+# -- Logging
+
+logging_formatter = logging.Formatter(fmt="[{name}] {levelname}: {message}", style="{")
+
+logging_handler = logging.StreamHandler()
+logging_handler.setFormatter(logging_formatter)
+
+logger = logging.getLogger(__package__)
+logger.propagate = False
+logger.addHandler(logging_handler)
 
 ## -- Analysis Functions
 
@@ -1132,7 +1141,7 @@ def goto(window, location, flags=sublime.ENCODED_POSITION):
                 view.set_scratch(True)
                 view.set_read_only(True)
 
-            logger.debug(f"Pep Debug: Goto JAR {filename}:{line}:{column}")
+            logger.debug(f"Goto JAR {filename}:{line}:{column}")
 
             open_jar(filename, window_open_file)
 
@@ -1609,7 +1618,7 @@ def analyze_classpath(window):
 
         sublime.status_message("Analyzing classpath...")
 
-        logger.debug(f"Pep Debug: Analyzing classpath... {window_project(window)}")
+        logger.debug(f"Analyzing classpath... {window_project(window)}")
 
         # Analysis doesn't work without a .clj-kondo cache directory:
         clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
@@ -1684,7 +1693,7 @@ def analyze_classpath(window):
             )
 
             logger.debug(
-                f"Pep Debug: Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+                f"Classpath analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
             )
 
         return True
@@ -1710,7 +1719,7 @@ def analyze_paths(window):
 
         sublime.status_message("Analyzing paths...")
 
-        logger.debug(f"Pep Debug: Analyzing paths... {window_project(window)}")
+        logger.debug(f"Analyzing paths... {window_project(window)}")
 
         # Analysis doesn't work without a .clj-kondo cache directory:
         clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
@@ -1753,7 +1762,7 @@ def analyze_paths(window):
             )
 
             logger.debug(
-                f"Pep Debug: Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+                f"Paths analysis is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
             )
 
 
@@ -2887,7 +2896,7 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
     def run(self):
         clear_cache()
 
-        logger.debug("Pep Debug: Cleared cache")
+        logger.debug("Cleared cache")
 
 
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
@@ -4307,7 +4316,7 @@ class PgPepEventListener(sublime_plugin.EventListener):
         Called right before a project is closed.
         """
         if project_path_ := project_path(window):
-            logger.debug(f"Pep Debug: Clear project cache: {project_path_}")
+            logger.debug(f"Clear project cache: {project_path_}")
 
             clear_project_index(project_path_)
 
@@ -4324,9 +4333,7 @@ def plugin_loaded():
         setting(active_window, "logging_level", "WARNING") if active_window else "WARNING"
     )
 
-    logging_format = "%(asctime)s %(name)s %(levelname)s %(message)s"
-
-    logging.basicConfig(level=logging_level, format=logging_format)
+    logger.setLevel(logging_level)
 
     logger.debug("loaded plugin")
 
@@ -4340,3 +4347,5 @@ def plugin_loaded():
 
 def plugin_unloaded():
     logger.debug("unloaded plugin")
+
+    logger.removeHandler(logging_handler)
