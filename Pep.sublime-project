@@ -7,9 +7,7 @@
     "pep": {
         "classpath": "clojure -Spath",
         "paths": [
-            "tests",
-            "server/src",
-            "server/test"
+            "tests"
         ],
         "analyze_classpath_on_plugin_loaded": false,
         "analyze_classpath_on_load_project": false
