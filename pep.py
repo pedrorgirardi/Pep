@@ -79,8 +79,7 @@ CLJ_KONDO_CLASSPATH_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_
 
 
 # -- Logging
-
-logging_formatter = logging.Formatter(fmt="[{name}] {levelname}: {message}", style="{")
+logging_formatter = logging.Formatter(fmt="[{name}] {message}", style="{")
 
 logging_handler = logging.StreamHandler()
 logging_handler.setFormatter(logging_formatter)
@@ -3365,7 +3364,7 @@ class PgPepInspect(sublime_plugin.TextCommand):
                     }}
                 </style>
 
-                <h1>{thingy['_semantic']}</h1>
+                <h1>{thingy["_semantic"]}</h1>
 
                 <ul>
                     {items_html}
@@ -4070,7 +4069,7 @@ class PgPepFindUsagesCommand(sublime_plugin.TextCommand):
             for thingy_usage in thingy_usages_sorted:
                 if location := thingy_location(thingy_usage):
                     name_usages_content.append(
-                        f'- {location.get("filename")}:{location.get("line")}:{location.get("column")}'
+                        f"- {location.get('filename')}:{location.get('line')}:{location.get('column')}"
                     )
 
             usages_content.append("Find Usages: " + thingy_name_)
@@ -4330,7 +4329,9 @@ def plugin_loaded():
     active_window = sublime.active_window()
 
     logging_level = (
-        setting(active_window, "logging_level", "WARNING") if active_window else "WARNING"
+        setting(active_window, "logging_level", "WARNING")
+        if active_window
+        else "WARNING"
     )
 
     logger.setLevel(logging_level)
