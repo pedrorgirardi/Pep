@@ -1,0 +1,18 @@
+{
+  "pythonVersion": "3.8",
+  "typeCheckingMode": "basic",
+  "stubPath": "typings",
+  "include": [
+    "pep.py",
+    "plugin",
+    "tests"
+  ],
+  "exclude": [
+    ".git",
+    ".clj-kondo",
+    ".cpcache",
+    "docs"
+  ],
+  "reportMissingModuleSource": "none",
+  "reportMissingTypeStubs": "none"
+}
