@@ -141,5 +141,9 @@
     {
         "caption": "Pep: Show Output Panel",
         "command": "pg_pep_show_output_panel"
+    },
+    {
+        "caption": "Pep: Debug",
+        "command": "pg_pep_debug"
     }
 ]

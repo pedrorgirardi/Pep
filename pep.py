@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import pathlib
+import pprint
 import re
 import shlex
 import shutil
@@ -69,6 +70,8 @@ SETTING_ANNOTATE_VIEW = "pep_annotate_view"
 # Configuration shared by paths and view analysis - without a common configuration the index would be inconsistent.
 CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG = "{:var-definitions true, :var-usages true, :arglists true, :locals true, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
 CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG = "{:var-usages false :var-definitions {:shallow true} :arglists true :keywords true :java-class-definitions false}"
+CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG2 = "{:var-definitions true, :var-usages true, :arglists true, :locals false, :keywords true, :symbols true, :java-class-definitions false, :java-class-usages true, :java-member-definitions false, :instance-invocations true}"
+
 
 CLJ_KONDO_OUTPUT_JSON_CONFIG = "{:format :json :canonical-paths true}"
 
@@ -76,6 +79,7 @@ CLJ_KONDO_OUTPUT_JSON_CONFIG = "{:format :json :canonical-paths true}"
 CLJ_KONDO_VIEW_CONFIG = f"{{:analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 CLJ_KONDO_PATHS_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_VIEW_PATHS_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 CLJ_KONDO_CLASSPATH_CONFIG = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
+CLJ_KONDO_CLASSPATH_CONFIG2 = f"{{:skip-lint true :analysis {CLJ_KONDO_CLASSPATH_ANALYSIS_CONFIG2} :output {CLJ_KONDO_OUTPUT_JSON_CONFIG} }}"
 
 
 # -- Logging
@@ -1704,6 +1708,124 @@ def analyze_classpath_async(window):
     threading.Thread(target=lambda: analyze_classpath(window), daemon=True).start()
 
 
+def analyze_classpath2(window):
+    if classpath := project_classpath(window):
+        t0 = time.time()
+
+        sublime.status_message("Analyzing classpath (v2)...")
+
+        logger.debug(f"Analyzing classpath (v2)... {window_project(window)}")
+
+        # Analysis doesn't work without a .clj-kondo cache directory:
+        clj_kondo_cache_directory = os.path.join(project_path(window), ".clj-kondo")
+
+        if not os.path.exists(clj_kondo_cache_directory):
+            os.makedirs(clj_kondo_cache_directory)
+
+        analysis_subprocess_args = [
+            clj_kondo_path(window),
+            "--config",
+            CLJ_KONDO_CLASSPATH_CONFIG2,
+            "--parallel",
+            "--lint",
+            classpath,
+        ]
+
+        analysis_completed_process = subprocess.run(
+            analysis_subprocess_args,
+            cwd=project_path(window),
+            text=True,
+            capture_output=True,
+            startupinfo=startupinfo(),
+        )
+
+        output = None
+
+        try:
+            output = json.loads(analysis_completed_process.stdout)
+        except Exception:
+            output = {}
+
+        analysis = output.get("analysis", {})
+
+        index = {
+            "namespace": {},
+            "var": {},
+            "java-class": {},
+            "symbol": {},
+            "keyword": {},
+        }
+
+        # Example:
+        # {"var": {"clojure.core/map": {"D": [...], "U": [...]}}}
+
+        def index_default():
+            return {
+                "D": [],
+                "U": [],
+            }
+
+        for k, v in analysis.items():
+            if k == "namespace-definitions":
+                for x in v:
+                    k_ = x["name"]
+
+                    D = index["namespace"].setdefault(k_, index_default())["D"]
+                    D.append(x)
+
+            elif k == "namespace-usages":
+                for x in v:
+                    k_ = x["to"]
+
+                    U = index["namespace"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
+            elif k == "var-definitions":
+                for x in v:
+                    k_ = f"{x['ns']}/{x['name']}"
+
+                    D = index["var"].setdefault(k_, index_default())["D"]
+                    D.append(x)
+
+            elif k == "var-usages":
+                for x in v:
+                    k_ = f"{x['to']}/{x['name']}"
+
+                    U = index["var"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
+            elif k == "java-class-usages":
+                for x in v:
+                    k_ = x["class"]
+
+                    U = index["java-class"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
+            elif k == "symbols":
+                for x in v:
+                    k_ = x["symbol"]
+
+                    U = index["symbol"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
+            elif k == "keywords":
+                for x in v:
+                    k_ = f"{x['ns']}/{x['name']}" if x.get("ns") else x["name"]
+
+                    if x.get("reg"):
+                        D = index["keyword"].setdefault(k_, index_default())["D"]
+                        D.append(x)
+
+                    U = index["keyword"].setdefault(k_, index_default())["U"]
+                    U.append(x)
+
+        logger.debug(
+            f"Classpath analysis (v2) is completed; {window_project(window)} [{time.time() - t0:,.2f} seconds]"
+        )
+
+        sublime.set_timeout(lambda: window.settings().set("index", index), 0)
+
+
 def analyze_paths(window):
     """
     Analyze paths to create indexes for var and namespace definitions, and keywords.
@@ -2901,7 +3023,9 @@ class PgPepClearCacheCommand(sublime_plugin.WindowCommand):
 class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
     def input(self, args):
         if "scope" not in args:
-            return ScopeInputHandler(scopes=["view", "paths", "classpath"])
+            return ScopeInputHandler(
+                scopes=["view", "paths", "classpath", "classpath_v2"]
+            )
 
     def run(self, scope):
         if scope == "view":
@@ -2913,6 +3037,16 @@ class PgPepAnalyzeCommand(sublime_plugin.WindowCommand):
 
         elif scope == "classpath":
             analyze_classpath_async(self.window)
+
+        elif scope == "classpath_v2":
+            threading.Thread(
+                target=lambda: analyze_classpath2(self.window), daemon=True
+            ).start()
+
+
+class PgPepDebugCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        pprint.pprint(self.window.settings().get("index"))
 
 
 # Deprecated. It should be deleted soon.
