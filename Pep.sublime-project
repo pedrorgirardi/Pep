@@ -12,4 +12,16 @@
         "analyze_classpath_on_plugin_loaded": false,
         "analyze_classpath_on_load_project": false
     },
+    "Smarts": {
+        "initialize": [
+            {
+                "name": "Pyright"
+            },
+            {
+                "name": "Ruff"
+            }
+        ],
+        "editor.show_hover": true,
+        "editor.format_on_save": true
+    }
 }
